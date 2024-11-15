@@ -1,6 +1,33 @@
-# Dependence
+# Watchman-backend
 
-## Rember diesel on Windows
+watchman is the IAM and dispatch service for whole Kernel master project.
+
+it should be the FIRST launched service in Kernel master compoment.
+
+## Dependence
+
+- basic web dependencies
+    - actix-web = "4.9.0"
+    - actix-rt = "2.10.0"
+    - actix-service = "2.0.2"
+    - actix-cors = "0.7.0"
+    - futures = "0.3.31"
+- DB dependencies
+    - diesel_migrations = "2.2.0"
+    - diesel = { version = "2.2.4", features = ["mysql", "r2d2", "chrono"] }
+- serializtion dependencies
+    - serde = "1.0.215"
+    - serde_derive = "1.0.215"
+    - serde_json = "1.0.132"
+    - jsonwebtoken = "9.3.0"
+    - bcrypt = "0.15.1"
+    - base64 = "0.22.1"
+- share-lib utils
+    - share-lib = { path = "../share-lib" }
+
+## Notes
+
+### Build diesel on Windows
 
 1. download a mysql-community-server ZIP pac
 
