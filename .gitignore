@@ -1,2 +1,8 @@
 **/target
 .vscode/launch.json
+**/logs
+**/keys
+/logs
+/keys
+**/Cargo.lock
+.DS_Store
