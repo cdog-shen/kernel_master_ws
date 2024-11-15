@@ -5,28 +5,28 @@ use std::io::{Result as IoResult, Write};
 use std::sync::{Arc, Mutex};
 use std::str::FromStr;
 
+
 pub struct ShareLogger {
-    pub file: Arc<Mutex<File>>,
-    pub level: Level,  // 使用 log crate 的 Level 类型
+    pub file: Arc<Mutex<File>>, // a Mutex file ptr
+    pub level: Level,           // log level params
 }
 
 impl ShareLogger {
-    // 构造函数，将文件路径和日志级别传入
     pub fn new(log_file: &str, log_level: &str) -> Self {
-        // 打开日志文件
+        // open the log file
         let file = OpenOptions::new()
             .create(true)
             .append(true)
             .open(log_file)
             .expect("Unable to open log file");
 
-        // 解析日志级别字符串并转化为对应的 Level 枚举
+        // trans log level config into Level const
         let level = match log_level.to_uppercase().as_str() {
             "ERROR" => Level::Error,
-            "INFO" => Level::Info,
             "WARN" => Level::Warn,
-            "TRACE" => Level::Trace,
-            _ => Level::Debug,
+            "INFO" => Level::Info,
+            "DEBUG" => Level::Debug,
+            _ => Level::Trace,
         };
 
         ShareLogger {
@@ -35,7 +35,7 @@ impl ShareLogger {
         }
     }
 
-    // 将日志消息写入文件
+    // write log into file
     fn log_to_file(&self, message: &str) -> IoResult<()> {
         let mut file = self.file.lock().unwrap();
         writeln!(file, "{}", message)
@@ -50,29 +50,26 @@ impl Log for ShareLogger {
     fn log(&self, record: &Record) {
         let message = format!("{} - {}", record.level(), record.args());
 
-        // 写入到文件
+        // write into file
         if let Err(e) = self.log_to_file(&message) {
             eprintln!("Failed to write to log file: {}", e);
         }
 
-        // 控制台输出
+        // console log output
         println!("{}", message);
     }
 
     fn flush(&self) {}
 }
 
-
 // logger init
-// pub fn init_logger(log_level: &str) {
-//     // read level
-//     let log_level = log_level.to_string();
+pub fn init_logger(log_path: &str, log_level_str: &str) {
 
-//     let combined_logger = CombinedLogger::new("logs/watchman.log");
+    let combined_logger = ShareLogger::new(log_path, log_level_str);
 
-//     log::set_boxed_logger(Box::new(combined_logger)).unwrap();
-//     log::set_max_level(LevelFilter::from_str(&log_level).unwrap_or(LevelFilter::Info));
-// }
+    log::set_boxed_logger(Box::new(combined_logger)).unwrap();
+    log::set_max_level(LevelFilter::from_str(log_level_str).unwrap_or(LevelFilter::Info));
+}
 
 // log macro
 #[macro_export]
