@@ -1,78 +1,80 @@
 // src/logger.rs
-use log::Level;
-use log::{LevelFilter, Log, Metadata, Record};
+use log::{Level, LevelFilter, Log, Metadata, Record};
 use std::fs::{File, OpenOptions};
 use std::io::{Result as IoResult, Write};
-use std::str::FromStr;
 use std::sync::{Arc, Mutex};
+use std::str::FromStr;
 
-pub struct FileLogger {
-    file: Arc<Mutex<File>>,
+pub struct ShareLogger {
+    pub file: Arc<Mutex<File>>,
+    pub level: Level,  // 使用 log crate 的 Level 类型
 }
 
-impl FileLogger {
-    pub fn new(log_file: &str) -> Self {
+impl ShareLogger {
+    // 构造函数，将文件路径和日志级别传入
+    pub fn new(log_file: &str, log_level: &str) -> Self {
+        // 打开日志文件
         let file = OpenOptions::new()
             .create(true)
             .append(true)
             .open(log_file)
             .expect("Unable to open log file");
 
-        FileLogger {
+        // 解析日志级别字符串并转化为对应的 Level 枚举
+        let level = match log_level.to_uppercase().as_str() {
+            "ERROR" => Level::Error,
+            "INFO" => Level::Info,
+            "WARN" => Level::Warn,
+            "TRACE" => Level::Trace,
+            _ => Level::Debug,
+        };
+
+        ShareLogger {
             file: Arc::new(Mutex::new(file)),
+            level,
         }
     }
 
-    pub fn log(&self, message: &str) -> IoResult<()> {
+    // 将日志消息写入文件
+    fn log_to_file(&self, message: &str) -> IoResult<()> {
         let mut file = self.file.lock().unwrap();
         writeln!(file, "{}", message)
     }
 }
 
-// custom logger
-pub struct CombinedLogger {
-    file_logger: FileLogger,
-}
-
-impl CombinedLogger {
-    pub fn new(log_file: &str) -> Self {
-        let file_logger = FileLogger::new(log_file);
-        CombinedLogger { file_logger }
-    }
-}
-
-impl Log for CombinedLogger {
+impl Log for ShareLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Level::Info // 可以根据需要调整级别
+        metadata.level() <= self.level
     }
 
     fn log(&self, record: &Record) {
         let message = format!("{} - {}", record.level(), record.args());
 
-        // output
-        if let Err(e) = self.file_logger.log(&message) {
+        // 写入到文件
+        if let Err(e) = self.log_to_file(&message) {
             eprintln!("Failed to write to log file: {}", e);
         }
 
-        // print
+        // 控制台输出
         println!("{}", message);
     }
 
     fn flush(&self) {}
 }
 
-// 定义日志初始化函数
-pub fn init_logger(log_level: &str) {
-    // 读取自定义环境变量
-    let log_level = log_level.to_string();
 
-    let combined_logger = CombinedLogger::new("logs/watchman.log");
+// logger init
+// pub fn init_logger(log_level: &str) {
+//     // read level
+//     let log_level = log_level.to_string();
 
-    log::set_boxed_logger(Box::new(combined_logger)).unwrap();
-    log::set_max_level(LevelFilter::from_str(&log_level).unwrap_or(LevelFilter::Info));
-}
+//     let combined_logger = CombinedLogger::new("logs/watchman.log");
 
-// 宏用于简化日志记录
+//     log::set_boxed_logger(Box::new(combined_logger)).unwrap();
+//     log::set_max_level(LevelFilter::from_str(&log_level).unwrap_or(LevelFilter::Info));
+// }
+
+// log macro
 #[macro_export]
 macro_rules! log_info {
     ($($arg:tt)*) => (info!($($arg)*));
