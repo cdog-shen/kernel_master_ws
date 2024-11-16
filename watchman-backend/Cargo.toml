@@ -6,6 +6,7 @@ authors = ["Cdog Shen <shencdog@oulook.com>"]
 
 [dependencies]
 # std dependencies
+log = "0.4.22"
 # basic web dependencies
 actix-web = "4.9.0"
 actix-rt = "2.10.0"
