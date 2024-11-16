@@ -2,9 +2,8 @@
 use log::{Level, LevelFilter, Log, Metadata, Record};
 use std::fs::{File, OpenOptions};
 use std::io::{Result as IoResult, Write};
-use std::sync::{Arc, Mutex};
 use std::str::FromStr;
-
+use std::sync::{Arc, Mutex};
 
 pub struct ShareLogger {
     pub file: Arc<Mutex<File>>, // a Mutex file ptr
@@ -64,10 +63,8 @@ impl Log for ShareLogger {
 
 // logger init
 pub fn init_logger(log_path: &str, log_level_str: &str) {
-
-    let combined_logger = ShareLogger::new(log_path, log_level_str);
-
-    log::set_boxed_logger(Box::new(combined_logger)).unwrap();
+    let logger_obj = ShareLogger::new(log_path, log_level_str);
+    log::set_boxed_logger(Box::new(logger_obj)).unwrap();
     log::set_max_level(LevelFilter::from_str(log_level_str).unwrap_or(LevelFilter::Info));
 }
 
