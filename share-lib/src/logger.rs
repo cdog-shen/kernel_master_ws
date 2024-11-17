@@ -4,6 +4,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{Result as IoResult, Write};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
+use time::{OffsetDateTime, format_description};
 
 pub struct ShareLogger {
     pub file: Arc<Mutex<File>>, // a Mutex file ptr
@@ -47,7 +48,10 @@ impl Log for ShareLogger {
     }
 
     fn log(&self, record: &Record) {
-        let message = format!("{} - {}", record.level(), record.args());
+        let now = OffsetDateTime::now_utc();
+        let format = format_description::well_known::Rfc3339;
+        let timestamp = now.format(&format).unwrap();
+        let message = format!("{} - {} - {} - {}", timestamp, record.level(), record.target(), record.args());
 
         // write into file
         if let Err(e) = self.log_to_file(&message) {
