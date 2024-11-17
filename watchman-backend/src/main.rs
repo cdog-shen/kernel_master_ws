@@ -22,6 +22,7 @@ use share_lib::cfg_reader::GLOBAL_CONFIG_HANDLER;
 mod api;
 mod config;
 mod middleware;
+mod models;
 
 #[actix_rt::main]
 async fn main() -> io::Result<()> {
