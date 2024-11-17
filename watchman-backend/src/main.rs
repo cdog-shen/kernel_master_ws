@@ -61,8 +61,8 @@ async fn main() -> io::Result<()> {
                     .max_age(3600),
             )
             .app_data(web::Data::new(pool.clone()))
-            // wrap custom looger from share-lib logger
-            // .wrap(middleware::log_middleware::logger)
+            // wrap default logger
+            .wrap(actix_web::middleware::Logger::default())
             // Comment this line if you want to integrate with yew-address-book-frontend
             // .wrap(crate::middleware::auth_middleware::Authentication)
             // .wrap_fn(|req, srv| srv.call(req).map(|res| res))
