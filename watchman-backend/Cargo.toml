@@ -7,6 +7,7 @@ authors = ["Cdog Shen <shencdog@oulook.com>"]
 [dependencies]
 # std dependencies
 log = "0.4.22"
+time = "0.3.36"
 # basic web dependencies
 actix-web = "4.9.0"
 actix-rt = "2.10.0"
@@ -19,7 +20,7 @@ diesel = { version = "2.2.4", features = ["mysql", "r2d2", "chrono"] }
 # serializtion dependencies
 serde = "1.0.215"
 serde_derive = "1.0.215"
-serde_json = "1.0.132"
+serde_json = "1.0.133"
 jsonwebtoken = "9.3.0"
 bcrypt = "0.15.1"
 base64 = "0.22.1"
