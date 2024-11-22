@@ -23,8 +23,8 @@ The workspace for my persional project kernel master (now it just a graduation p
 
     |user|token|exp_time|
     |:-:|:-:|:-:|
-    |varchar - str|varchar - str|datetime|
-    |test|ahsodhajkshdkanshdjka|2024-10-25 00:00:00.000000|
+    |varchar - str|varchar - str|datetime/int|
+    |test|ahsodhajkshdkanshdjka|2024-10-25 00:00:00.000000/UNIX_TIME_STAMP|
 
 - Group table
 
