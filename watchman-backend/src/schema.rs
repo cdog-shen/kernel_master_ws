@@ -24,18 +24,18 @@ diesel::table! {
     group (id) {
         id -> Unsigned<Integer>,
         #[max_length = 255]
-        group -> Varchar,
+        name -> Varchar,
         is_enable -> Unsigned<Tinyint>,
         date_update -> Nullable<Datetime>,
     }
 }
 
 diesel::table! {
-    token (token) {
+    token (tokenid) {
         #[max_length = 255]
-        token -> Varchar,
+        tokenid -> Varchar,
         #[max_length = 255]
-        user -> Varchar,
+        username -> Varchar,
         exp_time -> Timestamp,
     }
 }
@@ -47,7 +47,7 @@ diesel::table! {
     user (id) {
         id -> Unsigned<Integer>,
         #[max_length = 255]
-        user -> Varchar,
+        username -> Varchar,
         #[max_length = 255]
         passwd -> Varchar,
         is_enable -> Unsigned<Tinyint>,

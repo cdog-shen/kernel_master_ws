@@ -23,6 +23,7 @@ mod api;
 mod config;
 mod middleware;
 mod models;
+mod schema;
 
 #[actix_rt::main]
 async fn main() -> io::Result<()> {
