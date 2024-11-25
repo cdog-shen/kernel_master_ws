@@ -1,11 +1,5 @@
 // @generated automatically by Diesel CLI.
 
-pub mod sql_types {
-    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
-    #[diesel(mysql_type(name = "Set"))]
-    pub struct UserGroupsSet;
-}
-
 diesel::table! {
     access (id) {
         id -> Unsigned<Integer>,
@@ -41,9 +35,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    use diesel::sql_types::*;
-    use super::sql_types::UserGroupsSet;
-
     user (id) {
         id -> Unsigned<Integer>,
         #[max_length = 255]
@@ -55,8 +46,8 @@ diesel::table! {
         name -> Nullable<Varchar>,
         #[max_length = 255]
         contact -> Nullable<Varchar>,
-        #[max_length = 5]
-        groups -> Nullable<UserGroupsSet>,
+        #[max_length = 255]
+        groups -> Nullable<Varchar>,
         date_joined -> Nullable<Datetime>,
         last_login -> Nullable<Datetime>,
     }
