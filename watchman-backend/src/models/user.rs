@@ -1,29 +1,46 @@
 use core::hash;
 
 use bcrypt::hash;
-use diesel::{prelude::*, Identifiable, Insertable, MysqlConnection, Queryablem};
+use chrono;
+use diesel::{prelude::*, Identifiable, Insertable, MysqlConnection, Queryable, Selectable};
 use serde::{Deserialize, Serialize};
-use time;
 
-use crate::config;
+use crate::{
+    config,
+    models::schema::user::{self, dsl::*},
+};
 
-#[derive(Queryable, Debug, Serialize, Deserialize)]
+#[derive(Queryable, Selectable, Debug, Serialize, Deserialize)]
+#[diesel(table_name = user)]
 pub struct UserModule {
-    pub id: i32,
-    pub user: String,
+    pub id: u32,
+    pub username: String,
     pub passwd: String,
-    pub is_enable: bool,
-    pub name: String,
-    pub contact: String,
-    pub group: String,
-    pub date_joined: time::PrimitiveDateTime,
-    pub last_login: Option<time::PrimitiveDateTime>,
+    pub is_enable: u8,
+    pub name: Option<String>,
+    pub contact: Option<String>,
+    pub groups: Option<String>,
+    pub date_joined: Option<chrono::NaiveDateTime>,
+    pub last_login: Option<chrono::NaiveDateTime>,
+}
+
+#[derive(Queryable, Selectable, Debug, Serialize, Deserialize)]
+#[diesel(table_name = user)]
+pub struct UserInfo {
+    pub id: u32,
+    pub username: String,
+    pub is_enable: u8,
+    pub name: Option<String>,
+    pub contact: Option<String>,
+    pub groups: Option<String>,
+    pub date_joined: Option<chrono::NaiveDateTime>,
+    pub last_login: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Insertable, Serialize, Deserialize)]
-#[diesel(table_name = users)]
+#[diesel(table_name = user)]
 pub struct SignUpDataStream {
-    pub user: String,
+    pub username: String,
     pub passwd: String,
 }
 
@@ -32,22 +49,16 @@ pub struct UserDataStream {}
 pub struct AuthDataStream {}
 
 impl UserModule {
-    pub fn signup(
-        new_user: SignUpDataStream,
+    pub fn get_user_by_username(
+        user_name: &str,
         conn: &mut MysqlConnection,
-    ) -> Result<String, String> {
-        if Self::find_user_by_username(&new_user.user, conn).is_err() {
-            let new_user = SignUpDataStream {
-                passwd: new_user.passwd,
-                ..new_user
-            };
-            diesel::insert_into(users).values(new_user).execute(conn);
-            Ok(constants::MESSAGE_SIGNUP_SUCCESS.to_string())
-        } else {
-            Err(format!(
-                "User '{}' is already registered",
-                &new_user.username
-            ))
-        }
+    ) -> QueryResult<UserModule> {
+        user.filter(is_enable.eq(1))
+            .filter(username.eq(user_name))
+            .get_result::<UserModule>(conn)
+    }
+    pub fn get_user_info(conn: &mut MysqlConnection) -> QueryResult<Vec<UserInfo>> {
+        user.select(UserInfo::as_select()) // 选择 UserInfo 结构体中定义的字段
+            .load::<UserInfo>(conn)
     }
 }

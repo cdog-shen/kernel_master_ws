@@ -7,6 +7,6 @@ authors = ["Cdog Shen <shencdog@oulook.com>"]
 [dependencies]
 serde = { version = "1.0.215", features = ["derive"] }
 toml = "0.8.19"
-time = { version = "0.3.36", features = ["serde", "formatting"] }
-log = { version = "0.4", features = ["std"] }
+chrono = { version = "0.4.38"}
+log = { version = "0.4.22", features = ["std"] }
 once_cell = "1.20.2"
