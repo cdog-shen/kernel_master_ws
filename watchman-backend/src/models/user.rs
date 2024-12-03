@@ -75,18 +75,10 @@ impl UserModule {
             .filter(is_enable.eq(1))
             .filter(username.eq(user_data.username.clone()))
             .filter(passwd.eq(user_data.passwd.clone()))
-            .get_result::<UserModule>(conn)
+            .select(UserInfo::as_select())
+            .get_result::<UserInfo>(conn)
         {
-            Ok(user_identified) => Some(UserInfo {
-                id: user_identified.id,
-                username: user_identified.username,
-                is_enable: user_identified.is_enable,
-                name: user_identified.name,
-                contact: user_identified.contact,
-                groups: user_identified.groups,
-                date_joined: user_identified.date_joined,
-                last_login: user_identified.last_login,
-            }),
+            Ok(user_identified) => Some(user_identified),
             Err(_) => None,
         }
     }
