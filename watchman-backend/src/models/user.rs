@@ -39,7 +39,7 @@ pub struct UserInfo {
 
 #[derive(Insertable, Serialize, Deserialize)]
 #[diesel(table_name = user)]
-pub struct SignUpDataStream {
+pub struct BasicUserDataStream {
     pub username: String,
     pub passwd: String,
 }
@@ -49,16 +49,45 @@ pub struct UserDataStream {}
 pub struct AuthDataStream {}
 
 impl UserModule {
-    pub fn get_user_by_username(
-        user_name: &str,
-        conn: &mut MysqlConnection,
-    ) -> QueryResult<UserModule> {
-        user.filter(is_enable.eq(1))
+    pub fn get_user_by_username(user_name: &str, conn: &mut MysqlConnection) -> Option<UserInfo> {
+        match user
+            .filter(is_enable.eq(1))
             .filter(username.eq(user_name))
-            .get_result::<UserModule>(conn)
+            .select(UserInfo::as_select())
+            .get_result::<UserInfo>(conn)
+        {
+            Ok(user_info) => Some(user_info),
+            Err(_) => None,
+        }
     }
-    pub fn get_user_info(conn: &mut MysqlConnection) -> QueryResult<Vec<UserInfo>> {
-        user.select(UserInfo::as_select()) // 选择 UserInfo 结构体中定义的字段
-            .load::<UserInfo>(conn)
+    pub fn get_user_info(conn: &mut MysqlConnection) -> Vec<UserInfo> {
+        match user
+            .select(UserInfo::as_select()) // 选择 UserInfo 结构体中定义的字段
+            .get_results::<UserInfo>(conn)
+        {
+            Ok(vec_user_info) => vec_user_info,
+            Err(_) => vec![],
+        }
+    }
+
+    pub fn login(user_data: BasicUserDataStream, conn: &mut MysqlConnection) -> Option<UserInfo> {
+        match user
+            .filter(is_enable.eq(1))
+            .filter(username.eq(&user_data.username))
+            .filter(passwd.eq(&user_data.passwd))
+            .get_result::<UserModule>(conn)
+        {
+            Ok(user_identified) => Some(UserInfo {
+                id: user_identified.id,
+                username: user_identified.username,
+                is_enable: user_identified.is_enable,
+                name: user_identified.name,
+                contact: user_identified.contact,
+                groups: user_identified.groups,
+                date_joined: user_identified.date_joined,
+                last_login: user_identified.last_login,
+            }),
+            Err(_) => None,
+        }
     }
 }
