@@ -70,11 +70,11 @@ impl UserModule {
         }
     }
 
-    pub fn login(user_data: BasicUserDataStream, conn: &mut MysqlConnection) -> Option<UserInfo> {
+    pub fn login(user_data: &BasicUserDataStream, conn: &mut MysqlConnection) -> Option<UserInfo> {
         match user
             .filter(is_enable.eq(1))
-            .filter(username.eq(&user_data.username))
-            .filter(passwd.eq(&user_data.passwd))
+            .filter(username.eq(user_data.username.clone()))
+            .filter(passwd.eq(user_data.passwd.clone()))
             .get_result::<UserModule>(conn)
         {
             Ok(user_identified) => Some(UserInfo {
