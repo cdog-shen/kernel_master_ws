@@ -4,6 +4,14 @@ watchman is the IAM and dispatch service for whole Kernel master project.
 
 it should be the FIRST launched service in Kernel master compoment.
 
+## Code rules
+
+- All ORM model corresponding operation methods should be placed in the corresponding mod under the ***models*** directory.
+
+- All interface processing logic should be placed in the ***services*** directory.
+
+- The logic related to API responses should be placed under the corresponding API mod in the ***apis*** directory.
+
 ## Dependence
 
 - basic web dependencies
