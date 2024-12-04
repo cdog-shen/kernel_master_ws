@@ -29,7 +29,7 @@ pub fn login<'a>(
             return Err(MailManErr::new(
                 400,
                 "Bad Request",
-                user.username,
+                format!("Bad user name or passwd for {}", user.username),
                 1,
             ));
         }
