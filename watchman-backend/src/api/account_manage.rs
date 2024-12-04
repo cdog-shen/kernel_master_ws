@@ -5,10 +5,9 @@ use diesel::{
 };
 
 use crate::utils::err_mapping::MailManErrResponser;
-use share_lib::data_structure::MailManErr;
 
 use crate::{
-    models::user::BasicUserDataStream, services::account_service, utils::err_mapping::MapErrorKey,
+    models::user::BasicUserDataStream, services::account_service,
 };
 
 // POST api/auth/login
@@ -18,6 +17,6 @@ pub async fn login(
 ) -> Result<HttpResponse, MailManErrResponser> {
     match account_service::login(login_json.0, &pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
-        Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
+        Err(err_mm) => Err(MailManErrResponser { mme_msg: err_mm.msg }),
     }
 }
