@@ -18,16 +18,14 @@ pub struct UserToken {
 }
 
 impl UserToken {
-    pub fn encode_token(
-        login_user: String,
-    ) -> Result<String, jsonwebtoken::errors::Error> {
+    pub fn encode_token(login_user: &String) -> String {
         debug!("Token Max Age: {}", EXP_CONST);
 
         let now = Utc::now();
         let exp = now.timestamp() + EXP_CONST; // Convert to Unix timestamp
         let payload = UserToken {
             exp,
-            user: login_user,
+            user: login_user.clone(),
             uuid: Uuid::new_v4().to_string(),
         };
 
@@ -36,6 +34,7 @@ impl UserToken {
             &payload,
             &EncodingKey::from_secret(&*SECRET_KEY.as_bytes()),
         )
+        .unwrap()
     }
 
     // pub fn decode_token(token: &str) -> Result<UserToken, jsonwebtoken::errors::Error> {
