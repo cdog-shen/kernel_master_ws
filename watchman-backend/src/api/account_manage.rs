@@ -18,6 +18,6 @@ pub async fn login(
 ) -> Result<HttpResponse, MailManErrResponser> {
     match account_service::login(login_json.0, &pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
-        Err(err_mm) => Err(MailManErrResponser { mme_msg: err_mm.msg }),
+        Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
 }
