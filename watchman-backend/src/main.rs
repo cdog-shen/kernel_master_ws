@@ -2,7 +2,7 @@
 
 // std import
 use std::default::Default;
-use std::{env, io};
+use std::io;
 // rt import
 use actix_cors::Cors;
 use actix_web::dev::Service;
