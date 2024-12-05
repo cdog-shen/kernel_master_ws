@@ -33,7 +33,10 @@ impl<'a> TokenModel {
             .get_result::<TokenModel>(conn)
         {
             Ok(token_line) => Ok(token_line),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("can NOT find {}'s token.", &user_token.user))),
+            Err(NotFound) => Err((
+                NOT_FOUND_CODE,
+                format!("can NOT find {}'s token.", &user_token.user),
+            )),
             Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow error {}", e.to_string()))),
         }
     }
@@ -81,7 +84,7 @@ impl<'a> TokenModel {
                 "{}'s token updated. line: {}",
                 &user_token.user, num_of_change
             )),
-            Err(err) => Err((NOT_FOUND_CODE, err.to_string())),
+            Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
     }
 }
