@@ -11,7 +11,7 @@ use share_lib::cfg_reader::SECRET_KEY;
 
 use crate::models::schema::token::{self, dsl::*};
 
-static EXP_CONST: i64 = 60 * 60 * 24 * 7; // in seconds
+static EXP_CONST: i64 = 60 * 60 * 24 * 7; // in seconds Week
 static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
 
@@ -98,11 +98,10 @@ pub struct UserToken {
 
 impl UserToken {
     pub fn new(login_user: &String) -> UserToken {
-        let timea = Local::now().naive_local();
         UserToken {
             user: login_user.clone(),
             uuid: Uuid::new_v4().to_string(),
-            exp: Local::now().timestamp() + EXP_CONST,
+            exp: Local::now().naive_local().timestamp() + EXP_CONST,
         }
     }
 
