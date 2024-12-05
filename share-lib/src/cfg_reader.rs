@@ -1,6 +1,6 @@
 use crate::data_structure;
 use serde::Deserialize;
-use std::{borrow::Cow, fs, path};
+use std::{borrow::Cow, fs};
 
 #[derive(Debug, Deserialize)]
 pub struct ServerConfig {
