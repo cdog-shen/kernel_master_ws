@@ -45,26 +45,36 @@ impl<'a> TokenModel {
         user_token: &UserToken,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match Self::find_token_by_username(&user_token, conn) {
-            Ok(token_line) => {
-                match diesel::update(token.find(token_line.username))
-                    .set((
-                        tokenid.eq(user_token.user.to_string()),
-                        exp_time.eq(chrono::NaiveDateTime::from_timestamp(
-                            user_token.exp.clone(),
-                            0,
-                        )),
+        let target = token.filter(username.eq(&user_token.user));
+
+        let _: Result<i64, (u8, String)> = match target.count().get_result(conn) {
+            Ok(c) => match c {
+                1 => Ok(1),
+                _ => {
+                    return Err((
+                        NOT_FOUND_CODE,
+                        format!("can NOT find specific token for {}.", &user_token.user),
                     ))
-                    .execute(conn)
-                {
-                    Ok(num_of_change) => Ok(format!(
-                        "{}'s token update. lines: {}",
-                        &user_token.user, num_of_change
-                    )),
-                    Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
                 }
-            }
-            Err(msg) => Err(msg),
+            },
+            Err(e) => return Err((UNKNOW_ERROR_CODE, e.to_string())),
+        };
+
+        match diesel::update(target)
+            .set((
+                tokenid.eq(user_token.uuid.to_string()),
+                exp_time.eq(chrono::NaiveDateTime::from_timestamp(
+                    user_token.exp.clone(),
+                    0,
+                )),
+            ))
+            .execute(conn)
+        {
+            Ok(num_of_change) => Ok(format!(
+                "{}'s token update. lines: {}",
+                &user_token.user, num_of_change
+            )),
+            Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
     }
 
@@ -89,7 +99,7 @@ impl<'a> TokenModel {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct UserToken {
     pub user: String,
     pub uuid: String,

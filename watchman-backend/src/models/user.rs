@@ -104,22 +104,30 @@ impl UserModule {
         user_data: &BasicUserDataStream,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match Self::get_user_by_username(&user_data.username, conn) {
-            Ok(user_line) => {
-                if diesel::update(user.find(user_line.id))
-                    .set(last_login.eq(chrono::Local::now().naive_local()))
-                    .execute(conn)
-                    .is_err()
-                {
-                    Err((
-                        UNKNOW_ERROR_CODE,
-                        format!("{}'s last_login update filed.", &user_line.username),
+        let target = user.filter(username.eq(&user_data.username));
+
+        let _: Result<i64, (u8, String)> = match target.count().get_result(conn) {
+            Ok(c) => match c {
+                1 => Ok(1),
+                _ => {
+                    return Err((
+                        NOT_FOUND_CODE,
+                        format!("can NOT find specific user: {}.", &user_data.username),
                     ))
-                } else {
-                    Ok(format!("{}'s token update DONE.", &user_line.username))
                 }
-            }
-            Err(msg) => Err(msg),
+            },
+            Err(e) => return Err((UNKNOW_ERROR_CODE, e.to_string())),
+        };
+
+        match diesel::update(target)
+            .set(last_login.eq(chrono::Local::now().naive_local()))
+            .execute(conn)
+        {
+            Ok(num_of_change) => Ok(format!(
+                "{}'s last login time update. lines: {}",
+                &user_data.username, num_of_change
+            )),
+            Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
     }
 }
