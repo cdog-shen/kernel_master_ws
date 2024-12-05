@@ -1,10 +1,10 @@
 // src/logger.rs
+use chrono::Local;
 use log::{Level, LevelFilter, Log, Metadata, Record};
 use std::fs::{File, OpenOptions};
 use std::io::{Result as IoResult, Write};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
-use chrono::Utc;
 
 pub struct ShareLogger {
     pub file: Arc<Mutex<File>>, // a Mutex file ptr
@@ -48,9 +48,15 @@ impl Log for ShareLogger {
     }
 
     fn log(&self, record: &Record) {
-        let now = Utc::now();
+        let now = Local::now();
         let timestamp = now.to_rfc3339();
-        let message = format!("{} - {} - {} - {}", timestamp, record.level(), record.target(), record.args());
+        let message = format!(
+            "{} - {} - {} - {}",
+            timestamp,
+            record.level(),
+            record.target(),
+            record.args()
+        );
 
         // write into file
         if let Err(e) = self.log_to_file(&message) {

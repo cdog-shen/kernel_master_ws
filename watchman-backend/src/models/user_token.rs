@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::Local;
 use diesel::{
     prelude::*, result::Error::NotFound, Insertable, MysqlConnection, Queryable, Selectable,
 };
@@ -98,10 +98,11 @@ pub struct UserToken {
 
 impl UserToken {
     pub fn new(login_user: &String) -> UserToken {
+        let timea = Local::now().naive_utc();
         UserToken {
             user: login_user.clone(),
             uuid: Uuid::new_v4().to_string(),
-            exp: Utc::now().timestamp() + EXP_CONST,
+            exp: Local::now().timestamp() + EXP_CONST,
         }
     }
 
