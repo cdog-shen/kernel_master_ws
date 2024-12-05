@@ -1,8 +1,7 @@
-use core::num;
-
-use actix_web::body::None;
 use chrono::Utc;
-use diesel::{prelude::*, Insertable, MysqlConnection, Queryable, Selectable};
+use diesel::{
+    prelude::*, result::Error::NotFound, Insertable, MysqlConnection, Queryable, Selectable,
+};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use log::debug;
 use serde::{Deserialize, Serialize};
@@ -13,6 +12,8 @@ use share_lib::cfg_reader::SECRET_KEY;
 use crate::models::schema::token::{self, dsl::*};
 
 static EXP_CONST: i64 = 60 * 60 * 24 * 7; // in seconds
+static NOT_FOUND_CODE: u8 = 1;
+static UNKNOW_ERROR_CODE: u8 = 0;
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = token)]
@@ -26,20 +27,21 @@ impl<'a> TokenModel {
     pub fn find_token_by_username(
         user_token: &UserToken,
         conn: &mut MysqlConnection,
-    ) -> Result<TokenModel, String> {
+    ) -> Result<TokenModel, (u8, String)> {
         match token
             .filter(username.eq(&user_token.user))
             .get_result::<TokenModel>(conn)
         {
             Ok(token_line) => Ok(token_line),
-            Err(_) => Err(format!("can NOT find {}'s token.", &user_token.user)),
+            Err(NotFound) => Err((NOT_FOUND_CODE, format!("can NOT find {}'s token.", &user_token.user))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow error {}", e.to_string()))),
         }
     }
 
     pub fn update_token(
         user_token: &UserToken,
         conn: &mut MysqlConnection,
-    ) -> Result<String, String> {
+    ) -> Result<String, (u8, String)> {
         match Self::find_token_by_username(&user_token, conn) {
             Ok(token_line) => {
                 match diesel::update(token.find(token_line.username))
@@ -56,7 +58,7 @@ impl<'a> TokenModel {
                         "{}'s token update. lines: {}",
                         &user_token.user, num_of_change
                     )),
-                    Err(err) => Err(err.to_string()),
+                    Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
                 }
             }
             Err(msg) => Err(msg),
@@ -66,7 +68,7 @@ impl<'a> TokenModel {
     pub fn insert_new_token(
         user_token: &UserToken,
         conn: &mut MysqlConnection,
-    ) -> Result<String, String> {
+    ) -> Result<String, (u8, String)> {
         match diesel::insert_into(token)
             .values(TokenModel {
                 tokenid: user_token.uuid.clone(),
@@ -79,7 +81,7 @@ impl<'a> TokenModel {
                 "{}'s token updated. line: {}",
                 &user_token.user, num_of_change
             )),
-            Err(err) => Err(err.to_string()),
+            Err(err) => Err((NOT_FOUND_CODE, err.to_string())),
         }
     }
 }
@@ -92,16 +94,18 @@ pub struct UserToken {
 }
 
 impl UserToken {
-    pub fn encode_token(login_user: &String) -> String {
-        debug!("Token Max Age: {}", EXP_CONST);
-
-        let now = Utc::now();
-        let exp = now.timestamp() + EXP_CONST; // Convert to Unix timestamp
-        let payload = UserToken {
-            exp,
+    pub fn new(login_user: &String) -> UserToken {
+        UserToken {
             user: login_user.clone(),
             uuid: Uuid::new_v4().to_string(),
-        };
+            exp: Utc::now().timestamp() + EXP_CONST,
+        }
+    }
+
+    pub fn encode_token(&self) -> String {
+        debug!("Token Max Age: {}", EXP_CONST);
+
+        let payload = self;
 
         encode(
             &Header::default(),

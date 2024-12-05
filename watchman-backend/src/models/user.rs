@@ -1,8 +1,13 @@
 use chrono;
-use diesel::{prelude::*, Insertable, MysqlConnection, Queryable, Selectable};
+use diesel::{
+    prelude::*, result::Error::NotFound, Insertable, MysqlConnection, Queryable, Selectable,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::models::schema::user::{self, dsl::*};
+
+static NOT_FOUND_CODE: u8 = 1;
+static UNKNOW_ERROR_CODE: u8 = 0;
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = user)]
@@ -43,15 +48,22 @@ pub struct BasicUserDataStream {
 // pub struct AuthDataStream {}
 
 impl UserModule {
-    pub fn get_user_by_username(user_name: &str, conn: &mut MysqlConnection) -> Option<UserInfo> {
+    pub fn get_user_by_username(
+        user_name: &str,
+        conn: &mut MysqlConnection,
+    ) -> Result<UserInfo, (u8, String)> {
         match user
             .filter(is_enable.eq(1))
             .filter(username.eq(user_name))
             .select(UserInfo::as_select())
             .get_result::<UserInfo>(conn)
         {
-            Ok(user_info) => Some(user_info),
-            Err(_) => None,
+            Ok(user_info) => Ok(user_info),
+            Err(NotFound) => Err((NOT_FOUND_CODE, format!("NotFound {}.", user_name))),
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
         }
     }
 
@@ -68,7 +80,7 @@ impl UserModule {
     pub fn login(
         user_data: &BasicUserDataStream,
         conn: &mut MysqlConnection,
-    ) -> Result<UserInfo, String> {
+    ) -> Result<UserInfo, (u8, String)> {
         match user
             .filter(is_enable.eq(1))
             .filter(username.eq(&user_data.username))
@@ -77,27 +89,37 @@ impl UserModule {
             .get_result::<UserInfo>(conn)
         {
             Ok(user_identified) => Ok(user_identified),
-            Err(err) => Err(format!("Login filed: {} - {}", &user_data.username, err.to_string())),
+            Err(NotFound) => Err((
+                NOT_FOUND_CODE,
+                format!("Login filed: {}.", &user_data.username),
+            )),
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
         }
     }
 
     pub fn update_last_login(
         user_data: &BasicUserDataStream,
         conn: &mut MysqlConnection,
-    ) -> Result<String, String> {
+    ) -> Result<String, (u8, String)> {
         match Self::get_user_by_username(&user_data.username, conn) {
-            Some(user_line) => {
+            Ok(user_line) => {
                 if diesel::update(user.find(user_line.id))
                     .set(last_login.eq(chrono::Utc::now().naive_utc()))
                     .execute(conn)
                     .is_err()
                 {
-                    Err(format!("{}'s last_login update filed.", &user_line.username))
+                    Err((
+                        UNKNOW_ERROR_CODE,
+                        format!("{}'s last_login update filed.", &user_line.username),
+                    ))
                 } else {
                     Ok(format!("{}'s token update DONE.", &user_line.username))
                 }
             }
-            None => Err(format!("can NOT find user {}", &user_data.username)),
+            Err(msg) => Err(msg),
         }
     }
 }
