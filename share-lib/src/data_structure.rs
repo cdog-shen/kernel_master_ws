@@ -40,6 +40,7 @@ impl<'a> MailManErr<'a> {
         }
     }
 }
+
 impl fmt::Display for MailManErr<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(

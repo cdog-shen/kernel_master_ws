@@ -5,7 +5,6 @@ use diesel::{
 };
 
 use crate::utils::err_mapping::MailManErrResponser;
-use share_lib::data_structure::MailManErr;
 
 use crate::{
     models::user::BasicUserDataStream, services::account_service, utils::err_mapping::MapErrorKey,

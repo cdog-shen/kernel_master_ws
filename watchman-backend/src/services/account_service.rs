@@ -26,12 +26,7 @@ pub fn login<'a>(
     let query_result = match UserModule::login(&user, &mut pool.get().unwrap()) {
         Ok(user_info) => user_info,
         Err(msg) => {
-            return Err(MailManErr {
-                code: 400,
-                key: "Bad Request",
-                msg: msg.1,
-                level: 1,
-            });
+            return Err(MailManErr::new(400, "Bad Request", msg.1, 1));
         }
     };
 
@@ -43,31 +38,24 @@ pub fn login<'a>(
     });
 
     let output = match serde_json::from_value(response) {
-        Ok(token_response_warp) => Ok(MailManOk::<TokenBodyResponse> {
-            code: 200,
-            key: "JWT generate DONE",
-            data: token_response_warp,
-        }),
+        Ok(token_response_warp) => Ok(MailManOk::<TokenBodyResponse>::new(
+            200,
+            "Login in success.",
+            token_response_warp,
+        )),
         Err(err) => {
-            return Err(MailManErr {
-                code: 500,
-                key: "Internal Server Error",
-                msg: err.to_string(),
-                level: 1,
-            })
+            return Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                err.to_string(),
+                1,
+            ))
         }
     };
 
     match UserModule::update_last_login(&user, &mut pool.get().unwrap()) {
         Ok(_) => (),
-        Err(msg) => {
-            return Err(MailManErr {
-                code: 500,
-                key: "Internal Server Error",
-                msg: msg.1,
-                level: 1,
-            })
-        }
+        Err(msg) => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
     }
 
     match TokenModel::update_token(&token_obj, &mut pool.get().unwrap()) {
@@ -77,21 +65,11 @@ pub fn login<'a>(
                 match TokenModel::insert_new_token(&token_obj, &mut pool.get().unwrap()) {
                     Ok(_) => (),
                     Err(msg) => {
-                        return Err(MailManErr {
-                            code: 500,
-                            key: "Internal Server Error",
-                            msg: msg.1,
-                            level: 1,
-                        })
+                        return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1))
                     }
                 }
             } else {
-                return Err(MailManErr {
-                    code: 500,
-                    key: "Internal Server Error",
-                    msg: msg.1,
-                    level: 1,
-                });
+                return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1));
             }
         }
     }
