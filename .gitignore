@@ -7,3 +7,4 @@
 **/Cargo.lock
 .DS_Store
 **/.DS_Store
+watchman-backend/watchman_server.cfg
