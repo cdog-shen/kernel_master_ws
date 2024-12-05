@@ -98,7 +98,7 @@ pub struct UserToken {
 
 impl UserToken {
     pub fn new(login_user: &String) -> UserToken {
-        let timea = Local::now().naive_utc();
+        let timea = Local::now().naive_local();
         UserToken {
             user: login_user.clone(),
             uuid: Uuid::new_v4().to_string(),

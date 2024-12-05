@@ -107,7 +107,7 @@ impl UserModule {
         match Self::get_user_by_username(&user_data.username, conn) {
             Ok(user_line) => {
                 if diesel::update(user.find(user_line.id))
-                    .set(last_login.eq(chrono::Local::now().naive_utc()))
+                    .set(last_login.eq(chrono::Local::now().naive_local()))
                     .execute(conn)
                     .is_err()
                 {
