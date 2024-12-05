@@ -54,16 +54,34 @@ pub fn login<'a>(
     };
 
     match UserModule::update_last_login(&user, &mut pool.get().unwrap()) {
-        Ok(_) => (),
+        Ok(msg) => {
+            MailManOk::<String>::new(
+                200,
+                format!("update_last_login call success - {}", msg).as_str(),
+                Some(msg),
+            );
+        }
         Err(msg) => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
     }
 
     match TokenModel::update_token(&token_obj, &mut pool.get().unwrap()) {
-        Ok(_) => (),
+        Ok(msg) => {
+            MailManOk::<String>::new(
+                200,
+                format!("update_token call success - {}", msg).as_str(),
+                Some(msg),
+            );
+        }
         Err(msg) => {
             if msg.0 == 1 {
                 match TokenModel::insert_new_token(&token_obj, &mut pool.get().unwrap()) {
-                    Ok(_) => (),
+                    Ok(msg) => {
+                        MailManOk::<String>::new(
+                            200,
+                            format!("insert_new_token call success - {}", msg).as_str(),
+                            Some(msg),
+                        );
+                    }
                     Err(msg) => {
                         return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1))
                     }
