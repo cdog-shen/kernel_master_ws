@@ -46,6 +46,7 @@ pub struct BasicUserDataStream {
 #[derive(AsChangeset, Serialize, Deserialize)]
 #[diesel(table_name = user)]
 pub struct UserUpdate {
+    pub id: u32,
     pub username: Option<String>,
     pub passwd: Option<String>,
     pub is_enable: Option<u8>,
@@ -132,15 +133,17 @@ impl UserModule {
     }
 
     pub fn update_user_info(
-        user_id: u32,
         user_update: &UserUpdate,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match diesel::update(user.find(user_id))
+        match diesel::update(user.find(user_update.id))
             .set(user_update)
             .execute(conn)
         {
-            Ok(num_of_eff) => Ok(format!("{}'s data updated. lines: {}", user_id, num_of_eff)),
+            Ok(num_of_eff) => Ok(format!(
+                "{}'s data updated. lines: {}",
+                user_update.id, num_of_eff
+            )),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }

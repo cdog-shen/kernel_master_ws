@@ -9,7 +9,7 @@ use serde_json::json;
 use share_lib::data_structure::{MailManErr, MailManOk};
 
 use crate::models::{
-    user::{BasicUserDataStream, UserModule},
+    user::{BasicUserDataStream, UserModule, UserUpdate},
     user_token::{TokenModel, UserToken},
 };
 
@@ -104,6 +104,16 @@ pub fn new_user<'a>(
 ) -> Result<MailManOk<'a, String>, MailManErr> {
     match UserModule::new_user(&user_to_creat, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "New user creat success", Some(msg))),
+        Err(msg) => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+    }
+}
+
+pub fn user_update<'a>(
+    user_info: UserUpdate,
+    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<MailManOk<'a, String>, MailManErr> {
+    match UserModule::update_user_info( &user_info, &mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "info updated", Some(msg))),
         Err(msg) => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
     }
 }
