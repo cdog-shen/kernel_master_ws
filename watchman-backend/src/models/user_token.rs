@@ -2,12 +2,12 @@ use chrono::Local;
 use diesel::{
     prelude::*, result::Error::NotFound, Insertable, MysqlConnection, Queryable, Selectable,
 };
-use jsonwebtoken::{encode, EncodingKey, Header};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use log::debug;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use share_lib::cfg_reader::SECRET_KEY;
+use share_lib::{cfg_reader::SECRET_KEY, log_debug};
 
 use crate::models::schema::token::{self, dsl::*};
 
@@ -115,26 +115,33 @@ impl UserToken {
         }
     }
 
-    pub fn encode_token(&self) -> String {
+    pub fn encode_token(&self) -> Result<String, (u8, String)> {
         debug!("Token Max Age: {}", EXP_CONST);
 
         let payload = self;
 
-        encode(
+        match encode(
             &Header::default(),
             &payload,
             &EncodingKey::from_secret(&*SECRET_KEY.as_bytes()),
-        )
-        .unwrap()
+        ) {
+            Ok(jwt) => Ok(jwt),
+            Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
+        }
     }
 
-    // pub fn decode_token(token: &str) -> Result<UserToken, jsonwebtoken::errors::Error> {
-    //     let decoding_key = EncodingKey::from_secret(&*SECRET_KEY.as_bytes());
-    //     let decoded: UserToken = decode::<UserToken>(
-    //         token,
-    //         &decoding_key,
-    //         &Validation::new(jsonwebtoken::Algorithm::HS256),
-    //     )?;
-    //     Ok(decoded)
-    // }
+    pub fn decode_token(token_str: String) -> Result<TokenModel, (u8, String)> {
+        let decoding_key = DecodingKey::from_secret(&*SECRET_KEY.as_bytes());
+        match decode::<TokenModel>(
+            &token_str,
+            &decoding_key,
+            &Validation::new(jsonwebtoken::Algorithm::HS256),
+        ) {
+            Ok(token_obj) => {
+                log_debug!("{:?}", token_obj);
+                Ok(token_obj.claims)
+            }
+            Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
+        }
+    }
 }
