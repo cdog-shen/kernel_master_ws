@@ -136,6 +136,14 @@ impl UserToken {
         }
     }
 
+    pub fn map_to_tm(self) -> TokenModel {
+        TokenModel {
+            tokenid: self.uuid,
+            username: self.user,
+            exp_time: chrono::NaiveDateTime::from_timestamp(self.exp, 0),
+        }
+    }
+
     pub fn encode_token(&self) -> Result<String, (u8, String)> {
         debug!("Token Max Age: {}", EXP_CONST);
 
@@ -153,14 +161,14 @@ impl UserToken {
 
     pub fn decode_token(token_str: String) -> Result<TokenModel, (u8, String)> {
         let decoding_key = DecodingKey::from_secret(&*SECRET_KEY.as_bytes());
-        match decode::<TokenModel>(
+        match decode::<UserToken>(
             &token_str,
             &decoding_key,
-            &Validation::new(jsonwebtoken::Algorithm::HS256),
+            &Validation::new(jsonwebtoken::Algorithm::default()),
         ) {
             Ok(token_obj) => {
                 log_debug!("{:?}", token_obj);
-                Ok(token_obj.claims)
+                Ok(token_obj.claims.map_to_tm())
             }
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
