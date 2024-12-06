@@ -1,0 +1,29 @@
+[package]
+name = "watchman-backend"
+version = "0.1.0"
+edition = "2021"
+authors = ["Cdog Shen <shencdog@oulook.com>"]
+
+[dependencies]
+# std dependencies
+log = "0.4.22"
+chrono = { version = "0.4.38", features = ["serde"] }
+# basic web dependencies
+actix-web = "4.9.0"
+actix-rt = "2.10.0"
+actix-service = "2.0.2"
+actix-cors = "0.7.0"
+futures = "0.3.31"
+# DB dependencies
+diesel_migrations = "2.2.0"
+diesel = { version = "2.2.5", features = ["mysql", "r2d2", "chrono"] }
+# serializtion dependencies
+serde = "1.0.215"
+serde_derive = "1.0.215"
+serde_json = "1.0.133"
+jsonwebtoken = "9.3.0"
+bcrypt = "0.16.0"
+base64 = "0.22.1"
+uuid = { version = "1.11.0", features = ["v4"] }
+# share-lib utils
+share-lib = { path = "../share-lib" }
