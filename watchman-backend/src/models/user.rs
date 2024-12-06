@@ -43,7 +43,16 @@ pub struct BasicUserDataStream {
     pub passwd: String,
 }
 
-// pub struct UserDataStream {}
+#[derive(AsChangeset, Serialize, Deserialize)]
+#[diesel(table_name = user)]
+pub struct UserUpdate {
+    pub username: Option<String>,
+    pub passwd: Option<String>,
+    pub is_enable: Option<u8>,
+    pub name: Option<String>,
+    pub contact: Option<String>,
+    pub groups: Option<String>,
+}
 
 // pub struct AuthDataStream {}
 
@@ -97,6 +106,35 @@ impl UserModule {
                 UNKNOW_ERROR_CODE,
                 format!("Unknow Error: {}.", e.to_string()),
             )),
+        }
+    }
+}
+
+impl UserModule {
+    pub fn new_user(
+        user_data: &BasicUserDataStream,
+        conn: &mut MysqlConnection,
+    ) -> Result<String, (u8, String)> {
+        match diesel::insert_into(user).values(user_data).execute(conn) {
+            Ok(num_of_change) => Ok(format!(
+                "User {} created. line: {}",
+                &user_data.username, num_of_change
+            )),
+            Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
+        }
+    }
+
+    pub fn update_user_info(
+        user_id: u32,
+        user_update: &UserUpdate,
+        conn: &mut MysqlConnection,
+    ) -> Result<String, (u8, String)> {
+        match diesel::update(user.find(user_id))
+            .set(user_update)
+            .execute(conn)
+        {
+            Ok(num_of_eff) => Ok(format!("{}'s data updated. lines: {}", user_id, num_of_eff)),
+            Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 

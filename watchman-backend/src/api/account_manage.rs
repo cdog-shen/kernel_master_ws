@@ -20,3 +20,14 @@ pub async fn login(
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
 }
+
+// POST api/auth/newuser
+pub async fn signup(
+    user_basic_info: web::Json<BasicUserDataStream>,
+    pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<HttpResponse, MailManErrResponser> {
+    match account_service::new_user(user_basic_info.0, &pool) {
+        Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
+        Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
+    }
+}

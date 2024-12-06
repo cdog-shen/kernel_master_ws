@@ -1,4 +1,4 @@
-use actix_web::{http::header::HeaderValue, web};
+use actix_web::web;
 use diesel::{
     r2d2::{ConnectionManager, Pool},
     MysqlConnection,
@@ -37,14 +37,7 @@ pub fn login<'a>(
             "token": jwt,
             "token_type": "bearer",
         }),
-        Err(err) => {
-            return Err(MailManErr::new(
-                500,
-                "Internal Server Error",
-                err.1,
-                1,
-            ))
-        }
+        Err(err) => return Err(MailManErr::new(500, "Internal Server Error", err.1, 1)),
     };
 
     let output = match serde_json::from_value(response) {
@@ -103,4 +96,14 @@ pub fn login<'a>(
     }
 
     return output;
+}
+
+pub fn new_user<'a>(
+    user_to_creat: BasicUserDataStream,
+    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<MailManOk<'a, String>, MailManErr> {
+    match UserModule::new_user(&user_to_creat, &mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "New user creat success", Some(msg))),
+        Err(msg) => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+    }
 }
