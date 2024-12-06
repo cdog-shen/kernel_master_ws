@@ -32,10 +32,20 @@ pub fn login<'a>(
 
     let token_obj = UserToken::new(&query_result.username);
 
-    let response = json!({
-        "token": token_obj.encode_token(),
-        "token_type": "bearer",
-    });
+    let response = match token_obj.encode_token() {
+        Ok(jwt) => json!({
+            "token": jwt,
+            "token_type": "bearer",
+        }),
+        Err(err) => {
+            return Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                err.1,
+                1,
+            ))
+        }
+    };
 
     let output = match serde_json::from_value(response) {
         Ok(token_response_warp) => Ok(MailManOk::<TokenBodyResponse>::new(
