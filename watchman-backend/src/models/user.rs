@@ -1,4 +1,4 @@
-use chrono;
+use chrono::{self, Local};
 use diesel::{
     prelude::*, result::Error::NotFound, Insertable, MysqlConnection, Queryable, Selectable,
 };
@@ -115,7 +115,14 @@ impl UserModule {
         user_data: &BasicUserDataStream,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match diesel::insert_into(user).values(user_data).execute(conn) {
+        match diesel::insert_into(user)
+            .values((
+                username.eq(&user_data.username),
+                passwd.eq(&user_data.passwd),
+                date_joined.eq(Local::now().naive_local()),
+            ))
+            .execute(conn)
+        {
             Ok(num_of_change) => Ok(format!(
                 "User {} created. line: {}",
                 &user_data.username, num_of_change
