@@ -2,7 +2,7 @@ use actix_web::{
     http::{header::ContentType, StatusCode},
     HttpResponse, ResponseError,
 };
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::fmt;
 
 use share_lib::data_structure::MailManErr;
