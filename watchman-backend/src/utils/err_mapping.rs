@@ -7,6 +7,9 @@ use std::fmt;
 
 use share_lib::data_structure::MailManErr;
 
+/// a wrapper for MailManErr
+///
+/// which is need by API(src/api) error response
 #[derive(Debug, Serialize)]
 pub struct MailManErrResponser {
     pub code: u16,
@@ -14,13 +17,9 @@ pub struct MailManErrResponser {
     pub msg: String,
 }
 
-pub trait MapErrorKey {
-    // fn response_by_mailman(&mut self) -> HttpResponse;
-    fn mapping_from_mme(mme_obj: MailManErr) -> MailManErrResponser;
-}
-
-impl<'a> MapErrorKey for MailManErrResponser {
-    fn mapping_from_mme(mme_obj: MailManErr) -> MailManErrResponser {
+impl MailManErrResponser {
+    /// get a MailManErr object and map it into MailManErrResponser
+    pub fn mapping_from_mme(mme_obj: MailManErr) -> MailManErrResponser {
         let status_key = match mme_obj.code {
             400 => StatusCode::BAD_REQUEST.to_string(),
             401 => StatusCode::UNAUTHORIZED.to_string(),
@@ -44,6 +43,8 @@ impl<'a> fmt::Display for MailManErrResponser {
     }
 }
 
+// implement unified error responses for MailManErrResponser
+// so that can make MailManErrResponser in error response
 impl<'a> ResponseError for MailManErrResponser {
     fn error_response(&self) -> HttpResponse {
         HttpResponse::build(self.status_code())

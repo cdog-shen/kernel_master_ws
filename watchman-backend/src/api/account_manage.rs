@@ -9,7 +9,6 @@ use crate::utils::err_mapping::MailManErrResponser;
 use crate::{
     models::user::{BasicUserDataStream, UserUpdate},
     services::account_service,
-    utils::err_mapping::MapErrorKey,
 };
 
 // POST api/auth/login

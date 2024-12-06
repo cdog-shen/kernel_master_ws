@@ -9,6 +9,7 @@ use crate::models::schema::user::{self, dsl::*};
 static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
 
+/// The structure of the user stored in the database.
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = user)]
 pub struct UserModule {
@@ -23,6 +24,7 @@ pub struct UserModule {
     pub last_login: Option<chrono::NaiveDateTime>,
 }
 
+/// User's full data without passwd
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = user)]
 pub struct UserInfo {
@@ -36,6 +38,7 @@ pub struct UserInfo {
     pub last_login: Option<chrono::NaiveDateTime>,
 }
 
+/// User's basic identification data
 #[derive(Insertable, Serialize, Deserialize)]
 #[diesel(table_name = user)]
 pub struct BasicUserDataStream {
@@ -43,6 +46,7 @@ pub struct BasicUserDataStream {
     pub passwd: String,
 }
 
+/// User data update struct
 #[derive(AsChangeset, Serialize, Deserialize)]
 #[diesel(table_name = user)]
 pub struct UserUpdate {
@@ -57,7 +61,9 @@ pub struct UserUpdate {
 
 // pub struct AuthDataStream {}
 
+// query implement
 impl UserModule {
+    /// get user by username
     pub fn get_user_by_username(
         user_name: &str,
         conn: &mut MysqlConnection,
@@ -77,6 +83,7 @@ impl UserModule {
         }
     }
 
+    /// get user full data
     pub fn get_user_info(conn: &mut MysqlConnection) -> Vec<UserInfo> {
         match user
             .select(UserInfo::as_select()) // 选择 UserInfo 结构体中定义的字段
@@ -87,6 +94,7 @@ impl UserModule {
         }
     }
 
+    /// login query
     pub fn login(
         user_data: &BasicUserDataStream,
         conn: &mut MysqlConnection,
@@ -111,7 +119,9 @@ impl UserModule {
     }
 }
 
+// update query
 impl UserModule {
+    /// creat a user (not enable it)
     pub fn new_user(
         user_data: &BasicUserDataStream,
         conn: &mut MysqlConnection,
@@ -132,6 +142,7 @@ impl UserModule {
         }
     }
 
+    /// update an user's data
     pub fn update_user_info(
         user_update: &UserUpdate,
         conn: &mut MysqlConnection,
@@ -148,6 +159,7 @@ impl UserModule {
         }
     }
 
+    /// refresh user's last login time
     pub fn update_last_login(
         user_data: &BasicUserDataStream,
         conn: &mut MysqlConnection,

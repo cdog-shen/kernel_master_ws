@@ -21,8 +21,10 @@ use share_lib::data_structure::MailManErr;
 
 use crate::models::user_token::{TokenModel, UserToken};
 
+// those routes dose not need pass this middleware
 const IGNORE_ROUTES: [&str; 2] = ["/api/auth/signup", "/api/auth/login"];
 
+// used to crate a middleware
 pub struct Authentication;
 
 impl<S, B> Transform<S, ServiceRequest> for Authentication
@@ -42,6 +44,7 @@ where
     }
 }
 
+// used to implement the middleware service
 pub struct AuthenticationMiddleware<S> {
     service: S,
 }
@@ -56,8 +59,10 @@ where
     type Error = Error;
     type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
 
+    // used to proxy the readiness state of the service.
     forward_ready!(service);
 
+    // the authentication logic
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let mut authenticate_pass: bool = false;
 

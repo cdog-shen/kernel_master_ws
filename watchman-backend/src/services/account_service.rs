@@ -13,16 +13,25 @@ use crate::models::{
     user_token::{TokenModel, UserToken},
 };
 
+
+/// token Response json data
 #[derive(Serialize, Deserialize)]
 pub struct TokenBodyResponse {
     pub token: String,
     pub token_type: String,
 }
 
+/// login api logic
+/// 
+/// 1. check user name and password
+/// 2. generate token and json
+/// 3. update user's last login time
+/// 4. save token to DB
 pub fn login<'a>(
     user: BasicUserDataStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, TokenBodyResponse>, MailManErr> {
+    // 1. check user name and password
     let query_result = match UserModule::login(&user, &mut pool.get().unwrap()) {
         Ok(user_info) => user_info,
         Err(msg) => {
@@ -30,6 +39,7 @@ pub fn login<'a>(
         }
     };
 
+    // 2. generate token and json
     let token_obj = UserToken::new(&query_result.username);
 
     let response = match token_obj.encode_token() {
@@ -56,6 +66,7 @@ pub fn login<'a>(
         }
     };
 
+    // 3. update user's last login time
     match UserModule::update_last_login(&user, &mut pool.get().unwrap()) {
         Ok(msg) => {
             MailManOk::<String>::new(
@@ -67,6 +78,7 @@ pub fn login<'a>(
         Err(msg) => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
     }
 
+    // 4. save token to DB
     match TokenModel::update_token(&token_obj, &mut pool.get().unwrap()) {
         Ok(msg) => {
             MailManOk::<String>::new(
@@ -98,6 +110,7 @@ pub fn login<'a>(
     return output;
 }
 
+/// signup api logic
 pub fn new_user<'a>(
     user_to_creat: BasicUserDataStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
@@ -108,6 +121,7 @@ pub fn new_user<'a>(
     }
 }
 
+/// user_update api logic
 pub fn user_update<'a>(
     user_info: UserUpdate,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,

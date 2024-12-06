@@ -11,10 +11,25 @@ use share_lib::{cfg_reader::SECRET_KEY, log_debug};
 
 use crate::models::schema::token::{self, dsl::*};
 
+// expire time const var
 static EXP_CONST: i64 = 60 * 60 * 24 * 7; // in seconds Week
+// Error status const code
 static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
 
+/// The structure of the token stored in the database.
+/// 
+/// - tokenid 
+/// 
+///     Token's unique identifier (UUIDv4 String)
+/// 
+/// - username 
+/// 
+///     User Associated with the Token (String)
+/// 
+/// - exp_time 
+/// 
+///     Token's expire time (%Y-%m-%d %H:%M:%S)
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = token)]
 pub struct TokenModel {
@@ -23,7 +38,9 @@ pub struct TokenModel {
     pub exp_time: chrono::NaiveDateTime,
 }
 
+// query implement
 impl<'a> TokenModel {
+    /// find token by username
     pub fn find_token_by_username(
         user_token: &UserToken,
         conn: &mut MysqlConnection,
@@ -41,6 +58,7 @@ impl<'a> TokenModel {
         }
     }
 
+    /// check token validation
     pub fn token_ckeck(
         decode_token: &TokenModel,
         conn: &mut MysqlConnection,
@@ -63,7 +81,9 @@ impl<'a> TokenModel {
     }
 }
 
+// update implement
 impl TokenModel {
+    /// crate a token data in DB
     pub fn new_token(
         user_token: &UserToken,
         conn: &mut MysqlConnection,
@@ -84,6 +104,7 @@ impl TokenModel {
         }
     }
 
+    /// update a token in DB
     pub fn update_token(
         user_token: &UserToken,
         conn: &mut MysqlConnection,
@@ -122,6 +143,11 @@ impl TokenModel {
     }
 }
 
+/// Token data struct in service. which can map to TokenModel
+/// 
+/// - user (UUIDv4 String) -> TokenModel.username
+/// - uuid (String) -> TokenModel.tokenid
+/// - exp (i64 timestamp) -> TokenModel.exp_time
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserToken {
     pub user: String,
@@ -130,6 +156,7 @@ pub struct UserToken {
 }
 
 impl UserToken {
+    /// generate a token claim object
     pub fn new(login_user: &String) -> UserToken {
         UserToken {
             user: login_user.clone(),
@@ -138,6 +165,7 @@ impl UserToken {
         }
     }
 
+    /// map a UserToken object to a TokenModel object
     pub fn map_to_tm(self) -> TokenModel {
         TokenModel {
             tokenid: self.uuid,
@@ -146,6 +174,7 @@ impl UserToken {
         }
     }
 
+    /// encode a token claim object as JWT string
     pub fn encode_token(&self) -> Result<String, (u8, String)> {
         debug!("Token Max Age: {}", EXP_CONST);
 
@@ -161,6 +190,7 @@ impl UserToken {
         }
     }
 
+    /// decode a JWT string back to token claim object and map it into a TokenModel
     pub fn decode_token(token_str: String) -> Result<TokenModel, (u8, String)> {
         let decoding_key = DecodingKey::from_secret(&*SECRET_KEY.as_bytes());
         match decode::<UserToken>(
