@@ -14,9 +14,10 @@ use diesel::{
     MysqlConnection,
 };
 use futures::future::{ok, LocalBoxFuture, Ready};
-use log::{debug, error};
+// use log::{debug, error};
 
-use share_lib::{data_structure::MailManErr, log_debug, log_error};
+use share_lib::data_structure::MailManErr;
+// use share_lib::{log_debug, log_error};
 
 use crate::models::user_token::{TokenModel, UserToken};
 
@@ -79,22 +80,22 @@ where
 
         if !authenticate_pass {
             if let Some(pool) = req.app_data::<Data<Pool<ConnectionManager<MysqlConnection>>>>() {
-                log_debug!("Connecting to database...");
+                // log_debug!("Connecting to database...");
                 if let Some(authen_header) = req.headers().get("Authorization") {
-                    log_debug!("Parsing authorization header...");
+                    // log_debug!("Parsing authorization header...");
                     if let Ok(authen_str) = authen_header.to_str() {
                         if authen_str.starts_with("bearer") || authen_str.starts_with("Bearer") {
-                            log_debug!("Parsing token...");
+                            // log_debug!("Parsing token...");
                             let token = authen_str[6..authen_str.len()].trim();
                             if let Ok(token_data) = UserToken::decode_token(token.to_string()) {
-                                log_debug!("Decoding token...");
+                                // log_debug!("Decoding token...");
                                 if TokenModel::token_ckeck(&token_data, &mut pool.get().unwrap())
                                     .is_ok()
                                 {
-                                    log_debug!("Valid token");
+                                    // log_debug!("Valid token");
                                     authenticate_pass = true;
                                 } else {
-                                    log_error!("Invalid token");
+                                    // log_error!("Invalid token");
                                 }
                             }
                         }
