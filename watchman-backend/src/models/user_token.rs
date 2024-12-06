@@ -41,6 +41,49 @@ impl<'a> TokenModel {
         }
     }
 
+    pub fn token_ckeck(
+        decode_token: &TokenModel,
+        conn: &mut MysqlConnection,
+    ) -> Result<String, (u8, String)> {
+        match token
+            .filter(username.eq(&decode_token.username))
+            .filter(tokenid.eq(&decode_token.tokenid))
+            .get_result::<TokenModel>(conn)
+        {
+            Ok(token_line) => {
+                if Local::now().naive_local() < token_line.exp_time {
+                    Ok("token valid".to_string())
+                } else {
+                    Err((NOT_FOUND_CODE, format!("token expired.")))
+                }
+            }
+            Err(NotFound) => Err((NOT_FOUND_CODE, format!("token invaild."))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow error {}", e.to_string()))),
+        }
+    }
+}
+
+impl TokenModel {
+    pub fn new_token(
+        user_token: &UserToken,
+        conn: &mut MysqlConnection,
+    ) -> Result<String, (u8, String)> {
+        match diesel::insert_into(token)
+            .values(TokenModel {
+                tokenid: user_token.uuid.clone(),
+                username: user_token.user.clone(),
+                exp_time: chrono::NaiveDateTime::from_timestamp(user_token.exp.clone(), 0),
+            })
+            .execute(conn)
+        {
+            Ok(num_of_change) => Ok(format!(
+                "{}'s token updated. line: {}",
+                &user_token.user, num_of_change
+            )),
+            Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
+        }
+    }
+
     pub fn update_token(
         user_token: &UserToken,
         conn: &mut MysqlConnection,
@@ -75,47 +118,6 @@ impl<'a> TokenModel {
                 &user_token.user, num_of_change
             )),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
-        }
-    }
-
-    pub fn insert_new_token(
-        user_token: &UserToken,
-        conn: &mut MysqlConnection,
-    ) -> Result<String, (u8, String)> {
-        match diesel::insert_into(token)
-            .values(TokenModel {
-                tokenid: user_token.uuid.clone(),
-                username: user_token.user.clone(),
-                exp_time: chrono::NaiveDateTime::from_timestamp(user_token.exp.clone(), 0),
-            })
-            .execute(conn)
-        {
-            Ok(num_of_change) => Ok(format!(
-                "{}'s token updated. line: {}",
-                &user_token.user, num_of_change
-            )),
-            Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
-        }
-    }
-
-    pub fn token_ckeck(
-        decode_token: &TokenModel,
-        conn: &mut MysqlConnection,
-    ) -> Result<String, (u8, String)> {
-        match token
-            .filter(username.eq(&decode_token.username))
-            .filter(tokenid.eq(&decode_token.tokenid))
-            .get_result::<TokenModel>(conn)
-        {
-            Ok(token_line) => {
-                if Local::now().naive_local() < token_line.exp_time {
-                    Ok("token valid".to_string())
-                } else {
-                    Err((NOT_FOUND_CODE, format!("token expired.")))
-                }
-            }
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("token invaild."))),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow error {}", e.to_string()))),
         }
     }
 }

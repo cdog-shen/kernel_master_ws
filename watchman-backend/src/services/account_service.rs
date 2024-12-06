@@ -84,7 +84,7 @@ pub fn login<'a>(
         }
         Err(msg) => {
             if msg.0 == 1 {
-                match TokenModel::insert_new_token(&token_obj, &mut pool.get().unwrap()) {
+                match TokenModel::new_token(&token_obj, &mut pool.get().unwrap()) {
                     Ok(msg) => {
                         MailManOk::<String>::new(
                             200,
