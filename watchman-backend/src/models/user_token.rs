@@ -97,6 +97,27 @@ impl<'a> TokenModel {
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
     }
+
+    pub fn token_ckeck(
+        decode_token: &TokenModel,
+        conn: &mut MysqlConnection,
+    ) -> Result<String, (u8, String)> {
+        match token
+            .filter(username.eq(&decode_token.username))
+            .filter(tokenid.eq(&decode_token.tokenid))
+            .get_result::<TokenModel>(conn)
+        {
+            Ok(token_line) => {
+                if Local::now().naive_local() < token_line.exp_time {
+                    Ok("token valid".to_string())
+                } else {
+                    Err((NOT_FOUND_CODE, format!("token expired.")))
+                }
+            }
+            Err(NotFound) => Err((NOT_FOUND_CODE, format!("token invaild."))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow error {}", e.to_string()))),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
