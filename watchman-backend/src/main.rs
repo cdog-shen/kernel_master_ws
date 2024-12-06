@@ -67,7 +67,7 @@ async fn main() -> io::Result<()> {
             // wrap default logger
             .wrap(actix_web::middleware::Logger::default())
             // Comment this line if you want to integrate with yew-address-book-frontend
-            // .wrap(crate::middleware::auth_middleware::Authentication)
+            .wrap(crate::middleware::auth_middleware::Authentication)
             .wrap_fn(|req, srv| srv.call(req).map(|res| res))
             .configure(config::app::config_services)
     })
