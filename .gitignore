@@ -9,3 +9,4 @@
 **/.DS_Store
 watchman-backend/watchman_server.cfg
 **/.vscode/**
+**/migrations/**
