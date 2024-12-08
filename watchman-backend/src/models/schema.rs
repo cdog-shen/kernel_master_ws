@@ -1,16 +1,13 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    access (id) {
-        id -> Unsigned<Integer>,
-        #[max_length = 255]
-        service_point -> Varchar,
-        #[max_length = 255]
-        access_group -> Varchar,
-        #[max_length = 255]
-        group_access -> Varchar,
+    access_table (id) {
+        id -> Integer,
+        service_id -> Unsigned<Integer>,
+        group_id -> Unsigned<Integer>,
+        group_access -> Unsigned<Tinyint>,
         is_enable -> Unsigned<Tinyint>,
-        date_update -> Nullable<Datetime>,
+        update_time -> Nullable<Datetime>,
     }
 }
 
@@ -21,6 +18,18 @@ diesel::table! {
         name -> Varchar,
         is_enable -> Unsigned<Tinyint>,
         date_update -> Nullable<Datetime>,
+    }
+}
+
+diesel::table! {
+    service_table (id) {
+        id -> Integer,
+        #[max_length = 255]
+        service_name -> Varchar,
+        #[max_length = 255]
+        service_point -> Varchar,
+        is_enable -> Unsigned<Tinyint>,
+        create_time -> Nullable<Datetime>,
     }
 }
 
@@ -54,8 +63,9 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    access,
+    access_table,
     group,
+    service_table,
     token,
     user,
 );
