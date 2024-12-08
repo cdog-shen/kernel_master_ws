@@ -84,6 +84,7 @@ impl<'a> TokenModel {
 // update implement
 impl TokenModel {
     /// crate a token data in DB
+    #[allow(deprecated)]
     pub fn new_token(
         user_token: &UserToken,
         conn: &mut MysqlConnection,
@@ -105,6 +106,7 @@ impl TokenModel {
     }
 
     /// update a token in DB
+    #[allow(deprecated)]
     pub fn update_token(
         user_token: &UserToken,
         conn: &mut MysqlConnection,
@@ -157,6 +159,7 @@ pub struct UserToken {
 
 impl UserToken {
     /// generate a token claim object
+    #[allow(deprecated)]
     pub fn new(login_user: &String) -> UserToken {
         UserToken {
             user: login_user.clone(),
@@ -166,6 +169,7 @@ impl UserToken {
     }
 
     /// map a UserToken object to a TokenModel object
+    #[allow(deprecated)]
     pub fn map_to_tm(self) -> TokenModel {
         TokenModel {
             tokenid: self.uuid,
