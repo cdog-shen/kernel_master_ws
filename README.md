@@ -37,18 +37,18 @@
     |int|varchar - str|tinyint|datetime|
     |0|dev|0|2024-10-25 00:00:00.000000|
 
-- Access table
-
-    |id|service_point|access_group|group_access|is_enable|date_update|
-    |:-:|:-:|:-:|:-:|:-:|:-:|
-    |int|varchar - str|varchar - str|varchar - str|tinyint|datetime|
-    |0|dev|groupIDs|accINT|0|2024-10-25 00:00:00.000000|
-
 - Service table
 
     |id|service_name|service_point|is_enable|date_update|
     |:-:|:-:|:-:|:-:|:-:|
     |int|varchar - str|varchar - str|tinyint|datetime|
     |0|CMDB|http://xxxxxxxx:0000|0|2024-10-25 00:00:00.000000|
+
+- Access table
+
+    |id|service_id|access_id|group_access|is_enable|date_update|
+    |:-:|:-:|:-:|:-:|:-:|:-:|
+    |int|int|int|tinyint|varchar - str|tinyint|datetime|
+    |0|0|0|accINT|0|2024-10-25 00:00:00.000000|
 
 ## CMDB
