@@ -40,8 +40,8 @@ pub struct GroupModel {
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
 #[diesel(table_name = group_table)]
 pub struct GroupInfo {
-    pub id: u32,
-    pub name: String,
+    pub id: Option<u32>,
+    pub name: Option<String>,
     pub is_enable: Option<u8>,
     pub date_update: Option<chrono::NaiveDateTime>,
     pub user_ids: Option<String>,
@@ -73,8 +73,7 @@ impl GroupModel {
     ) -> Result<String, (u8, String)> {
         match diesel::insert_into(group_table)
             .values((
-                id.eq(group_info.id),
-                name.eq(group_info.name.clone()),
+                name.eq(group_info.name.clone().unwrap()),
                 is_enable.eq(group_info.is_enable.unwrap_or(0)),
                 date_update.eq(Local::now().naive_local()),
                 user_ids.eq(group_info.user_ids.clone().unwrap_or("[]".to_string())),
@@ -83,7 +82,7 @@ impl GroupModel {
         {
             Ok(num_of_change) => Ok(format!(
                 "Group {} created. line: {}",
-                &group_info.name, num_of_change
+                &group_info.name.clone().unwrap(), num_of_change
             )),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
@@ -93,15 +92,15 @@ impl GroupModel {
         group_info: &GroupInfo,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match diesel::update(group_table.find(group_info.id))
+        match diesel::update(group_table.find(group_info.id.unwrap()))
             .set(group_info)
             .execute(conn)
         {
             Ok(num_of_eff) => Ok(format!(
                 "{}'s data updated. lines: {}",
-                group_info.id, num_of_eff
+                group_info.id.unwrap(), num_of_eff
             )),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {} not found", group_info.id))),
+            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {} not found", group_info.id.unwrap()))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
