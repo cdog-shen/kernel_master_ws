@@ -18,10 +18,10 @@
 
 - User table
 
-    |id|user|passwd|is_enable|name|contact|groups|date_joined|last_login|
+    |id|user|passwd|is_enable|name|contact||date_joined|last_login|
     |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-    |uint|varchar - str|varchar - str|tinyint|varchar - str|varchar - json|varchar - vec|datetime|datetime|
-    | 0 |testuser| 00000000 | 1 | test| {email:"test@test.com"} | [10,20,30]|2024-10-25 00:00:00.000000|2024-11-11 09:15:26.978272|
+    |uint|varchar - str|varchar - str|tinyint|varchar - str|JSON|datetime|datetime|
+    | 0 |testuser| 00000000 | 1 | test| {email:"test@test.com"} |2024-10-25 00:00:00.000000|2024-11-11 09:15:26.978272|
 
 - Token table
 
@@ -32,10 +32,10 @@
 
 - Group table
 
-    |id|group|is_enable|date_update|
-    |:-:|:-:|:-:|:-:|
-    |int|varchar - str|tinyint|datetime|
-    |0|dev|0|2024-10-25 00:00:00.000000|
+    |id|name|is_enable|user_id_list|date_update|
+    |:-:|:-:|:-:|:-:|:-:|
+    |int|varchar - str|tinyint|JSON|datetime|
+    |0|dev|0|[1,2,3,4]|2024-10-25 00:00:00.000000|
 
 - Service table
 

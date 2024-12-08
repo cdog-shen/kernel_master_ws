@@ -18,6 +18,8 @@ diesel::table! {
         name -> Varchar,
         is_enable -> Unsigned<Tinyint>,
         date_update -> Nullable<Datetime>,
+        #[max_length = 255]
+        user_ids -> Varchar,
     }
 }
 
@@ -55,8 +57,6 @@ diesel::table! {
         name -> Nullable<Varchar>,
         #[max_length = 255]
         contact -> Nullable<Varchar>,
-        #[max_length = 255]
-        groups -> Nullable<Varchar>,
         date_joined -> Nullable<Datetime>,
         last_login -> Nullable<Datetime>,
     }

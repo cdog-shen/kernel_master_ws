@@ -19,13 +19,12 @@ pub struct UserModule {
     pub is_enable: u8,
     pub name: Option<String>,
     pub contact: Option<String>,
-    pub groups: Option<String>,
     pub date_joined: Option<chrono::NaiveDateTime>,
     pub last_login: Option<chrono::NaiveDateTime>,
 }
 
 /// User's full data without passwd
-#[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable)]
+#[derive(Queryable, Selectable, Debug, Serialize, Deserialize)]
 #[diesel(table_name = user)]
 pub struct UserInfo {
     pub id: u32,
@@ -33,7 +32,6 @@ pub struct UserInfo {
     pub is_enable: u8,
     pub name: Option<String>,
     pub contact: Option<String>,
-    pub groups: Option<String>,
     pub date_joined: Option<chrono::NaiveDateTime>,
     pub last_login: Option<chrono::NaiveDateTime>,
 }
@@ -43,7 +41,7 @@ pub struct UserInfo {
 #[diesel(table_name = user)]
 pub struct BasicUserDataStream {
     pub username: String,
-    pub passwd: String,
+    pub passwd: Option<String>,
 }
 
 /// User data update struct
@@ -56,7 +54,6 @@ pub struct UserUpdate {
     pub is_enable: Option<u8>,
     pub name: Option<String>,
     pub contact: Option<String>,
-    pub groups: Option<String>,
 }
 
 // pub struct AuthDataStream {}
@@ -102,7 +99,7 @@ impl UserModule {
         match user
             .filter(is_enable.eq(1))
             .filter(username.eq(&user_data.username))
-            .filter(passwd.eq(&user_data.passwd))
+            .filter(passwd.eq(&user_data.passwd.clone().unwrap_or("".to_string())))
             .select(UserInfo::as_select())
             .get_result::<UserInfo>(conn)
         {
@@ -129,7 +126,7 @@ impl UserModule {
         match diesel::insert_into(user)
             .values((
                 username.eq(&user_data.username),
-                passwd.eq(&user_data.passwd),
+                passwd.eq(&user_data.passwd.clone().unwrap_or("".to_string())),
                 date_joined.eq(Local::now().naive_local()),
             ))
             .execute(conn)
