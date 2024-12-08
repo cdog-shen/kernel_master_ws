@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use share_lib::{cfg_reader::SECRET_KEY, log_debug};
 
-use crate::models::schema::token::{self, dsl::*};
+use crate::models::schema::token_table::{self, dsl::*};
 
 // expire time const var
 static EXP_CONST: i64 = 60 * 60 * 24 * 7; // in seconds Week
@@ -31,7 +31,7 @@ static UNKNOW_ERROR_CODE: u8 = 0;
 ///
 ///     Token's expire time (%Y-%m-%d %H:%M:%S)
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable)]
-#[diesel(table_name = token)]
+#[diesel(table_name = token_table)]
 pub struct TokenModel {
     pub tokenid: String,
     pub username: String,
@@ -45,7 +45,7 @@ impl<'a> TokenModel {
         user_token: &UserToken,
         conn: &mut MysqlConnection,
     ) -> Result<TokenModel, (u8, String)> {
-        match token
+        match token_table
             .filter(username.eq(&user_token.user))
             .get_result::<TokenModel>(conn)
         {
@@ -63,7 +63,7 @@ impl<'a> TokenModel {
         decode_token: &TokenModel,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match token
+        match token_table
             .filter(username.eq(&decode_token.username))
             .filter(tokenid.eq(&decode_token.tokenid))
             .get_result::<TokenModel>(conn)
@@ -89,7 +89,7 @@ impl TokenModel {
         user_token: &UserToken,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match diesel::insert_into(token)
+        match diesel::insert_into(token_table)
             .values(TokenModel {
                 tokenid: user_token.uuid.clone(),
                 username: user_token.user.clone(),
@@ -111,7 +111,7 @@ impl TokenModel {
         user_token: &UserToken,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        let target = token.filter(username.eq(&user_token.user));
+        let target = token_table.filter(username.eq(&user_token.user));
 
         let _: Result<i64, (u8, String)> = match target.count().get_result(conn) {
             Ok(c) => match c {
@@ -146,7 +146,7 @@ impl TokenModel {
 
     /// remove token
     pub fn delete(user_name: &String, conn: &mut MysqlConnection) -> Result<String, (u8, String)> {
-        let target = token.filter(username.eq(user_name));
+        let target = token_table.filter(username.eq(user_name));
 
         match diesel::delete(target).execute(conn) {
             Ok(num_of_eff) => Ok(format!(

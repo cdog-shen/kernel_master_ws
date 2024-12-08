@@ -9,7 +9,7 @@ use serde_json::json;
 use share_lib::data_structure::{MailManErr, MailManOk};
 
 use crate::models::{
-    user::{BasicUserDataStream, UserModule, UserUpdate},
+    user::{BasicUserDataStream, UserModel, UserUpdate},
     user_token::{TokenModel, UserToken},
 };
 
@@ -31,7 +31,7 @@ pub fn login<'a>(
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, TokenBodyResponse>, MailManErr> {
     // 1. check user name and password
-    let query_result = match UserModule::login(&user, &mut pool.get().unwrap()) {
+    let query_result = match UserModel::login(&user, &mut pool.get().unwrap()) {
         Ok(user_info) => user_info,
         Err(msg) => {
             return Err(MailManErr::new(400, "Bad Request", msg.1, 1));
@@ -66,7 +66,7 @@ pub fn login<'a>(
     };
 
     // 3. update user's last login time
-    match UserModule::update_last_login(&user, &mut pool.get().unwrap()) {
+    match UserModel::update_last_login(&user, &mut pool.get().unwrap()) {
         Ok(msg) => {
             MailManOk::<String>::new(
                 200,
@@ -114,7 +114,7 @@ pub fn new_user<'a>(
     user_to_creat: BasicUserDataStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr> {
-    match UserModule::new_user(&user_to_creat, &mut pool.get().unwrap()) {
+    match UserModel::new_user(&user_to_creat, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "New user creat success", Some(msg))),
         Err(msg) => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
     }
@@ -136,7 +136,7 @@ pub fn user_update<'a>(
     user_info: UserUpdate,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr> {
-    match UserModule::update_user_info(&user_info, &mut pool.get().unwrap()) {
+    match UserModel::update_user_info(&user_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "info updated", Some(msg))),
         Err(msg) => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
     }

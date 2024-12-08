@@ -4,15 +4,15 @@ use diesel::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::models::schema::user::{self, dsl::*};
+use crate::models::schema::user_table::{self, dsl::*};
 
 static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
 
 /// The structure of the user stored in the database.
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable)]
-#[diesel(table_name = user)]
-pub struct UserModule {
+#[diesel(table_name = user_table)]
+pub struct UserModel {
     pub id: u32,
     pub username: String,
     pub passwd: String,
@@ -25,7 +25,7 @@ pub struct UserModule {
 
 /// User's full data without passwd
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize)]
-#[diesel(table_name = user)]
+#[diesel(table_name = user_table)]
 pub struct UserInfo {
     pub id: u32,
     pub username: String,
@@ -38,7 +38,7 @@ pub struct UserInfo {
 
 /// User's basic identification data
 #[derive(Insertable, Serialize, Deserialize)]
-#[diesel(table_name = user)]
+#[diesel(table_name = user_table)]
 pub struct BasicUserDataStream {
     pub username: String,
     pub passwd: Option<String>,
@@ -46,7 +46,7 @@ pub struct BasicUserDataStream {
 
 /// User data update struct
 #[derive(AsChangeset, Serialize, Deserialize)]
-#[diesel(table_name = user)]
+#[diesel(table_name = user_table)]
 pub struct UserUpdate {
     pub id: u32,
     pub username: Option<String>,
@@ -59,13 +59,13 @@ pub struct UserUpdate {
 // pub struct AuthDataStream {}
 
 // query implement
-impl UserModule {
+impl UserModel {
     /// get user by username
     pub fn get_user_by_username(
         user_name: &str,
         conn: &mut MysqlConnection,
     ) -> Result<UserInfo, (u8, String)> {
-        match user
+        match user_table
             .filter(is_enable.eq(1))
             .filter(username.eq(user_name))
             .select(UserInfo::as_select())
@@ -82,7 +82,7 @@ impl UserModule {
 
     /// get user full data
     pub fn get_user_info(conn: &mut MysqlConnection) -> Vec<UserInfo> {
-        match user
+        match user_table
             .select(UserInfo::as_select()) // 选择 UserInfo 结构体中定义的字段
             .get_results::<UserInfo>(conn)
         {
@@ -96,7 +96,7 @@ impl UserModule {
         user_data: &BasicUserDataStream,
         conn: &mut MysqlConnection,
     ) -> Result<UserInfo, (u8, String)> {
-        match user
+        match user_table
             .filter(is_enable.eq(1))
             .filter(username.eq(&user_data.username))
             .filter(passwd.eq(&user_data.passwd.clone().unwrap_or("".to_string())))
@@ -117,13 +117,13 @@ impl UserModule {
 }
 
 // update query
-impl UserModule {
+impl UserModel {
     /// creat a user (not enable it)
     pub fn new_user(
         user_data: &BasicUserDataStream,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match diesel::insert_into(user)
+        match diesel::insert_into(user_table)
             .values((
                 username.eq(&user_data.username),
                 passwd.eq(&user_data.passwd.clone().unwrap_or("".to_string())),
@@ -144,7 +144,7 @@ impl UserModule {
         user_update: &UserUpdate,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match diesel::update(user.find(user_update.id))
+        match diesel::update(user_table.find(user_update.id))
             .set(user_update)
             .execute(conn)
         {
@@ -161,7 +161,7 @@ impl UserModule {
         user_data: &BasicUserDataStream,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        let target = user.filter(username.eq(&user_data.username));
+        let target = user_table.filter(username.eq(&user_data.username));
 
         let _: Result<i64, (u8, String)> = match target.count().get_result(conn) {
             Ok(c) => match c {
