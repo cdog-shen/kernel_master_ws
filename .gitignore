@@ -1,11 +1,7 @@
 **/target
-.vscode/launch.json
 **/logs
 **/keys
-/logs
-/keys
 **/Cargo.lock
-.DS_Store
 **/.DS_Store
 watchman-backend/watchman_server.cfg
 **/.vscode/**
