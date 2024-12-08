@@ -12,7 +12,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    group (id) {
+    group_table (id) {
         id -> Unsigned<Integer>,
         #[max_length = 255]
         name -> Varchar,
@@ -36,7 +36,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    token (tokenid) {
+    token_table (tokenid) {
         #[max_length = 255]
         tokenid -> Varchar,
         #[max_length = 255]
@@ -46,7 +46,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    user (id) {
+    user_table (id) {
         id -> Unsigned<Integer>,
         #[max_length = 255]
         username -> Varchar,
@@ -64,8 +64,8 @@ diesel::table! {
 
 diesel::allow_tables_to_appear_in_same_query!(
     access_table,
-    group,
+    group_table,
     service_table,
-    token,
-    user,
+    token_table,
+    user_table,
 );
