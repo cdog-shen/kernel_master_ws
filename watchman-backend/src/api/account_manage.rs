@@ -4,9 +4,8 @@ use diesel::{
     MysqlConnection,
 };
 
-use crate::utils::err_mapping::MailManErrResponser;
-
 use crate::{
+    utils::err_mapping::MailManErrResponser,
     models::user::{BasicUserDataStream, UserUpdate},
     services::account_service,
 };
