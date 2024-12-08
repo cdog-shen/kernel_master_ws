@@ -1,14 +1,18 @@
 # kernel_master_ws
 
-The workspace for my persional project kernel master (now it just a graduation project)
+🎓 The workspace for my persional project kernel master (now it just a graduation project)
+
+## Acknowledgements
+
+🙏 Thank the user [SakaDream](https://github.com/SakaDream) for providing coding ideas on the project [actix-web-rest-api-with-jwt](https://github.com/SakaDream/actix-web-rest-api-with-jwt).
 
 ## share-lib : the public utils for all service
 
-[share-lib readme file](./share-lib/Readme.md)
+📚 [share-lib readme file](./share-lib/Readme.md)
 
 ## watchman-backend : the IAM and dispatch service for all subsystem
 
-[Watch man readme file](./watchman-backend/Readme.md)
+🆔 [Watch man readme file](./watchman-backend/Readme.md)
 
 ## AuthDB
 
