@@ -13,7 +13,6 @@ use crate::models::{
     user_token::{TokenModel, UserToken},
 };
 
-
 /// token Response json data
 #[derive(Serialize, Deserialize)]
 pub struct TokenBodyResponse {
@@ -22,7 +21,7 @@ pub struct TokenBodyResponse {
 }
 
 /// login api logic
-/// 
+///
 /// 1. check user name and password
 /// 2. generate token and json
 /// 3. update user's last login time
@@ -121,12 +120,23 @@ pub fn new_user<'a>(
     }
 }
 
+/// logout api logic
+pub fn logout<'a>(
+    username_to_logout: String,
+    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<MailManOk<'a, String>, MailManErr> {
+    match TokenModel::delete(&username_to_logout, &mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "logout success", Some(msg))),
+        Err(msg) => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+    }
+}
+
 /// user_update api logic
 pub fn user_update<'a>(
     user_info: UserUpdate,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr> {
-    match UserModule::update_user_info( &user_info, &mut pool.get().unwrap()) {
+    match UserModule::update_user_info(&user_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "info updated", Some(msg))),
         Err(msg) => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
     }

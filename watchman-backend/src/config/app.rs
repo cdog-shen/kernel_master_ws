@@ -17,8 +17,8 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                 web::scope("/auth")
                     .service(web::resource("/signup").route(web::post().to(account_manage::signup)))
                     .service(web::resource("/login").route(web::post().to(account_manage::login)))
-                    .service(
-                        web::resource("/user_update").route(web::post().to(account_manage::user_update)),
+                    .service(web::resource("/logout").route(web::post().to(account_manage::logout)))
+                    .service(web::resource("/user_update").route(web::post().to(account_manage::user_update)),
                     ), //         .service(
                        //             web::resource("/logout").route(web::post().to(account_controller::logout)),
                        //         )

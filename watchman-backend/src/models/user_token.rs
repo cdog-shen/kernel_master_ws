@@ -13,22 +13,22 @@ use crate::models::schema::token::{self, dsl::*};
 
 // expire time const var
 static EXP_CONST: i64 = 60 * 60 * 24 * 7; // in seconds Week
-// Error status const code
+                                          // Error status const code
 static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
 
 /// The structure of the token stored in the database.
-/// 
-/// - tokenid 
-/// 
+///
+/// - tokenid
+///
 ///     Token's unique identifier (UUIDv4 String)
-/// 
-/// - username 
-/// 
+///
+/// - username
+///
 ///     User Associated with the Token (String)
-/// 
-/// - exp_time 
-/// 
+///
+/// - exp_time
+///
 ///     Token's expire time (%Y-%m-%d %H:%M:%S)
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = token)]
@@ -136,9 +136,22 @@ impl TokenModel {
             ))
             .execute(conn)
         {
-            Ok(num_of_change) => Ok(format!(
+            Ok(num_of_eff) => Ok(format!(
                 "{}'s token update. lines: {}",
-                &user_token.user, num_of_change
+                &user_token.user, num_of_eff
+            )),
+            Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
+        }
+    }
+
+    /// remove token
+    pub fn delete(user_name: &String, conn: &mut MysqlConnection) -> Result<String, (u8, String)> {
+        let target = token.filter(username.eq(user_name));
+
+        match diesel::delete(target).execute(conn) {
+            Ok(num_of_eff) => Ok(format!(
+                "{}'s token update. lines: {}",
+                user_name, num_of_eff
             )),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
@@ -146,7 +159,7 @@ impl TokenModel {
 }
 
 /// Token data struct in service. which can map to TokenModel
-/// 
+///
 /// - user (UUIDv4 String) -> TokenModel.username
 /// - uuid (String) -> TokenModel.tokenid
 /// - exp (i64 timestamp) -> TokenModel.exp_time
