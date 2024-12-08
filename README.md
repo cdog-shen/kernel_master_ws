@@ -14,7 +14,7 @@
 
 🆔 [Watch man readme file](./watchman-backend/Readme.md)
 
-## AuthDB
+### AuthDB
 
 - User table
 
@@ -43,5 +43,12 @@
     |:-:|:-:|:-:|:-:|:-:|:-:|
     |int|varchar - str|varchar - str|varchar - str|tinyint|datetime|
     |0|dev|groupIDs|accINT|0|2024-10-25 00:00:00.000000|
+
+- Service table
+
+    |id|service_name|service_point|is_enable|date_update|
+    |:-:|:-:|:-:|:-:|:-:|
+    |int|varchar - str|varchar - str|tinyint|datetime|
+    |0|CMDB|http://xxxxxxxx:0000|0|2024-10-25 00:00:00.000000|
 
 ## CMDB
