@@ -1,7 +1,5 @@
 use chrono::{self, Local};
-use diesel::{
-    prelude::*, result::Error::NotFound, Insertable, MysqlConnection, Queryable, Selectable,
-};
+use diesel::{prelude::*, result::Error::NotFound};
 use serde::{Deserialize, Serialize};
 
 use crate::models::schema::user_table::{self, dsl::*};
@@ -140,7 +138,7 @@ impl UserModel {
     }
 
     /// update an user's data
-    pub fn update_user_info(
+    pub fn update_user_by_id(
         user_update: &UserUpdate,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
