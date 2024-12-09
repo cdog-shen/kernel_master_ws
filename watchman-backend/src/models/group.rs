@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use crate::models::schema::group_table::{self, dsl::*};
 
 static NOT_FOUND_CODE: u8 = 1;
-static UNKNOW_ERROR_CODE: u8 = 0;
 static TMI_ERROR_CODE: u8 = 2;
+static UNKNOW_ERROR_CODE: u8 = 0;
 
 /// The structure of the Group stored in the database.
 /// - name
@@ -51,11 +51,10 @@ pub struct GroupInfo {
 // query implement
 impl GroupModel {
     /// get all group
-    pub fn get_all(conn: &mut MysqlConnection) -> Result<GroupModel, (u8, String)> {
+    pub fn get_all(conn: &mut MysqlConnection) -> Result<Vec<GroupModel>, (u8, String)> {
         match group_table
-            // .filter(is_enable.eq(1))
             .select(GroupModel::as_select())
-            .get_result::<GroupModel>(conn)
+            .get_results::<GroupModel>(conn)
         {
             Ok(group_table_data) => Ok(group_table_data),
             Err(e) => Err((
