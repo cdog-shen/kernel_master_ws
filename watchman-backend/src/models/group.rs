@@ -57,6 +57,17 @@ pub struct GroupOutputStream {
     pub user_ids: Option<serde_json::Value>,
 }
 
+fn map_model_to_output_stream(group_info: GroupModel) -> GroupOutputStream {
+    GroupOutputStream {
+        id: Some(group_info.id),
+        name: Some(group_info.name),
+        is_enable: Some(group_info.is_enable),
+        date_update: group_info.date_update,
+        user_ids: serde_json::from_str(&group_info.user_ids)
+            .unwrap_or(serde_json::from_str(format!("[{}]", &group_info.user_ids).as_str()).ok()),
+    }
+}
+
 // query implement
 impl GroupModel {
     /// get all group
@@ -68,16 +79,7 @@ impl GroupModel {
             Ok(group_table_data) => {
                 let group_output_stream_data: Vec<GroupOutputStream> = group_table_data
                     .into_iter()
-                    .map(|group_model| GroupOutputStream {
-                        id: Some(group_model.id),
-                        name: Some(group_model.name),
-                        is_enable: Some(group_model.is_enable),
-                        date_update: group_model.date_update,
-                        user_ids: serde_json::from_str(&group_model.user_ids).unwrap_or(
-                            serde_json::from_str(format!("[{}]", &group_model.user_ids).as_str())
-                                .ok(),
-                        ),
-                    })
+                    .map(|group_info| map_model_to_output_stream(group_info))
                     .collect();
                 Ok(group_output_stream_data)
             }
@@ -100,16 +102,7 @@ impl GroupModel {
             Ok(group_table_data) => {
                 let group_output_stream_data: Vec<GroupOutputStream> = group_table_data
                     .into_iter()
-                    .map(|group_model| GroupOutputStream {
-                        id: Some(group_model.id),
-                        name: Some(group_model.name),
-                        is_enable: Some(group_model.is_enable),
-                        date_update: group_model.date_update,
-                        user_ids: serde_json::from_str(&group_model.user_ids).unwrap_or(
-                            serde_json::from_str(format!("[{}]", &group_model.user_ids).as_str())
-                                .ok(),
-                        ),
-                    })
+                    .map(|group_info| map_model_to_output_stream(group_info))
                     .collect();
                 Ok(group_output_stream_data)
             }

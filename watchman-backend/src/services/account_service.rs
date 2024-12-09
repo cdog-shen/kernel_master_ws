@@ -8,10 +8,7 @@ use serde_json::json;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::models::{
-    user::{BasicUserDataStream, UserModel, UserUpdate},
-    user_token::{TokenModel, UserToken},
-};
+use crate::models::{user::*, user_token::*};
 
 /// token Response json data
 #[derive(Serialize, Deserialize)]
@@ -27,9 +24,9 @@ pub struct TokenBodyResponse {
 /// 3. update user's last login time
 /// 4. save token to DB
 pub fn login<'a>(
-    user: BasicUserDataStream,
+    user: UserInputStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, TokenBodyResponse>, MailManErr> {
+) -> Result<MailManOk<'a, TokenBodyResponse>, MailManErr<'a>> {
     // 1. check user name and password
     let query_result = match UserModel::login(&user, &mut pool.get().unwrap()) {
         Ok(user_info) => user_info,
@@ -39,7 +36,7 @@ pub fn login<'a>(
     };
 
     // 2. generate token and json
-    let token_obj = UserToken::new(&query_result.username);
+    let token_obj = UserToken::new(&query_result.username.unwrap());
 
     let response = match token_obj.encode_token() {
         Ok(jwt) => json!({
@@ -111,7 +108,7 @@ pub fn login<'a>(
 
 /// signup api logic
 pub fn new_user<'a>(
-    user_to_creat: BasicUserDataStream,
+    user_to_creat: UserInputStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr> {
     match UserModel::new_user(&user_to_creat, &mut pool.get().unwrap()) {
@@ -139,7 +136,7 @@ pub fn logout<'a>(
 
 /// user_update api logic
 pub fn user_update<'a>(
-    user_info: UserUpdate,
+    user_info: UserInputStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr> {
     match UserModel::update_user_by_id(&user_info, &mut pool.get().unwrap()) {
