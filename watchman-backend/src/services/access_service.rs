@@ -15,7 +15,7 @@ pub fn all_group<'a>(
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, Vec<GroupOutputStream>>, MailManErr<'a>> {
     match GroupModel::get_all(&mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "info updated", Some(msg))),
+        Ok(msg) => Ok(MailManOk::new(200, "All group info", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
             _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
@@ -29,7 +29,7 @@ pub fn new_group<'a>(
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
     match GroupModel::new_group(&group_info, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "info updated", Some(msg))),
+        Ok(msg) => Ok(MailManOk::new(200, "Group created", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
             _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
@@ -43,7 +43,7 @@ pub fn update_group<'a>(
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
     match GroupModel::update_group_by_id(&user_info, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "info updated", Some(msg))),
+        Ok(msg) => Ok(MailManOk::new(200, "Group info updated", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
             _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
@@ -57,7 +57,7 @@ pub fn delete_group<'a>(
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
     match GroupModel::delete_group_by_id(group_id, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "info updated", Some(msg))),
+        Ok(msg) => Ok(MailManOk::new(200, "Group deleted", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
             _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
