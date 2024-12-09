@@ -41,3 +41,14 @@ pub async fn update_group(
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
 }
+
+// DEL api/access_control/delete_group
+pub async fn delete_group(
+    group_id: web::Json<GroupInfo>,
+    pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<HttpResponse, MailManErrResponser> {
+    match access_service::delete_group(group_id.0.id.unwrap(), &pool) {
+        Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
+        Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
+    }
+}
