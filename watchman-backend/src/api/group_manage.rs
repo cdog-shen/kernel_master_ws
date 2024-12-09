@@ -5,8 +5,8 @@ use diesel::{
 };
 
 use crate::{
-    models::group::{GroupInputStream, GroupModel},
-    services::access_service,
+    models::group::GroupInputStream,
+    services::group_service,
     utils::err_mapping::MailManErrResponser,
 };
 
@@ -14,7 +14,7 @@ use crate::{
 pub async fn all_group(
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match access_service::all_group(&pool) {
+    match group_service::all_group(&pool) {
         Ok(group_data) => Ok(HttpResponse::Ok().json(group_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -25,7 +25,7 @@ pub async fn new_group(
     group_info: web::Json<GroupInputStream>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match access_service::new_group(&group_info, &pool) {
+    match group_service::new_group(&group_info, &pool) {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -33,10 +33,10 @@ pub async fn new_group(
 
 // POST api/access_control/update_group
 pub async fn update_group(
-    user_info: web::Json<GroupInputStream>,
+    group_info: web::Json<GroupInputStream>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match access_service::update_group(&user_info.0, &pool) {
+    match group_service::update_group(&group_info.0, &pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -47,7 +47,7 @@ pub async fn delete_group(
     group_id: web::Json<GroupInputStream>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match access_service::delete_group(group_id.0.id.unwrap(), &pool) {
+    match group_service::delete_group(group_id.0.id.unwrap(), &pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
