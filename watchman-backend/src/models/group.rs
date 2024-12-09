@@ -40,7 +40,7 @@ pub struct GroupModel {
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
 #[diesel(table_name = group_table)]
-pub struct GroupInfo {
+pub struct GroupInputStream {
     pub id: Option<u32>,
     pub name: Option<String>,
     pub is_enable: Option<u8>,
@@ -48,15 +48,39 @@ pub struct GroupInfo {
     pub user_ids: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GroupOutputStream {
+    pub id: Option<u32>,
+    pub name: Option<String>,
+    pub is_enable: Option<u8>,
+    pub date_update: Option<chrono::NaiveDateTime>,
+    pub user_ids: Option<serde_json::Value>,
+}
+
 // query implement
 impl GroupModel {
     /// get all group
-    pub fn get_all(conn: &mut MysqlConnection) -> Result<Vec<GroupModel>, (u8, String)> {
+    pub fn get_all(conn: &mut MysqlConnection) -> Result<Vec<GroupOutputStream>, (u8, String)> {
         match group_table
             .select(GroupModel::as_select())
             .get_results::<GroupModel>(conn)
         {
-            Ok(group_table_data) => Ok(group_table_data),
+            Ok(group_table_data) => {
+                let group_output_stream_data: Vec<GroupOutputStream> = group_table_data
+                    .into_iter()
+                    .map(|group_model| GroupOutputStream {
+                        id: Some(group_model.id),
+                        name: Some(group_model.name),
+                        is_enable: Some(group_model.is_enable),
+                        date_update: group_model.date_update,
+                        user_ids: serde_json::from_str(&group_model.user_ids).unwrap_or(
+                            serde_json::from_str(format!("[{}]", &group_model.user_ids).as_str())
+                                .ok(),
+                        ),
+                    })
+                    .collect();
+                Ok(group_output_stream_data)
+            }
             Err(e) => Err((
                 UNKNOW_ERROR_CODE,
                 format!("Unknow Error: {}.", e.to_string()),
@@ -65,13 +89,30 @@ impl GroupModel {
     }
 
     /// get all enable group
-    pub fn get_all_enable(conn: &mut MysqlConnection) -> Result<GroupModel, (u8, String)> {
+    pub fn get_all_enable(
+        conn: &mut MysqlConnection,
+    ) -> Result<Vec<GroupOutputStream>, (u8, String)> {
         match group_table
             .filter(is_enable.eq(1))
             .select(GroupModel::as_select())
-            .get_result::<GroupModel>(conn)
+            .get_results::<GroupModel>(conn)
         {
-            Ok(group_table_data) => Ok(group_table_data),
+            Ok(group_table_data) => {
+                let group_output_stream_data: Vec<GroupOutputStream> = group_table_data
+                    .into_iter()
+                    .map(|group_model| GroupOutputStream {
+                        id: Some(group_model.id),
+                        name: Some(group_model.name),
+                        is_enable: Some(group_model.is_enable),
+                        date_update: group_model.date_update,
+                        user_ids: serde_json::from_str(&group_model.user_ids).unwrap_or(
+                            serde_json::from_str(format!("[{}]", &group_model.user_ids).as_str())
+                                .ok(),
+                        ),
+                    })
+                    .collect();
+                Ok(group_output_stream_data)
+            }
             Err(e) => Err((
                 UNKNOW_ERROR_CODE,
                 format!("Unknow Error: {}.", e.to_string()),
@@ -83,7 +124,7 @@ impl GroupModel {
 // update implement
 impl GroupModel {
     pub fn new_group(
-        group_info: &GroupInfo,
+        group_info: &GroupInputStream,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
         match diesel::insert_into(group_table)
@@ -105,7 +146,7 @@ impl GroupModel {
     }
 
     pub fn update_group_by_id(
-        group_info: &GroupInfo,
+        group_info: &GroupInputStream,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
         match diesel::update(group_table.find(group_info.id.unwrap()))

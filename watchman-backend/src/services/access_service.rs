@@ -8,12 +8,12 @@ use diesel::{
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::models::group::{GroupInfo, GroupModel};
+use crate::models::group::*;
 
 /// all_group api logic
 pub fn all_group<'a>(
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, Vec<GroupModel>>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, Vec<GroupOutputStream>>, MailManErr<'a>> {
     match GroupModel::get_all(&mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "info updated", Some(msg))),
         Err(msg) => match msg.0 {
@@ -25,7 +25,7 @@ pub fn all_group<'a>(
 
 /// new_group api logic
 pub fn new_group<'a>(
-    group_info: &GroupInfo,
+    group_info: &GroupInputStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
     match GroupModel::new_group(&group_info, &mut pool.get().unwrap()) {
@@ -39,7 +39,7 @@ pub fn new_group<'a>(
 
 /// update_group api logic
 pub fn update_group<'a>(
-    user_info: &GroupInfo,
+    user_info: &GroupInputStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
     match GroupModel::update_group_by_id(&user_info, &mut pool.get().unwrap()) {

@@ -5,7 +5,7 @@ use diesel::{
 };
 
 use crate::{
-    models::group::{GroupInfo, GroupModel},
+    models::group::{GroupInputStream, GroupModel},
     services::access_service,
     utils::err_mapping::MailManErrResponser,
 };
@@ -22,7 +22,7 @@ pub async fn all_group(
 
 // POST api/access_control/new_group
 pub async fn new_group(
-    group_info: web::Json<GroupInfo>,
+    group_info: web::Json<GroupInputStream>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     match access_service::new_group(&group_info, &pool) {
@@ -33,7 +33,7 @@ pub async fn new_group(
 
 // POST api/access_control/update_group
 pub async fn update_group(
-    user_info: web::Json<GroupInfo>,
+    user_info: web::Json<GroupInputStream>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     match access_service::update_group(&user_info.0, &pool) {
@@ -44,7 +44,7 @@ pub async fn update_group(
 
 // DEL api/access_control/delete_group
 pub async fn delete_group(
-    group_id: web::Json<GroupInfo>,
+    group_id: web::Json<GroupInputStream>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     match access_service::delete_group(group_id.0.id.unwrap(), &pool) {
