@@ -10,7 +10,7 @@ use crate::{
     utils::err_mapping::MailManErrResponser,
 };
 
-// GET api/access_control/all_group
+// GET api/group_control/all_group
 pub async fn all_group(
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
@@ -20,7 +20,7 @@ pub async fn all_group(
     }
 }
 
-// POST api/access_control/new_group
+// POST api/group_control/new_group
 pub async fn new_group(
     group_info: web::Json<GroupInputStream>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
@@ -31,7 +31,7 @@ pub async fn new_group(
     }
 }
 
-// POST api/access_control/update_group
+// POST api/group_control/update_group
 pub async fn update_group(
     group_info: web::Json<GroupInputStream>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
@@ -42,7 +42,7 @@ pub async fn update_group(
     }
 }
 
-// DEL api/access_control/delete_group
+// DEL api/group_control/delete_group
 pub async fn delete_group(
     group_id: web::Json<GroupInputStream>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
