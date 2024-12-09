@@ -26,9 +26,11 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                     //                 .route(web::delete().to(address_book_controller::delete)),
             )
             .service(web::scope("/access_control")
-                .service(web::resource("/all_group").route(web::post().to(group_manage::all_group)))
+                .service(web::resource("/all_group").route(web::get().to(group_manage::all_group)))
                 .service(web::resource("/new_group").route(web::post().to(group_manage::new_group)))
                 .service(web::resource("/update_group").route(web::post().to(group_manage::update_group)))
+                .service(web::resource("/delete_group").route(web::delete().to(group_manage::delete_group)))
+
             ),
     );
 }
