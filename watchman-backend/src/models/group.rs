@@ -6,6 +6,7 @@ use crate::models::schema::group_table::{self, dsl::*};
 
 static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
+static TMI_ERROR_CODE: u8 = 2;
 
 /// The structure of the Group stored in the database.
 /// - name
@@ -52,6 +53,21 @@ impl GroupModel {
     /// get all group
     pub fn get_all(conn: &mut MysqlConnection) -> Result<GroupModel, (u8, String)> {
         match group_table
+            // .filter(is_enable.eq(1))
+            .select(GroupModel::as_select())
+            .get_result::<GroupModel>(conn)
+        {
+            Ok(group_table_data) => Ok(group_table_data),
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
+        }
+    }
+
+    /// get all enable group
+    pub fn get_all_enable(conn: &mut MysqlConnection) -> Result<GroupModel, (u8, String)> {
+        match group_table
             .filter(is_enable.eq(1))
             .select(GroupModel::as_select())
             .get_result::<GroupModel>(conn)
@@ -82,7 +98,8 @@ impl GroupModel {
         {
             Ok(num_of_change) => Ok(format!(
                 "Group {} created. line: {}",
-                &group_info.name.clone().unwrap(), num_of_change
+                &group_info.name.clone().unwrap(),
+                num_of_change
             )),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
@@ -96,11 +113,21 @@ impl GroupModel {
             .set(group_info)
             .execute(conn)
         {
-            Ok(num_of_eff) => Ok(format!(
-                "{}'s data updated. lines: {}",
-                group_info.id.unwrap(), num_of_eff
-            )),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {} not found", group_info.id.unwrap()))),
+            Ok(num_of_eff) => match num_of_eff {
+                0 => Err((
+                    NOT_FOUND_CODE,
+                    format!("id: {} not found", group_info.id.unwrap()),
+                )),
+                1 => Ok(format!(
+                    "{}'s data updated. lines: {}",
+                    group_info.id.unwrap(),
+                    num_of_eff
+                )),
+                _ => Err((
+                    TMI_ERROR_CODE,
+                    format!("id: {} Too much info", group_info.id.unwrap()),
+                )),
+            },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }

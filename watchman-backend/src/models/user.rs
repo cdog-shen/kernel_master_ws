@@ -6,6 +6,7 @@ use crate::models::schema::user_table::{self, dsl::*};
 
 static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
+static TMI_ERROR_CODE: u8 = 2;
 
 /// The structure of the user stored in the database.
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable)]
@@ -146,10 +147,17 @@ impl UserModel {
             .set(user_update)
             .execute(conn)
         {
-            Ok(num_of_eff) => Ok(format!(
-                "{}'s data updated. lines: {}",
-                user_update.id, num_of_eff
-            )),
+            Ok(num_of_eff) => match num_of_eff {
+                0 => Err((NOT_FOUND_CODE, format!("id: {} not found", user_update.id))),
+                1 => Ok(format!(
+                    "{}'s data updated. lines: {}",
+                    user_update.id, num_of_eff
+                )),
+                _ => Err((
+                    TMI_ERROR_CODE,
+                    format!("id: {} Too much info", user_update.id),
+                )),
+            },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }

@@ -8,7 +8,9 @@ use diesel::{
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::models::group::{GroupInfo, GroupModel};
+use crate::models::{
+    group::{GroupInfo, GroupModel},
+};
 
 /// all_group api logic
 pub fn all_group<'a>(
@@ -16,18 +18,24 @@ pub fn all_group<'a>(
 ) -> Result<MailManOk<'a, GroupModel>, MailManErr<'a>> {
     match GroupModel::get_all(&mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "info updated", Some(msg))),
-        Err(msg) => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+        Err(msg) => match msg.0 {
+            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
     }
 }
 
 /// new_group api logic
 pub fn new_group<'a>(
-    group_info : &GroupInfo,
+    group_info: &GroupInfo,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
-    match GroupModel::new_group(&group_info,&mut pool.get().unwrap()) {
+    match GroupModel::new_group(&group_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "info updated", Some(msg))),
-        Err(msg) => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+        Err(msg) => match msg.0 {
+            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
     }
 }
 
@@ -38,6 +46,23 @@ pub fn update_group<'a>(
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
     match GroupModel::update_group_by_id(&user_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "info updated", Some(msg))),
-        Err(msg) => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+        Err(msg) => match msg.0 {
+            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
+    }
+}
+
+/// delete_group api logic
+pub fn delete_group<'a>(
+    group_id: u32,
+    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
+    match GroupModel::delete_group_by_id(group_id, &mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "info updated", Some(msg))),
+        Err(msg) => match msg.0 {
+            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
     }
 }

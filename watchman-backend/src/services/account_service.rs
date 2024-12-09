@@ -116,7 +116,10 @@ pub fn new_user<'a>(
 ) -> Result<MailManOk<'a, String>, MailManErr> {
     match UserModel::new_user(&user_to_creat, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "New user creat success", Some(msg))),
-        Err(msg) => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+        Err(msg) => match msg.0 {
+            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
     }
 }
 
@@ -127,7 +130,10 @@ pub fn logout<'a>(
 ) -> Result<MailManOk<'a, String>, MailManErr> {
     match TokenModel::delete(&username_to_logout, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "logout success", Some(msg))),
-        Err(msg) => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+        Err(msg) => match msg.0 {
+            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
     }
 }
 
@@ -138,6 +144,9 @@ pub fn user_update<'a>(
 ) -> Result<MailManOk<'a, String>, MailManErr> {
     match UserModel::update_user_by_id(&user_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "info updated", Some(msg))),
-        Err(msg) => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+        Err(msg) => match msg.0 {
+            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
     }
 }
