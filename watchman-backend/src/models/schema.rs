@@ -2,7 +2,7 @@
 
 diesel::table! {
     access_table (id) {
-        id -> Integer,
+        id -> Unsigned<Integer>,
         service_id -> Unsigned<Integer>,
         group_id -> Unsigned<Integer>,
         group_access -> Unsigned<Tinyint>,
@@ -25,7 +25,7 @@ diesel::table! {
 
 diesel::table! {
     service_table (id) {
-        id -> Integer,
+        id -> Unsigned<Integer>,
         #[max_length = 255]
         service_name -> Varchar,
         #[max_length = 255]
