@@ -70,7 +70,7 @@ impl<'a> TokenModel {
         {
             Ok(token_line) => {
                 if Local::now().naive_local() < token_line.exp_time {
-                    Ok("token valid".to_string())
+                    Ok(token_line.username)
                 } else {
                     Err((NOT_FOUND_CODE, format!("token expired.")))
                 }

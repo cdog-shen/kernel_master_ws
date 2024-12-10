@@ -114,6 +114,25 @@ impl ServiceModel {
             )),
         }
     }
+
+    /// get all id by service route
+    pub fn get_sids_by_route(
+        route: &String,
+        conn: &mut MysqlConnection,
+    ) -> Result<Vec<u32>, (u8, String)> {
+        match service_table
+            .filter(is_enable.eq(1))
+            .filter(service_point.eq(route))
+            .select(id)
+            .get_results::<u32>(conn)
+        {
+            Ok(sids) => Ok(sids),
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
+        }
+    }
 }
 
 // update implement

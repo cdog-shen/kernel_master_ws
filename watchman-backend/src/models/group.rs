@@ -112,6 +112,48 @@ impl GroupModel {
             )),
         }
     }
+
+    /// get all of user
+    pub fn get_gids_by_uid(uid: u32, conn: &mut MysqlConnection) -> Result<Vec<u32>, (u8, String)> {
+        match group_table
+            .filter(is_enable.eq(1))
+            .select(GroupModel::as_select())
+            .get_results::<GroupModel>(conn)
+        {
+            Ok(group_table_data) => {
+                let result_gids: Vec<u32> = group_table_data
+                    .into_iter()
+                    .map(|group_info| map_model_to_output_stream(group_info))
+                    .map(|group_info| {
+                        group_info
+                            .user_ids
+                            .map_or(false, |uids| {
+                                if let serde_json::Value::Array(array) = uids {
+                                    array.iter().any(|item| {
+                                        if let Some(i) = item.as_u64() {
+                                            i == uid as u64
+                                        } else {
+                                            false
+                                        }
+                                    })
+                                } else {
+                                    false
+                                }
+                            })
+                            .then_some(group_info.id)
+                    })
+                    .filter_map(|opt| opt)
+                    .filter_map(|opt| opt)
+                    .collect();
+
+                Ok(result_gids)
+            }
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
+        }
+    }
 }
 
 // update implement

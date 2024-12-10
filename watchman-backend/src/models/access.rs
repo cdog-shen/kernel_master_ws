@@ -127,6 +127,38 @@ impl AccessModel {
             )),
         }
     }
+
+    /// get user's access
+    pub fn get_max_permission(
+        gid_list: Vec<u32>,
+        sid_list: Vec<u32>,
+        conn: &mut MysqlConnection,
+    ) -> Result<u8, (u8, String)> {
+        match access_table
+            .filter(group_id.eq_any(gid_list))
+            .filter(service_id.eq_any(sid_list))
+            .select(AccessModel::as_select())
+            .get_results::<AccessModel>(conn)
+        {
+            Ok(access_table_data) => {
+                let mut max_access_strea: u8 = 0;
+                for access_info in access_table_data
+                    .into_iter()
+                    .map(|access_info| map_model_to_output_stream(access_info))
+                {
+                    match access_info.group_access.unwrap_or(0) > max_access_strea {
+                        true => max_access_strea = access_info.group_access.unwrap_or(0),
+                        false => (),
+                    };
+                }
+                Ok(max_access_strea)
+            }
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
+        }
+    }
 }
 
 // update implement
