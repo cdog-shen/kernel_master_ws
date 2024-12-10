@@ -8,13 +8,11 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
     log_info!("Configuring routes...");
     cfg.service(
         web::scope("/api")
-            .service(
-                web::resource("/hey")
+            .service(web::resource("/hey")
                     .route(web::get().to(hey_hi_hello::hey))
                     .route(web::post().to(hey_hi_hello::hey)),
             )
-            .service(
-                web::scope("/auth")
+            .service(web::scope("/auth")
                     .service(web::resource("/signup").route(web::post().to(account_manage::signup)))
                     .service(web::resource("/login").route(web::post().to(account_manage::login)))
                     .service(web::resource("/logout").route(web::post().to(account_manage::logout)))
