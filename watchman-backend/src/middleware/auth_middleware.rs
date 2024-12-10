@@ -14,16 +14,16 @@ use diesel::{
     MysqlConnection,
 };
 use futures::future::{ok, LocalBoxFuture, Ready};
-use log::{debug, error};
+// use log::{debug, error};
 
 use share_lib::data_structure::MailManErr;
-use share_lib::{log_debug, log_error};
+// use share_lib::{log_debug, log_error};
 
 use crate::models::{
     access::AccessModel,
     group::GroupModel,
     service::ServiceModel,
-    user::{self, UserModel},
+    user::UserModel,
     user_token::{TokenModel, UserToken},
 };
 
@@ -73,6 +73,7 @@ where
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let mut authenticate_pass: bool = false;
         let mut permit_pass: bool = false;
+        let mut internal_error: (bool, String) = (false, format!(""));
 
         // Bypass some account routes
         let mut headers = req.headers().clone();
@@ -139,6 +140,7 @@ where
                                                     &mut pool.get().unwrap(),
                                                 )
                                                 .unwrap();
+
                                                 match AccessModel::get_max_permission(
                                                     gid_list,
                                                     sid_list,
@@ -154,39 +156,13 @@ where
                                                         _ => (),
                                                     },
                                                     Err(e) => {
-                                                        let (request, _pl) = req.into_parts();
-                                                        let response = HttpResponse::Unauthorized()
-                                                            .json(MailManErr::new(
-                                                                500,
-                                                                "Internal Server Error",
-                                                                "User has no permissions check faild",
-                                                                1,
-                                                            ))
-                                                            .map_into_right_body();
-                                                        log_debug!("{:?}", e);
-                                                        return Box::pin(async {
-                                                            Ok(ServiceResponse::new(
-                                                                request, response,
-                                                            ))
-                                                        });
+                                                        internal_error = (true, e.1.clone().into());
                                                     }
                                                 };
-                                                log_debug!("find {:?}", req.uri());
+                                                // log_debug!("find {:?}", req.uri());
                                             }
                                             Err(e) => {
-                                                let (request, _pl) = req.into_parts();
-                                                let response = HttpResponse::Unauthorized()
-                                                    .json(MailManErr::new(
-                                                        500,
-                                                        "Internal Server Error",
-                                                        "User has no permissions check faild",
-                                                        1,
-                                                    ))
-                                                    .map_into_right_body();
-                                                log_debug!("{:?}", e);
-                                                return Box::pin(async {
-                                                    Ok(ServiceResponse::new(request, response))
-                                                });
+                                                internal_error = (true, e.1.clone().into());
                                             }
                                         };
                                     }
@@ -200,6 +176,20 @@ where
                     }
                 }
             }
+        }
+
+        if internal_error.0 {
+            let (request, _pl) = req.into_parts();
+            let response = HttpResponse::Unauthorized()
+                .json(MailManErr::new(
+                    500,
+                    "Internal Server Error",
+                    internal_error.1,
+                    1,
+                ))
+                .map_into_right_body();
+
+            return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
         }
 
         if !authenticate_pass {
