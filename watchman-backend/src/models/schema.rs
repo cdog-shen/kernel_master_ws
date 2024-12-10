@@ -36,6 +36,20 @@ diesel::table! {
 }
 
 diesel::table! {
+    subsystem_table (id) {
+        id -> Integer,
+        #[max_length = 255]
+        uuid -> Varchar,
+        #[max_length = 255]
+        service_name -> Varchar,
+        #[max_length = 255]
+        url -> Varchar,
+        is_enable -> Unsigned<Tinyint>,
+        update_time -> Nullable<Datetime>,
+    }
+}
+
+diesel::table! {
     token_table (tokenid) {
         #[max_length = 255]
         tokenid -> Varchar,
@@ -66,6 +80,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     access_table,
     group_table,
     service_table,
+    subsystem_table,
     token_table,
     user_table,
 );

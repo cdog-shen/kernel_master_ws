@@ -42,7 +42,7 @@
     |id|service_name|service_point|is_enable|date_update|
     |:-:|:-:|:-:|:-:|:-:|
     |int|varchar - str|varchar - str|tinyint|datetime|
-    |0|CMDB|http://xxxxxxxx:0000|0|2024-10-25 00:00:00.000000|
+    |0|CMDB|/an/api/route|0|2024-10-25 00:00:00.000000|
 
 - Access table
 
@@ -50,5 +50,12 @@
     |:-:|:-:|:-:|:-:|:-:|:-:|
     |int|int|int|tinyint|varchar - str|tinyint|datetime|
     |0|0|0|accINT|0|2024-10-25 00:00:00.000000|
+
+- subsystem_table
+
+    |id|uuid|service_name|url|is_enable|date_update|
+    |:-:|:-:|:-:|:-:|:-:|:-:|
+    |int|varchar|varchar|varchar|varchar - str|tinyint|datetime|
+    |0|XXXXXXX|unnamed|http://127.0.0.1:8000/api/hey|0|2024-10-25 00:00:00.000000|
 
 ## CMDB
