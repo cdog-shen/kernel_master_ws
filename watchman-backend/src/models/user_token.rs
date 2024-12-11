@@ -9,29 +9,29 @@ use uuid::Uuid;
 
 use share_lib::{cfg_reader::SECRET_KEY, log_debug};
 
-use crate::models::schema::token::{self, dsl::*};
+use crate::models::schema::token_table::{self, dsl::*};
 
 // expire time const var
 static EXP_CONST: i64 = 60 * 60 * 24 * 7; // in seconds Week
-// Error status const code
+                                          // Error status const code
 static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
 
 /// The structure of the token stored in the database.
-/// 
-/// - tokenid 
-/// 
+///
+/// - tokenid
+///
 ///     Token's unique identifier (UUIDv4 String)
-/// 
-/// - username 
-/// 
+///
+/// - username
+///
 ///     User Associated with the Token (String)
-/// 
-/// - exp_time 
-/// 
+///
+/// - exp_time
+///
 ///     Token's expire time (%Y-%m-%d %H:%M:%S)
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable)]
-#[diesel(table_name = token)]
+#[diesel(table_name = token_table)]
 pub struct TokenModel {
     pub tokenid: String,
     pub username: String,
@@ -45,7 +45,7 @@ impl<'a> TokenModel {
         user_token: &UserToken,
         conn: &mut MysqlConnection,
     ) -> Result<TokenModel, (u8, String)> {
-        match token
+        match token_table
             .filter(username.eq(&user_token.user))
             .get_result::<TokenModel>(conn)
         {
@@ -63,14 +63,14 @@ impl<'a> TokenModel {
         decode_token: &TokenModel,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match token
+        match token_table
             .filter(username.eq(&decode_token.username))
             .filter(tokenid.eq(&decode_token.tokenid))
             .get_result::<TokenModel>(conn)
         {
             Ok(token_line) => {
                 if Local::now().naive_local() < token_line.exp_time {
-                    Ok("token valid".to_string())
+                    Ok(token_line.username)
                 } else {
                     Err((NOT_FOUND_CODE, format!("token expired.")))
                 }
@@ -84,11 +84,12 @@ impl<'a> TokenModel {
 // update implement
 impl TokenModel {
     /// crate a token data in DB
+    #[allow(deprecated)]
     pub fn new_token(
         user_token: &UserToken,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match diesel::insert_into(token)
+        match diesel::insert_into(token_table)
             .values(TokenModel {
                 tokenid: user_token.uuid.clone(),
                 username: user_token.user.clone(),
@@ -105,11 +106,12 @@ impl TokenModel {
     }
 
     /// update a token in DB
+    #[allow(deprecated)]
     pub fn update_token(
         user_token: &UserToken,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        let target = token.filter(username.eq(&user_token.user));
+        let target = token_table.filter(username.eq(&user_token.user));
 
         let _: Result<i64, (u8, String)> = match target.count().get_result(conn) {
             Ok(c) => match c {
@@ -134,9 +136,22 @@ impl TokenModel {
             ))
             .execute(conn)
         {
-            Ok(num_of_change) => Ok(format!(
+            Ok(num_of_eff) => Ok(format!(
                 "{}'s token update. lines: {}",
-                &user_token.user, num_of_change
+                &user_token.user, num_of_eff
+            )),
+            Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
+        }
+    }
+
+    /// remove token
+    pub fn delete(user_name: &String, conn: &mut MysqlConnection) -> Result<String, (u8, String)> {
+        let target = token_table.filter(username.eq(user_name));
+
+        match diesel::delete(target).execute(conn) {
+            Ok(num_of_eff) => Ok(format!(
+                "{}'s token update. lines: {}",
+                user_name, num_of_eff
             )),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
@@ -144,7 +159,7 @@ impl TokenModel {
 }
 
 /// Token data struct in service. which can map to TokenModel
-/// 
+///
 /// - user (UUIDv4 String) -> TokenModel.username
 /// - uuid (String) -> TokenModel.tokenid
 /// - exp (i64 timestamp) -> TokenModel.exp_time
@@ -157,6 +172,7 @@ pub struct UserToken {
 
 impl UserToken {
     /// generate a token claim object
+    #[allow(deprecated)]
     pub fn new(login_user: &String) -> UserToken {
         UserToken {
             user: login_user.clone(),
@@ -166,6 +182,7 @@ impl UserToken {
     }
 
     /// map a UserToken object to a TokenModel object
+    #[allow(deprecated)]
     pub fn map_to_tm(self) -> TokenModel {
         TokenModel {
             tokenid: self.uuid,

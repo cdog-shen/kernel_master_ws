@@ -19,10 +19,17 @@ use futures::future::{ok, LocalBoxFuture, Ready};
 use share_lib::data_structure::MailManErr;
 // use share_lib::{log_debug, log_error};
 
-use crate::models::user_token::{TokenModel, UserToken};
+use crate::models::{
+    access::AccessModel,
+    group::GroupModel,
+    service::ServiceModel,
+    user::UserModel,
+    user_token::{TokenModel, UserToken},
+};
 
 // those routes dose not need pass this middleware
-const IGNORE_ROUTES: [&str; 2] = ["/api/auth/signup", "/api/auth/login"];
+const AUTHENTICATE_BYPASS: [&str; 3] = ["/api/auth/signup", "/api/auth/login", "/webhook"];
+const PERMIT_BYPASS: [&str; 3] = ["/api/auth/signup", "/api/auth/login", "/webhook"];
 
 // used to crate a middleware
 pub struct Authentication;
@@ -65,6 +72,8 @@ where
     // the authentication logic
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let mut authenticate_pass: bool = false;
+        let mut permit_pass: bool = false;
+        let mut internal_error: (bool, String) = (false, format!(""));
 
         // Bypass some account routes
         let mut headers = req.headers().clone();
@@ -75,9 +84,26 @@ where
         if Method::OPTIONS == *req.method() {
             authenticate_pass = true;
         } else {
-            for ignore_route in IGNORE_ROUTES.iter() {
+            for ignore_route in AUTHENTICATE_BYPASS.iter() {
                 if req.path().starts_with(ignore_route) {
                     authenticate_pass = true;
+                    break;
+                }
+            }
+        }
+
+        // Bypass some low permission route
+        let mut headers = req.headers().clone();
+        headers.append(
+            HeaderName::from_static("content-length"),
+            HeaderValue::from_static("true"),
+        );
+        if Method::OPTIONS == *req.method() {
+            permit_pass = true;
+        } else {
+            for ignore_route in PERMIT_BYPASS.iter() {
+                if req.path().starts_with(ignore_route) {
+                    permit_pass = true;
                     break;
                 }
             }
@@ -94,19 +120,76 @@ where
                             let token = authen_str[6..authen_str.len()].trim();
                             if let Ok(token_data) = UserToken::decode_token(token.to_string()) {
                                 // log_debug!("Decoding token...");
-                                if TokenModel::token_ckeck(&token_data, &mut pool.get().unwrap())
-                                    .is_ok()
+                                match TokenModel::token_ckeck(&token_data, &mut pool.get().unwrap())
                                 {
-                                    // log_debug!("Valid token");
-                                    authenticate_pass = true;
-                                } else {
-                                    // log_error!("Invalid token");
+                                    Ok(user_name) => {
+                                        authenticate_pass = true;
+                                        match UserModel::get_user_by_username(
+                                            &user_name,
+                                            &mut pool.get().unwrap(),
+                                        ) {
+                                            Ok(user_info) => {
+                                                let gid_list = GroupModel::get_gids_by_uid(
+                                                    user_info.id.unwrap(),
+                                                    &mut pool.get().unwrap(),
+                                                )
+                                                .unwrap();
+
+                                                let sid_list = ServiceModel::get_sids_by_route(
+                                                    &req.uri().to_string(),
+                                                    &mut pool.get().unwrap(),
+                                                )
+                                                .unwrap();
+
+                                                match AccessModel::get_max_permission(
+                                                    gid_list,
+                                                    sid_list,
+                                                    &mut pool.get().unwrap(),
+                                                ) {
+                                                    Ok(access_int) => match access_int {
+                                                        2 => permit_pass = true,
+                                                        1 => {
+                                                            if Method::GET == req.method() {
+                                                                permit_pass = true;
+                                                            }
+                                                        }
+                                                        _ => (),
+                                                    },
+                                                    Err(e) => {
+                                                        internal_error = (true, e.1.clone().into());
+                                                    }
+                                                };
+                                                // log_debug!("find {:?}", req.uri());
+                                            }
+                                            Err(e) => {
+                                                internal_error = (true, e.1.clone().into());
+                                            }
+                                        };
+                                    }
+                                    Err(_) => {
+                                        // log_debug!("Valid token");
+                                        ()
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+
+        if internal_error.0 {
+            let (request, _pl) = req.into_parts();
+            let response = HttpResponse::Unauthorized()
+                .json(MailManErr::new(
+                    500,
+                    "Internal Server Error",
+                    internal_error.1,
+                    1,
+                ))
+                .map_into_right_body();
+
+            return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
         }
 
         if !authenticate_pass {
@@ -116,6 +199,20 @@ where
                     401,
                     "Invalid token",
                     "please login again",
+                    1,
+                ))
+                .map_into_right_body();
+
+            return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
+        }
+
+        if !permit_pass {
+            let (request, _pl) = req.into_parts();
+            let response = HttpResponse::Unauthorized()
+                .json(MailManErr::new(
+                    403,
+                    "Forbidden",
+                    "User has no permissions on the resource",
                     1,
                 ))
                 .map_into_right_body();

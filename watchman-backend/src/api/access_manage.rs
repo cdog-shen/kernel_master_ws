@@ -5,50 +5,50 @@ use diesel::{
 };
 
 use crate::{
+    models::access::AccessInputStream,
+    services::access_service,
     utils::err_mapping::MailManErrResponser,
-    models::user::*,
-    services::account_service,
 };
 
-// POST api/auth/login
-pub async fn login(
-    login_json: web::Json<UserInputStream>,
+
+// GET api/access_control/all_access
+pub async fn all_access(
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match account_service::login(login_json.0, &pool) {
+    match access_service::all_access(&pool) {
+        Ok(access_data) => Ok(HttpResponse::Ok().json(access_data)),
+        Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
+    }
+}
+
+// POST api/access_control/new_access
+pub async fn new_access(
+    access_info: web::Json<AccessInputStream>,
+    pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<HttpResponse, MailManErrResponser> {
+    match access_service::new_access(&access_info, &pool) {
+        Ok(data) => Ok(HttpResponse::Ok().json(data)),
+        Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
+    }
+}
+
+// POST api/access_control/update_access
+pub async fn update_access(
+    access_info: web::Json<AccessInputStream>,
+    pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<HttpResponse, MailManErrResponser> {
+    match access_service::update_access(&access_info.0, &pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
 }
 
-// POST api/auth/signup
-pub async fn signup(
-    user_basic_info: web::Json<UserInputStream>,
+// DEL api/access_control/delete_access
+pub async fn delete_access(
+    access_id: web::Json<AccessInputStream>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match account_service::new_user(user_basic_info.0, &pool) {
-        Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
-        Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
-    }
-}
-
-// POST api/auth/logout
-pub async fn logout(
-    user_basic_info: web::Json<UserInputStream>,
-    pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<HttpResponse, MailManErrResponser> {
-    match account_service::logout(user_basic_info.0.username.unwrap(), &pool) {
-        Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
-        Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
-    }
-}
-
-// POST api/auth/user_update
-pub async fn user_update(
-    user_info: web::Json<UserInputStream>,
-    pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<HttpResponse, MailManErrResponser> {
-    match account_service::user_update(user_info.0, &pool) {
+    match access_service::delete_access(access_id.0.id.unwrap(), &pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
