@@ -49,6 +49,8 @@ pub struct AccessModel {
     pub is_enable: u8,
     #[diesel(column_name = update_time)]
     pub update_time: Option<chrono::NaiveDateTime>,
+    #[diesel(column_name = comment)]
+    pub comment: Option<String>,
 }
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
@@ -60,6 +62,7 @@ pub struct AccessInputStream {
     pub group_access: Option<u8>,
     pub is_enable: Option<u8>,
     pub update_time: Option<chrono::NaiveDateTime>,
+    pub comment: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -70,6 +73,7 @@ pub struct AccessOutputStream {
     pub group_access: Option<u8>,
     pub is_enable: Option<u8>,
     pub update_time: Option<chrono::NaiveDateTime>,
+    pub comment: Option<String>,
 }
 
 fn map_model_to_output_stream(access_info: AccessModel) -> AccessOutputStream {
@@ -80,6 +84,7 @@ fn map_model_to_output_stream(access_info: AccessModel) -> AccessOutputStream {
         group_access: Some(access_info.group_access),
         is_enable: Some(access_info.is_enable),
         update_time: access_info.update_time,
+        comment: access_info.comment,
     }
 }
 

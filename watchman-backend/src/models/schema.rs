@@ -8,6 +8,8 @@ diesel::table! {
         group_access -> Unsigned<Tinyint>,
         is_enable -> Unsigned<Tinyint>,
         update_time -> Nullable<Datetime>,
+        #[max_length = 255]
+        comment -> Nullable<Varchar>,
     }
 }
 
