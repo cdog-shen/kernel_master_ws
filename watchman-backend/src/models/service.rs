@@ -120,19 +120,39 @@ impl ServiceModel {
         route: &String,
         conn: &mut MysqlConnection,
     ) -> Result<Vec<u32>, (u8, String)> {
-        let like_pattern = format!("%{}%", route); // 创建一个包含通配符的LIKE模式
-        match service_table
-            .filter(is_enable.eq(1))
-            .filter(service_point.like(like_pattern)) // 使用LIKE进行模糊匹配
-            .select(id)
-            .get_results::<u32>(conn)
-        {
-            Ok(sids) => Ok(sids),
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
+        let stash_index: Vec<usize> = route
+            .chars()
+            .enumerate()
+            .filter(|&(_, c)| c == '/')
+            .map(|(i, _)| i)
+            .collect();
+        for index in stash_index {
+            let like_pattern = format!("%{}%", &route[..index]);
+            // println!("{:?}", like_pattern.len());
+
+            if like_pattern.len() <= 6 {
+                continue;
+            }
+
+            match service_table
+                .filter(is_enable.eq(1))
+                .filter(service_point.like(like_pattern)) // 使用LIKE进行模糊匹配
+                .select(id)
+                .get_results::<u32>(conn)
+            {
+                Ok(sids) => match sids.len() {
+                    0 => continue,
+                    _ => return Ok(sids),
+                },
+                Err(e) => {
+                    return Err((
+                        UNKNOW_ERROR_CODE,
+                        format!("Unknow Error: {}.", e.to_string()),
+                    ))
+                }
+            }
         }
+        Err((NOT_FOUND_CODE, format!("No matching permissions.")))
     }
 }
 
