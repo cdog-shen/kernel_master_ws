@@ -120,9 +120,10 @@ impl ServiceModel {
         route: &String,
         conn: &mut MysqlConnection,
     ) -> Result<Vec<u32>, (u8, String)> {
+        let like_pattern = format!("%{}%", route); // 创建一个包含通配符的LIKE模式
         match service_table
             .filter(is_enable.eq(1))
-            .filter(service_point.eq(route))
+            .filter(service_point.like(like_pattern)) // 使用LIKE进行模糊匹配
             .select(id)
             .get_results::<u32>(conn)
         {
