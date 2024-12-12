@@ -22,6 +22,8 @@ it should be the FIRST launched service in Kernel master compoment.
 
     All query interface methods should be `GET`, update interfaces should be `POST`, and delete interfaces should be `DELETE`.
 
+    And if POST data include any JSON object, deserialize it to String in this file.
+
 ## Dependence
 
 - basic support dependencies
