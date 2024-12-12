@@ -5,11 +5,7 @@ use diesel::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    models::user::{self, *},
-    services::account_service,
-    utils::err_mapping::MailManErrResponser,
-};
+use crate::{models::user::*, services::account_service, utils::err_mapping::MailManErrResponser};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct InputJsonStruct {
@@ -48,10 +44,10 @@ pub async fn get_all(
 
 // POST api/auth/login
 pub async fn login(
-    login_json: web::Json<UserInputStream>,
+    login_json: web::Json<InputJsonStruct>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match account_service::login(login_json.0, &pool) {
+    match account_service::login(deserialization_input_json_struct(login_json.0), &pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -59,10 +55,10 @@ pub async fn login(
 
 // POST api/auth/signup
 pub async fn signup(
-    user_basic_info: web::Json<UserInputStream>,
+    user_basic_info: web::Json<InputJsonStruct>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match account_service::new_user(user_basic_info.0, &pool) {
+    match account_service::new_user(deserialization_input_json_struct(user_basic_info.0), &pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -70,7 +66,7 @@ pub async fn signup(
 
 // POST api/auth/logout
 pub async fn logout(
-    user_basic_info: web::Json<UserInputStream>,
+    user_basic_info: web::Json<InputJsonStruct>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     match account_service::logout(user_basic_info.0.username.unwrap(), &pool) {
