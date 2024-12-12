@@ -4,8 +4,6 @@ share-lib provide all public utils for Kernel master project
 
 ## Dependence
 
-- serde = { version = "1.0.215", features = ["derive"] }
-- toml = "0.8.19"
-- time = { version = "0.3.36", features = ["serde"] }
-- log = { version = "0.4", features = ["std"] }
-- once_cell = "1.20.2"
+- serde = { version = "1.0.216", features = ["derive"] }
+- chrono = { version = "0.4.39"}
+- log = { version = "0.4.22", features = ["std"] }

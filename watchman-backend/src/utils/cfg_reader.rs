@@ -1,6 +1,7 @@
-use crate::data_structure;
-use serde::Deserialize;
 use std::{borrow::Cow, fs};
+use serde::Deserialize;
+
+use share_lib::data_structure;
 
 #[derive(Debug, Deserialize)]
 pub struct ServerConfig {
@@ -8,8 +9,8 @@ pub struct ServerConfig {
     pub listen_port: u16,
     pub log_path: Cow<'static, str>,
     pub log_level: Cow<'static, str>,
-    pub pub_key_path: Option<Cow<'static, str>>,
-    pub pri_key_path: Option<Cow<'static, str>>,
+    // pub pub_key_path: Option<Cow<'static, str>>,
+    // pub pri_key_path: Option<Cow<'static, str>>,
     pub secret_key_path: Option<Cow<'static, str>>,
 }
 
@@ -18,11 +19,11 @@ pub struct DBConfig {
     pub db_str: Cow<'static, str>,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct KeyKeeper {
-    pub pub_key: Cow<'static, str>,
-    pub pri_key: Cow<'static, str>,
-}
+// #[derive(Debug, Deserialize)]
+// pub struct KeyKeeper {
+//     pub pub_key: Cow<'static, str>,
+//     pub pri_key: Cow<'static, str>,
+// }
 
 #[derive(Debug, Deserialize)]
 pub struct SubSysConfig {
@@ -98,59 +99,59 @@ pub static GLOBAL_CONFIG_HANDLER: once_cell::sync::Lazy<ConfigKeeper> =
         ConfigKeeper::new(config_path.clone()).unwrap()
     });
 
-pub static PUB_KEY: once_cell::sync::Lazy<String> = once_cell::sync::Lazy::new(|| {
-    let pub_path = match &GLOBAL_CONFIG_HANDLER.server_config.pub_key_path {
-        Some(_) => GLOBAL_CONFIG_HANDLER
-            .server_config
-            .pub_key_path
-            .as_ref()
-            .unwrap(),
-        None => {
-            data_structure::MailManErr::new(
-                500,
-                "PUB key config missing :",
-                "GLOBAL_CONFIG_HANDLER.server_config.pub_key_path is None",
-                0,
-            );
-            ""
-        }
-    };
+// pub static PUB_KEY: once_cell::sync::Lazy<String> = once_cell::sync::Lazy::new(|| {
+//     let pub_path = match &GLOBAL_CONFIG_HANDLER.server_config.pub_key_path {
+//         Some(_) => GLOBAL_CONFIG_HANDLER
+//             .server_config
+//             .pub_key_path
+//             .as_ref()
+//             .unwrap(),
+//         None => {
+//             data_structure::MailManErr::new(
+//                 500,
+//                 "PUB key config missing :",
+//                 "GLOBAL_CONFIG_HANDLER.server_config.pub_key_path is None",
+//                 0,
+//             );
+//             ""
+//         }
+//     };
 
-    match fs::read_to_string(pub_path) {
-        Ok(key) => key,
-        Err(e) => {
-            data_structure::MailManErr::new(500, "PUB key read error :", e, 1);
-            "".to_string()
-        }
-    }
-});
+//     match fs::read_to_string(pub_path) {
+//         Ok(key) => key,
+//         Err(e) => {
+//             data_structure::MailManErr::new(500, "PUB key read error :", e, 1);
+//             "".to_string()
+//         }
+//     }
+// });
 
-pub static PRI_KEY: once_cell::sync::Lazy<String> = once_cell::sync::Lazy::new(|| {
-    let pri_path = match &GLOBAL_CONFIG_HANDLER.server_config.pri_key_path {
-        Some(_) => GLOBAL_CONFIG_HANDLER
-            .server_config
-            .pri_key_path
-            .as_ref()
-            .unwrap(),
-        None => {
-            data_structure::MailManErr::new(
-                500,
-                "PRI key config missing :",
-                "GLOBAL_CONFIG_HANDLER.server_config.pri_key_path is None",
-                0,
-            );
-            ""
-        }
-    };
+// pub static PRI_KEY: once_cell::sync::Lazy<String> = once_cell::sync::Lazy::new(|| {
+//     let pri_path = match &GLOBAL_CONFIG_HANDLER.server_config.pri_key_path {
+//         Some(_) => GLOBAL_CONFIG_HANDLER
+//             .server_config
+//             .pri_key_path
+//             .as_ref()
+//             .unwrap(),
+//         None => {
+//             data_structure::MailManErr::new(
+//                 500,
+//                 "PRI key config missing :",
+//                 "GLOBAL_CONFIG_HANDLER.server_config.pri_key_path is None",
+//                 0,
+//             );
+//             ""
+//         }
+//     };
 
-    match fs::read_to_string(pri_path) {
-        Ok(key) => key,
-        Err(e) => {
-            data_structure::MailManErr::new(500, "PRI key read error :", e, 1);
-            "".to_string()
-        }
-    }
-});
+//     match fs::read_to_string(pri_path) {
+//         Ok(key) => key,
+//         Err(e) => {
+//             data_structure::MailManErr::new(500, "PRI key read error :", e, 1);
+//             "".to_string()
+//         }
+//     }
+// });
 
 pub static SECRET_KEY: once_cell::sync::Lazy<String> = once_cell::sync::Lazy::new(|| {
     let secret_path = match &GLOBAL_CONFIG_HANDLER.server_config.secret_key_path {
