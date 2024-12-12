@@ -147,3 +147,15 @@ pub fn user_update<'a>(
         },
     }
 }
+
+pub fn get_all(
+    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<MailManOk<Vec<UserOutputStream>>, MailManErr> {
+    match UserModel::get_user_info(&mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "All user info", Some(msg))),
+        Err(msg) => match msg.0 {
+            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
+    }
+}

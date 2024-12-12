@@ -13,6 +13,7 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                     .route(web::post().to(hey_hi_hello::hey)),
             )
             .service(web::scope("/auth")
+                .service(web::resource("/all_user").route(web::get().to(account_manage::get_all)))
                     .service(web::resource("/signup").route(web::post().to(account_manage::signup)))
                     .service(web::resource("/login").route(web::post().to(account_manage::login)))
                     .service(web::resource("/logout").route(web::post().to(account_manage::logout)))

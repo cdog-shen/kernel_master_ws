@@ -87,16 +87,18 @@ impl UserModel {
     }
 
     /// get user full data
-    pub fn get_user_info(conn: &mut MysqlConnection) -> Vec<UserOutputStream> {
+    pub fn get_user_info(
+        conn: &mut MysqlConnection,
+    ) -> Result<Vec<UserOutputStream>, (u8, String)> {
         match user_table
             .select(UserModel::as_select()) // 选择 UserInfo 结构体中定义的字段
             .get_results::<UserModel>(conn)
         {
-            Ok(vec_user_info) => vec_user_info
+            Ok(vec_user_info) => Ok(vec_user_info
                 .into_iter()
                 .map(|user_info| map_model_to_output_stream(user_info))
-                .collect(),
-            Err(_) => vec![],
+                .collect()),
+            Err(_) => Err((NOT_FOUND_CODE, "can NOT find any user".to_string())),
         }
     }
 
