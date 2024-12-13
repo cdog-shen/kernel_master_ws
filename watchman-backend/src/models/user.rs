@@ -86,6 +86,25 @@ impl UserModel {
         }
     }
 
+    /// get user by username
+    pub fn get_user_by_id(
+        uid: u32,
+        conn: &mut MysqlConnection,
+    ) -> Result<UserOutputStream, (u8, String)> {
+        match user_table
+            .find(uid)
+            .select(UserModel::as_select())
+            .get_result::<UserModel>(conn)
+        {
+            Ok(user_info) => Ok(map_model_to_output_stream(user_info)),
+            Err(NotFound) => Err((NOT_FOUND_CODE, format!("NotFound {}.", uid))),
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
+        }
+    }
+
     /// get user full data
     pub fn get_user_info(
         conn: &mut MysqlConnection,

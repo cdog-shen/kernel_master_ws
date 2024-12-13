@@ -102,11 +102,36 @@ impl ServiceModel {
             .get_results::<ServiceModel>(conn)
         {
             Ok(service_table_data) => {
-                let group_output_stream_data: Vec<ServiceOutputStream> = service_table_data
+                let service_output_stream_data: Vec<ServiceOutputStream> = service_table_data
                     .into_iter()
                     .map(|service_info| map_model_to_output_stream(service_info))
                     .collect();
-                Ok(group_output_stream_data)
+                Ok(service_output_stream_data)
+            }
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
+        }
+    }
+
+    /// get services by id
+    pub fn get_services_by_id(
+        sid_list: Vec<u32>,
+        conn: &mut MysqlConnection,
+    ) -> Result<Vec<ServiceOutputStream>, (u8, String)> {
+        match service_table
+            .filter(is_enable.eq(1))
+            .filter(id.eq_any(sid_list))
+            .select(ServiceModel::as_select())
+            .get_results::<ServiceModel>(conn)
+        {
+            Ok(service_table_data) => {
+                let service_output_stream_data: Vec<ServiceOutputStream> = service_table_data
+                    .into_iter()
+                    .map(|service_info| map_model_to_output_stream(service_info))
+                    .collect();
+                Ok(service_output_stream_data)
             }
             Err(e) => Err((
                 UNKNOW_ERROR_CODE,
