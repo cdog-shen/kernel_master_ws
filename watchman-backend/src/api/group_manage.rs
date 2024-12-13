@@ -24,7 +24,9 @@ fn deserialization_input_json_struct(input: InputJsonStruct) -> GroupInputStream
         id: input.id,
         name: input.name,
         is_enable: input.is_enable,
-        user_ids: Some(serde_json::to_string(&input.user_ids.unwrap()).unwrap()),
+        user_ids: Some(
+            serde_json::to_string(&input.user_ids.unwrap_or(serde_json::json!(""))).unwrap(),
+        ),
         date_update: None,
     }
 }

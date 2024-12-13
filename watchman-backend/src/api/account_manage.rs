@@ -26,7 +26,9 @@ fn deserialization_input_json_struct(input: InputJsonStruct) -> UserInputStream 
         passwd: input.passwd,
         is_enable: input.is_enable,
         name: input.name,
-        contact: Some(serde_json::to_string(&input.contact.unwrap_or(serde_json::json!(""))).unwrap()),
+        contact: Some(
+            serde_json::to_string(&input.contact.unwrap_or(serde_json::json!(""))).unwrap(),
+        ),
         date_joined: None,
         last_login: None,
     }
