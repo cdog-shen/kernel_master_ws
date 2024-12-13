@@ -26,7 +26,7 @@ fn deserialization_input_json_struct(input: InputJsonStruct) -> UserInputStream 
         passwd: input.passwd,
         is_enable: input.is_enable,
         name: input.name,
-        contact: Some(serde_json::to_string(&input.contact.unwrap()).unwrap()),
+        contact: Some(serde_json::to_string(&input.contact.unwrap_or(serde_json::json!(""))).unwrap()),
         date_joined: None,
         last_login: None,
     }
@@ -38,6 +38,17 @@ pub async fn get_all(
 ) -> Result<HttpResponse, MailManErrResponser> {
     match account_service::get_all(&pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
+        Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
+    }
+}
+
+// GET api/auth/me/{id}
+pub async fn get_me(
+    user_id: web::Path<u32>,
+    pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<HttpResponse, MailManErrResponser> {
+    match account_service::get_me(*user_id, &pool) {
+        Ok(user_full_info) => Ok(HttpResponse::Ok().json(user_full_info)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
 }
