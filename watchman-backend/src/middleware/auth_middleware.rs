@@ -129,20 +129,27 @@ where
                                             &mut pool.get().unwrap(),
                                         ) {
                                             Ok(user_info) => {
-                                                let gid_list = GroupModel::get_gids_by_uid(
+                                                let gid_list = match GroupModel::get_groups_by_uid(
                                                     user_info.id.unwrap(),
                                                     &mut pool.get().unwrap(),
-                                                )
-                                                .unwrap();
+                                                ) {
+                                                    Ok(v) => v,
+                                                    Err(_) => vec![],
+                                                };
 
-                                                let sid_list = ServiceModel::get_sids_by_route(
+                                                let sid_list = match ServiceModel::get_sids_by_route(
                                                     &req.uri().to_string(),
                                                     &mut pool.get().unwrap(),
-                                                )
-                                                .unwrap();
+                                                ) {
+                                                    Ok(v) => v,
+                                                    Err(_) => vec![],
+                                                };
 
                                                 match AccessModel::get_max_permission(
-                                                    gid_list,
+                                                    gid_list
+                                                        .into_iter()
+                                                        .filter_map(|group_info| group_info.id)
+                                                        .collect(),
                                                     sid_list,
                                                     &mut pool.get().unwrap(),
                                                 ) {

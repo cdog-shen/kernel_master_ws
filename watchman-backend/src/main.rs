@@ -16,7 +16,8 @@ use diesel::MysqlConnection;
 
 // share-lib import
 use share_lib;
-use share_lib::cfg_reader::GLOBAL_CONFIG_HANDLER;
+// local import
+use utils::cfg_reader::GLOBAL_CONFIG_HANDLER;
 
 // local modules
 mod api;

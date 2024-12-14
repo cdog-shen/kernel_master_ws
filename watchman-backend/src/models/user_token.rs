@@ -7,9 +7,10 @@ use log::debug;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use share_lib::{cfg_reader::SECRET_KEY, log_debug};
+use share_lib::log_debug;
 
 use crate::models::schema::token_table::{self, dsl::*};
+use crate::utils::cfg_reader::SECRET_KEY;
 
 // expire time const var
 static EXP_CONST: i64 = 60 * 60 * 24 * 7; // in seconds Week

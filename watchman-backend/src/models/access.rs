@@ -133,13 +133,56 @@ impl AccessModel {
         }
     }
 
-    /// get user's access
+    pub fn get_access_by_gids(
+        gid_list: Vec<u32>,
+        conn: &mut MysqlConnection,
+    ) -> Result<Vec<AccessOutputStream>, (u8, String)> {
+        match access_table
+            .filter(is_enable.eq(1))
+            .filter(group_id.eq_any(gid_list))
+            .select(AccessModel::as_select())
+            .get_results::<AccessModel>(conn)
+        {
+            Ok(access_table_data) => Ok(access_table_data
+                .into_iter()
+                .map(|access_info| map_model_to_output_stream(access_info))
+                .collect()),
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
+        }
+    }
+
+    pub fn get_access_by_sids(
+        sid_list: Vec<u32>,
+        conn: &mut MysqlConnection,
+    ) -> Result<Vec<AccessOutputStream>, (u8, String)> {
+        match access_table
+            .filter(is_enable.eq(1))
+            .filter(service_id.eq_any(sid_list))
+            .select(AccessModel::as_select())
+            .get_results::<AccessModel>(conn)
+        {
+            Ok(access_table_data) => Ok(access_table_data
+                .into_iter()
+                .map(|access_info| map_model_to_output_stream(access_info))
+                .collect()),
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
+        }
+    }
+
+    /// get user's max access
     pub fn get_max_permission(
         gid_list: Vec<u32>,
         sid_list: Vec<u32>,
         conn: &mut MysqlConnection,
     ) -> Result<u8, (u8, String)> {
         match access_table
+            .filter(is_enable.eq(1))
             .filter(group_id.eq_any(gid_list))
             .filter(service_id.eq_any(sid_list))
             .select(AccessModel::as_select())

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use actix_web::web;
 use diesel::{
     r2d2::{ConnectionManager, Pool},
@@ -8,11 +10,12 @@ use serde_json::json;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::models::{user::*, user_token::*};
+use crate::models::{access::*, group::*, service::*, user::*, user_token::*};
 
 /// token Response json data
 #[derive(Serialize, Deserialize)]
 pub struct TokenBodyResponse {
+    pub uid: u32,
     pub token: String,
     pub token_type: String,
 }
@@ -40,6 +43,7 @@ pub fn login<'a>(
 
     let response = match token_obj.encode_token() {
         Ok(jwt) => json!({
+            "uid": query_result.id,
             "token": jwt,
             "token_type": "bearer",
         }),
@@ -146,4 +150,76 @@ pub fn user_update<'a>(
             _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
         },
     }
+}
+
+/// get all user info
+pub fn get_all(
+    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<MailManOk<Vec<UserOutputStream>>, MailManErr> {
+    match UserModel::get_user_info(&mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "All user info", Some(msg))),
+        Err(msg) => match msg.0 {
+            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
+    }
+}
+
+/// get user's all info
+pub fn get_me(
+    id: u32,
+    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<HashMap<String, serde_json::Value>, MailManErr<'_>> {
+    let mut result: HashMap<String, serde_json::Value> = HashMap::new();
+
+    let user_basic_info = match UserModel::get_user_by_id(id, &mut pool.get().unwrap()) {
+        Ok(ubi) => ubi,
+        Err(msg) => match msg.0 {
+            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
+    };
+
+    let user_group_info = match GroupModel::get_groups_by_uid(id, &mut pool.get().unwrap()) {
+        Ok(ugi) => ugi,
+        Err(msg) => match msg.0 {
+            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
+    };
+
+    let user_access_info = match AccessModel::get_access_by_gids(
+        user_group_info
+            .iter()
+            .filter_map(|group| group.id)
+            .collect(),
+        &mut pool.get().unwrap(),
+    ) {
+        Ok(uai) => uai,
+        Err(msg) => match msg.0 {
+            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
+    };
+
+    let user_service_info = match ServiceModel::get_services_by_id(
+        user_access_info
+            .iter()
+            .filter_map(|access| access.service_id)
+            .collect(),
+        &mut pool.get().unwrap(),
+    ) {
+        Ok(usi) => usi,
+        Err(msg) => match msg.0 {
+            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
+    };
+
+    result.insert("ubi".to_string(), json!(&user_basic_info));
+    result.insert("ugi".to_string(), json!(&user_group_info));
+    result.insert("uai".to_string(), json!(&user_access_info));
+    result.insert("usi".to_string(), json!(&user_service_info));
+
+    Ok(result)
 }
