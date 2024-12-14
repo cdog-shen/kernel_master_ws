@@ -148,7 +148,7 @@ impl SubsysModel {
 
 // update implement
 impl SubsysModel {
-    pub fn new_service(
+    pub fn new_meta(
         subsys_info: &SubsysInputStream,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
@@ -171,7 +171,7 @@ impl SubsysModel {
         }
     }
 
-    pub fn update_service_by_id(
+    pub fn update_meta_by_id(
         subsys_info: &SubsysInputStream,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
@@ -198,7 +198,7 @@ impl SubsysModel {
         }
     }
 
-    pub fn delete_service_by_id(
+    pub fn delete_meta_by_id(
         subsys_id: u32,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
