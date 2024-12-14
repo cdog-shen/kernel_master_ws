@@ -17,11 +17,11 @@ static UNKNOW_ERROR_CODE: u8 = 0;
 ///
 /// - service_point
 ///
-///     Service URL (URL String)
+///     Service route (route String)
 ///
 /// - is_enable
 ///
-///    is this group enable (tinyint 1/0)
+///    is this service enable (tinyint 1/0)
 ///
 /// - create_time
 ///
@@ -79,11 +79,11 @@ impl ServiceModel {
             .get_results::<ServiceModel>(conn)
         {
             Ok(service_table_data) => {
-                let group_output_stream_data: Vec<ServiceOutputStream> = service_table_data
+                let service_output_stream_data: Vec<ServiceOutputStream> = service_table_data
                     .into_iter()
                     .map(|service_info| map_model_to_output_stream(service_info))
                     .collect();
-                Ok(group_output_stream_data)
+                Ok(service_output_stream_data)
             }
             Err(e) => Err((
                 UNKNOW_ERROR_CODE,
@@ -233,15 +233,15 @@ impl ServiceModel {
     }
 
     pub fn delete_service_by_id(
-        group_id: u32,
+        service_id: u32,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match diesel::delete(service_table.find(group_id)).execute(conn) {
+        match diesel::delete(service_table.find(service_id)).execute(conn) {
             Ok(num_of_eff) => Ok(format!(
                 "{}'s data deleted. lines: {}",
-                group_id, num_of_eff
+                service_id, num_of_eff
             )),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {} not found", group_id))),
+            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {} not found", service_id))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
