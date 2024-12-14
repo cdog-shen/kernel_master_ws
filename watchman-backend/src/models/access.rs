@@ -222,6 +222,7 @@ impl AccessModel {
                 group_access.eq(access_info.group_access.unwrap()),
                 is_enable.eq(access_info.is_enable.unwrap_or(0)),
                 update_time.eq(Local::now().naive_local()),
+                comment.eq(access_info.comment.clone().unwrap_or("none set".to_string()))
             ))
             .execute(conn)
         {
