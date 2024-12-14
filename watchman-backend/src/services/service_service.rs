@@ -8,7 +8,7 @@ use diesel::{
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::models::service::*;
+use crate::models::{access::*, service::*};
 
 /// all_service api logic
 pub fn all_service<'a>(
@@ -56,6 +56,39 @@ pub fn delete_service<'a>(
     service_id: u32,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
+    let access_target: Vec<u32> =
+        match AccessModel::get_access_by_sids(vec![service_id], &mut pool.get().unwrap()) {
+            Ok(access_info_list) => access_info_list
+                .into_iter()
+                .filter_map(|access_info| access_info.id)
+                .collect(),
+            Err(msg) => match msg.0 {
+                0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+                _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            },
+        };
+
+    for access_id in access_target {
+        match AccessModel::update_access_by_id(
+            &AccessInputStream {
+                id: Some(access_id),
+                is_enable: Some(0),
+                service_id: None,
+                group_id: None,
+                group_access: None,
+                update_time: None,
+                comment: None,
+            },
+            &mut pool.get().unwrap(),
+        ) {
+            Ok(_) => (),
+            Err(msg) => match msg.0 {
+                0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+                _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            },
+        }
+    }
+
     match ServiceModel::delete_service_by_id(service_id, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "Service deleted", Some(msg))),
         Err(msg) => match msg.0 {
