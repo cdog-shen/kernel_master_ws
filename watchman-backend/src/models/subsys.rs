@@ -1,7 +1,5 @@
 use chrono::{self, Local};
-use diesel::{
-    prelude::*, result::Error::NotFound, Insertable, MysqlConnection, Queryable, Selectable,
-};
+use diesel::{prelude::*, result::Error::NotFound, MysqlConnection};
 use serde::{Deserialize, Serialize};
 
 use crate::models::schema::subsystem_table::{self, dsl::*};
@@ -116,6 +114,27 @@ impl SubsysModel {
                     .collect();
                 Ok(service_output_stream_data)
             }
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
+        }
+    }
+
+    pub fn get_meta_by_id(
+        subsys_id: u32,
+        conn: &mut MysqlConnection,
+    ) -> Result<SubsysOutputStream, (u8, String)> {
+        match subsystem_table
+            .find(subsys_id)
+            .select(SubsysModel::as_select())
+            .get_result::<SubsysModel>(conn)
+        {
+            Ok(subsys_meta) => Ok(map_model_to_output_stream(subsys_meta)),
+            Err(NotFound) => Err((
+                NOT_FOUND_CODE,
+                format!("can NOT find subsystem id: {}.", &subsys_id),
+            )),
             Err(e) => Err((
                 UNKNOW_ERROR_CODE,
                 format!("Unknow Error: {}.", e.to_string()),

@@ -6,7 +6,7 @@ use diesel::{
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::models::{service::*, subsys::*};
+use crate::models::{access::*, service::*, subsys::*};
 
 /// all_subsys api logic
 pub fn all_subsys<'a>(
@@ -26,6 +26,29 @@ pub fn new_subsys<'a>(
     subsys_info: &SubsysInputStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
+    match ServiceModel::new_service(
+        &ServiceInputStream {
+            id: None,
+            service_name: Some(format!(
+                "bind_{}",
+                &subsys_info.subsys_name.clone().unwrap()
+            )),
+            service_point: Some(format!(
+                "/subsystem/{}",
+                &subsys_info.subsys_name.clone().unwrap()
+            )),
+            is_enable: Some(1),
+            create_time: None,
+        },
+        &mut pool.get().unwrap(),
+    ) {
+        Ok(msg) => MailManOk::new(200, "Subsystem bind service created", Some(msg)),
+        Err(msg) => match msg.0 {
+            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
+    };
+
     match SubsysModel::new_meta(&subsys_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
@@ -33,8 +56,8 @@ pub fn new_subsys<'a>(
             Some(msg),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
         },
     }
 }
@@ -62,8 +85,69 @@ pub fn delete_subsys<'a>(
     subsys_meta_id: u32,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
+    let bind_service_id =
+        match SubsysModel::get_meta_by_id(subsys_meta_id, &mut pool.get().unwrap()) {
+            Ok(sub_meta) => sub_meta.relate_service.unwrap(),
+            Err(msg) => match msg.0 {
+                0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+                _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            },
+        };
+
+    let access_target: Vec<u32> =
+        match AccessModel::get_access_by_sids(vec![bind_service_id], &mut pool.get().unwrap()) {
+            Ok(access_info_list) => access_info_list
+                .into_iter()
+                .filter_map(|access_info| access_info.id)
+                .collect(),
+            Err(msg) => match msg.0 {
+                0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+                _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            },
+        };
+
+    for access_id in &access_target {
+        match AccessModel::update_access_by_id(
+            &AccessInputStream {
+                id: Some(*access_id),
+                is_enable: Some(0),
+                service_id: None,
+                group_id: None,
+                group_access: None,
+                update_time: None,
+                comment: None,
+            },
+            &mut pool.get().unwrap(),
+        ) {
+            Ok(_) => (),
+            Err(msg) => match msg.0 {
+                0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+                _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            },
+        }
+    }
+
+    let _ = match ServiceModel::delete_service_by_id(bind_service_id, &mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(
+            200,
+            "Service deleted",
+            Some(format!(
+                "Service table: {}. And disabled those access line {:?}",
+                msg, access_target
+            )),
+        )),
+        Err(msg) => match msg.0 {
+            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
+    };
+
     match SubsysModel::delete_meta_by_id(subsys_meta_id, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "Subsystem meta data deleted", Some(msg))),
+        Ok(msg) => Ok(MailManOk::new(
+            200,
+            "Subsystem meta data deleted",
+            Some(msg),
+        )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
             _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
