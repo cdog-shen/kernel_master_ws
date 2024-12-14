@@ -39,15 +39,14 @@ diesel::table! {
 
 diesel::table! {
     subsystem_table (id) {
-        id -> Integer,
+        id -> Unsigned<Integer>,
         #[max_length = 255]
-        uuid -> Varchar,
-        #[max_length = 255]
-        service_name -> Varchar,
+        subsys_name -> Varchar,
         #[max_length = 255]
         url -> Varchar,
         is_enable -> Unsigned<Tinyint>,
         update_time -> Nullable<Datetime>,
+        relate_service -> Nullable<Unsigned<Integer>>,
     }
 }
 

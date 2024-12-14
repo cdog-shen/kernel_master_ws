@@ -53,9 +53,9 @@
 
 - subsystem_table
 
-    |id|uuid|service_name|url|is_enable|date_update|
-    |:-:|:-:|:-:|:-:|:-:|:-:|
-    |int|varchar|varchar|varchar|varchar - str|tinyint|datetime|
-    |0|XXXXXXX|unnamed|http://127.0.0.1:8000/api/hey|0|2024-10-25 00:00:00.000000|
+    |id|uuid|service_name|url|is_enable|date_update|relate_service|
+    |:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+    |int|varchar|varchar|varchar|varchar - str|tinyint|datetime|int|
+    |0|XXXXXXX|unnamed|http://127.0.0.1:8000/api/hey|0|2024-10-25 00:00:00.000000|0|
 
 ## CMDB
