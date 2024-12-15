@@ -28,8 +28,8 @@ use crate::models::{
 };
 
 // those routes dose not need pass this middleware
-const AUTHENTICATE_BYPASS: [&str; 3] = ["/api/auth/signup", "/api/auth/login", "/webhook"];
-const PERMIT_BYPASS: [&str; 3] = ["/api/auth/signup", "/api/auth/login", "/webhook"];
+const AUTHENTICATE_BYPASS: [&str; 4] = ["/api/auth/signup", "/api/auth/login", "/webhook", "/api/hey"];
+const PERMIT_BYPASS: [&str; 4] = ["/api/auth/signup", "/api/auth/login", "/webhook", "/api/hey"];
 
 // used to crate a middleware
 pub struct Authentication;

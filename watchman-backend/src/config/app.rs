@@ -44,6 +44,9 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                 .service(web::resource("/update_subsystem").route(web::post().to(subsys_manage::update_subsys)))
                 .service(web::resource("/delete_subsystem").route(web::delete().to(subsys_manage::delete_subsys)))
             )
+            .service(web::scope("/subsystem_call")
+                .service(web::resource("/{subsystem_name}").route(web::post().to(subsys_manage::call_subsys)))
+            )
 
         );
 }

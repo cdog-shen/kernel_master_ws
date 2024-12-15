@@ -3,6 +3,7 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
     MysqlConnection,
 };
+use ureq;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
@@ -153,4 +154,54 @@ pub fn delete_subsys<'a>(
             _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
         },
     }
+}
+
+pub fn call<'a>(
+    subsys_name: String,
+    subsys_params: std::collections::HashMap<Option<String>, Option<serde_json::Value>>,
+    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<MailManOk<'a, serde_json::Value>, MailManErr<'a>> {
+    let target =
+        match SubsysModel::get_enable_by_name(subsys_name.clone(), &mut pool.get().unwrap()) {
+            Ok(subsys_info) => subsys_info,
+            Err(msg) => match msg.0 {
+                0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+                _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            },
+        };
+
+    let req = ureq::post(&target.url.unwrap())
+        .set("Content-Type", "application/json")
+        .set("Token", &target.token.unwrap())
+        .send_json(&subsys_params);
+
+    let _resp = match req {
+        Ok(resp) => {
+            return Ok(MailManOk::new(
+                200,
+                "Subsystem call success",
+                Some({
+                    let resp_text = resp.into_string().unwrap();
+                    match serde_json::from_str::<serde_json::Value>(&resp_text) {
+                        Ok(json_value) => json_value,
+                        Err(_) => {
+                            serde_json::json!({
+                                "data": resp_text,
+                            })
+                        }
+                    }
+                }),
+            ));
+        }
+        Err(msg) => match msg.kind() {
+            _ => {
+                return Err(MailManErr::new(
+                    500,
+                    "Internal Server Error",
+                    format!("Subsystem: {}. Error kind: {}", &subsys_name, msg),
+                    1,
+                ))
+            }
+        },
+    };
 }

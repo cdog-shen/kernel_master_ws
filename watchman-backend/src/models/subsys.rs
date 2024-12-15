@@ -42,6 +42,8 @@ pub struct SubsysModel {
     pub relate_service: Option<u32>,
     #[diesel(column_name = update_time)]
     pub update_time: Option<chrono::NaiveDateTime>,
+    #[diesel(column_name = token)]
+    pub token: String,
 }
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
@@ -53,6 +55,7 @@ pub struct SubsysInputStream {
     pub is_enable: Option<u8>,
     pub relate_service: Option<u32>,
     pub update_time: Option<chrono::NaiveDateTime>,
+    pub token: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -63,6 +66,7 @@ pub struct SubsysOutputStream {
     pub is_enable: Option<u8>,
     pub relate_service: Option<u32>,
     pub update_time: Option<chrono::NaiveDateTime>,
+    pub token: Option<String>,
 }
 
 fn map_model_to_output_stream(subsys_info: SubsysModel) -> SubsysOutputStream {
@@ -73,6 +77,7 @@ fn map_model_to_output_stream(subsys_info: SubsysModel) -> SubsysOutputStream {
         is_enable: Some(subsys_info.is_enable),
         relate_service: subsys_info.relate_service,
         update_time: subsys_info.update_time,
+        token: Some(subsys_info.token),
     }
 }
 
@@ -176,6 +181,7 @@ impl SubsysModel {
                 subsys_name.eq(subsys_info.subsys_name.clone().unwrap()),
                 url.eq(subsys_info.url.clone().unwrap()),
                 is_enable.eq(subsys_info.is_enable.unwrap_or(0)),
+                token.eq(subsys_info.token.clone().unwrap()),
                 relate_service.eq(subsys_info.relate_service.unwrap_or(0)),
                 update_time.eq(Local::now().naive_local()),
             ))

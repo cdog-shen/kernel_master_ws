@@ -47,6 +47,8 @@ diesel::table! {
         is_enable -> Unsigned<Tinyint>,
         update_time -> Nullable<Datetime>,
         relate_service -> Nullable<Unsigned<Integer>>,
+        #[max_length = 255]
+        token -> Varchar,
     }
 }
 
