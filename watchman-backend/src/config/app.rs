@@ -38,6 +38,16 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                 .service(web::resource("/update_access").route(web::post().to(access_manage::update_access)))
                 .service(web::resource("/delete_access").route(web::delete().to(access_manage::delete_access)))
             )
+            .service(web::scope("/subsystem_control")
+                .service(web::resource("/all_subsystem").route(web::get().to(subsys_manage::all_subsys)))
+                .service(web::resource("/new_subsystem").route(web::post().to(subsys_manage::new_subsys)))
+                .service(web::resource("/update_subsystem").route(web::post().to(subsys_manage::update_subsys)))
+                .service(web::resource("/delete_subsystem").route(web::delete().to(subsys_manage::delete_subsys)))
+            )
+            .service(web::scope("/subsystem_call")
+                .service(web::resource("/{subsystem_name}").route(web::post().to(subsys_manage::call_subsys)))
+            )
+
         );
 }
 

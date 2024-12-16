@@ -27,5 +27,7 @@ jsonwebtoken = "9.3.0"
 bcrypt = "0.16.0"
 base64 = "0.22.1"
 uuid = { version = "1.11.0", features = ["v4"] }
+# RPC dependencies
+ureq = { version = "2.12.1", features = ["charset", "json"] }
 # share-lib utils
 share-lib = { path = "../share-lib" }

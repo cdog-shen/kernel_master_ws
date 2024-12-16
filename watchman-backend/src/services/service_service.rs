@@ -68,10 +68,10 @@ pub fn delete_service<'a>(
             },
         };
 
-    for access_id in access_target {
+    for access_id in &access_target {
         match AccessModel::update_access_by_id(
             &AccessInputStream {
-                id: Some(access_id),
+                id: Some(*access_id),
                 is_enable: Some(0),
                 service_id: None,
                 group_id: None,
@@ -90,7 +90,14 @@ pub fn delete_service<'a>(
     }
 
     match ServiceModel::delete_service_by_id(service_id, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "Service deleted", Some(msg))),
+        Ok(msg) => Ok(MailManOk::new(
+            200,
+            "Service deleted",
+            Some(format!(
+                "Service table: {}. And disabled those access line {:?}",
+                msg, access_target
+            )),
+        )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
             _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),

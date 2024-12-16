@@ -18,8 +18,8 @@
 
 - User table
 
-    |id|user|passwd|is_enable|name|contact||date_joined|last_login|
-    |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+    |id|user|passwd|is_enable|name|contact|date_joined|last_login|
+    |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
     |uint|varchar - str|varchar - str|tinyint|varchar - str|JSON|datetime|datetime|
     | 0 |testuser| 00000000 | 1 | test| {email:"test@test.com"} |2024-10-25 00:00:00.000000|2024-11-11 09:15:26.978272|
 
@@ -53,9 +53,9 @@
 
 - subsystem_table
 
-    |id|uuid|service_name|url|is_enable|date_update|
-    |:-:|:-:|:-:|:-:|:-:|:-:|
-    |int|varchar|varchar|varchar|varchar - str|tinyint|datetime|
-    |0|XXXXXXX|unnamed|http://127.0.0.1:8000/api/hey|0|2024-10-25 00:00:00.000000|
+    |id|uuid|service_name|url|is_enable|date_update|relate_service|
+    |:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+    |int|varchar|varchar|varchar|varchar - str|tinyint|datetime|int|
+    |0|XXXXXXX|unnamed|http://127.0.0.1:8000/api/hey|0|2024-10-25 00:00:00.000000|0|
 
 ## CMDB
