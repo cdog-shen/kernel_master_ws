@@ -70,26 +70,6 @@ fn map_model_to_output_stream(group_info: GroupModel) -> GroupOutputStream {
 
 // query implement
 impl GroupModel {
-    /// get all group
-    pub fn get_all(conn: &mut MysqlConnection) -> Result<Vec<GroupOutputStream>, (u8, String)> {
-        match group_table
-            .select(GroupModel::as_select())
-            .get_results::<GroupModel>(conn)
-        {
-            Ok(group_table_data) => {
-                let group_output_stream_data: Vec<GroupOutputStream> = group_table_data
-                    .into_iter()
-                    .map(|group_info| map_model_to_output_stream(group_info))
-                    .collect();
-                Ok(group_output_stream_data)
-            }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
-        }
-    }
-
     /// get all enable group
     pub fn get_all_enable(
         conn: &mut MysqlConnection,
@@ -115,7 +95,10 @@ impl GroupModel {
 
     /// get all of user
     /// need by middleware
-    pub fn get_groups_by_uid(uid: u32, conn: &mut MysqlConnection) -> Result<Vec<GroupOutputStream>, (u8, String)> {
+    pub fn get_groups_by_uid(
+        uid: u32,
+        conn: &mut MysqlConnection,
+    ) -> Result<Vec<GroupOutputStream>, (u8, String)> {
         match group_table
             .filter(is_enable.eq(1))
             .select(GroupModel::as_select())
@@ -148,6 +131,54 @@ impl GroupModel {
                     .collect();
 
                 Ok(result_gids)
+            }
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
+        }
+    }
+
+    /// get all group
+    pub fn get_all_with_filter(
+        filter: serde_json::Map<String, serde_json::Value>,
+        conn: &mut MysqlConnection,
+    ) -> Result<Vec<GroupOutputStream>, (u8, String)> {
+        let mut query = group_table.into_boxed().select(GroupModel::as_select());
+
+        for (q_k, q_v) in filter.iter() {
+            match q_k.as_str() {
+                "name" => {
+                    if let Some(value) = q_v.as_str() {
+                        query = query.filter(name.eq(value));
+                    }
+                }
+                "is_enable" => {
+                    println!("{}", q_v.as_str().unwrap().parse::<u8>().is_ok());
+                    if let Ok(value) = q_v.as_str().unwrap().parse::<u8>() {
+                        query = query.filter(is_enable.eq(value));
+                    }
+                }
+                "user_ids" => {
+                    if let Some(value) = q_v.as_str() {
+                        let pattern1 = format!("%{},%", value);
+                        let pattern2 = format!("%{}]%", value);
+                        query = query
+                            .filter(user_ids.like(pattern1))
+                            .or_filter(user_ids.like(pattern2));
+                    }
+                }
+                _ => continue,
+            }
+        }
+
+        match query.get_results::<GroupModel>(conn) {
+            Ok(group_table_data) => {
+                let group_output_stream_data: Vec<GroupOutputStream> = group_table_data
+                    .into_iter()
+                    .map(|group_info| map_model_to_output_stream(group_info))
+                    .collect();
+                Ok(group_output_stream_data)
             }
             Err(e) => Err((
                 UNKNOW_ERROR_CODE,

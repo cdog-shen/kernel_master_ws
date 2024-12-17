@@ -3,8 +3,7 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
     MysqlConnection,
 };
-// use serde::{Deserialize, Serialize};
-// use serde_json::json;
+use serde_json::{Map, Value};
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
@@ -12,9 +11,10 @@ use crate::models::group::*;
 
 /// all_group api logic
 pub fn all_group<'a>(
+    filter: &'a Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, Vec<GroupOutputStream>>, MailManErr<'a>> {
-    match GroupModel::get_all(&mut pool.get().unwrap()) {
+    match GroupModel::get_all_with_filter(filter.clone(), &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "All group info", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
