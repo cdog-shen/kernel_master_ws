@@ -176,7 +176,6 @@ impl ServiceModel {
                     }
                 }
                 "is_enable" => {
-                    println!("{}", q_v.as_str().unwrap().parse::<u8>().is_ok());
                     if let Ok(value) = q_v.as_str().unwrap().parse::<u8>() {
                         query = query.filter(is_enable.eq(value));
                     }
