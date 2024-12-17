@@ -3,6 +3,7 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
     MysqlConnection,
 };
+use serde_json::{Map, Value};
 
 use crate::{
     models::subsys::SubsysInputStream, services::subsys_service,
@@ -11,9 +12,10 @@ use crate::{
 
 // GET api/subsystem_control/all_subsystem
 pub async fn all_subsys(
+    query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match subsys_service::all_subsys(&pool) {
+    match subsys_service::all_subsys(&query, &pool) {
         Ok(subsys_data) => Ok(HttpResponse::Ok().json(subsys_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

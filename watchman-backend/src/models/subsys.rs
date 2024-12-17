@@ -1,6 +1,7 @@
 use chrono::{self, Local};
 use diesel::{prelude::*, result::Error::NotFound, MysqlConnection};
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 
 use crate::models::schema::subsystem_table::{self, dsl::*};
 
@@ -83,26 +84,6 @@ fn map_model_to_output_stream(subsys_info: SubsysModel) -> SubsysOutputStream {
 
 // query implement
 impl SubsysModel {
-    /// get all services
-    pub fn get_all(conn: &mut MysqlConnection) -> Result<Vec<SubsysOutputStream>, (u8, String)> {
-        match subsystem_table
-            .select(SubsysModel::as_select())
-            .get_results::<SubsysModel>(conn)
-        {
-            Ok(subsystem_table_data) => {
-                let group_output_stream_data: Vec<SubsysOutputStream> = subsystem_table_data
-                    .into_iter()
-                    .map(|subsys_info| map_model_to_output_stream(subsys_info))
-                    .collect();
-                Ok(group_output_stream_data)
-            }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
-        }
-    }
-
     /// get all enable services
     pub fn get_all_enable(
         conn: &mut MysqlConnection,
@@ -162,6 +143,57 @@ impl SubsysModel {
                 NOT_FOUND_CODE,
                 format!("can NOT find subsystem: {}.", &name),
             )),
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
+        }
+    }
+
+    /// get all services
+    pub fn get_all_with_filter(
+        filter: Map<String, Value>,
+        conn: &mut MysqlConnection,
+    ) -> Result<Vec<SubsysOutputStream>, (u8, String)> {
+        let mut query = subsystem_table
+            .into_boxed()
+            .select(SubsysModel::as_select());
+
+        for (q_k, q_v) in filter.iter() {
+            match q_k.as_str() {
+                "subsys_name" => {
+                    if let Some(value) = q_v.as_str() {
+                        query = query.filter(subsys_name.eq(value));
+                    }
+                }
+                "is_enable" => {
+                    if let Ok(value) = q_v.as_str().unwrap().parse::<u8>() {
+                        query = query.filter(is_enable.eq(value));
+                    }
+                }
+                "url" => {
+                    if let Some(value) = q_v.as_str() {
+                        let pattern = format!("%{}%", value);
+                        query = query.filter(url.like(pattern));
+                    }
+                }
+                "relate_service" => {
+                    if let Ok(value) = q_v.as_str().unwrap().parse::<u32>() {
+                        query = query.filter(relate_service.eq(value));
+                    }
+                }
+                _ => continue,
+            }
+        }
+
+        match query.get_results::<SubsysModel>(conn) {
+            Ok(subsystem_table_data) => {
+                let group_output_stream_data: Vec<SubsysOutputStream> = subsystem_table_data
+                    .into_iter()
+                    .map(|subsys_info| map_model_to_output_stream(subsys_info))
+                    .collect();
+                Ok(group_output_stream_data)
+            }
             Err(e) => Err((
                 UNKNOW_ERROR_CODE,
                 format!("Unknow Error: {}.", e.to_string()),
