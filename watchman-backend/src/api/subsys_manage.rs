@@ -3,7 +3,6 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
     MysqlConnection,
 };
-use std::collections::HashMap;
 
 use crate::{
     models::subsys::SubsysInputStream, services::subsys_service,
@@ -56,7 +55,7 @@ pub async fn delete_subsys(
 /// POST api/subsystem_call/call_subsystem
 pub async fn call_subsys(
     subsys_name: web::Path<String>,
-    subsys_params: web::Json<HashMap<Option<String>, Option<serde_json::Value>>>,
+    subsys_params: web::Json<serde_json::Map<String, serde_json::Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     match subsys_service::call((*subsys_name.clone()).to_string(), subsys_params.0, &pool) {

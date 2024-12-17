@@ -158,7 +158,7 @@ pub fn delete_subsys<'a>(
 
 pub fn call<'a>(
     subsys_name: String,
-    subsys_params: std::collections::HashMap<Option<String>, Option<serde_json::Value>>,
+    subsys_params: serde_json::Map<String, serde_json::Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, serde_json::Value>, MailManErr<'a>> {
     let target =
