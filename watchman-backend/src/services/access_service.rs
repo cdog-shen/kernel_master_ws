@@ -3,8 +3,8 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
     MysqlConnection,
 };
+use serde_json::{Map, Value};
 // use serde::{Deserialize, Serialize};
-// use serde_json::json;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
@@ -12,9 +12,10 @@ use crate::models::access::*;
 
 /// all_access api logic
 pub fn all_access<'a>(
+    filter: &'a Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, Vec<AccessOutputStream>>, MailManErr<'a>> {
-    match AccessModel::get_all(&mut pool.get().unwrap()) {
+    match AccessModel::get_all_with_filter(filter.clone(), &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "All access info", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
