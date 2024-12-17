@@ -67,6 +67,7 @@ fn map_model_to_output_stream(user_info: UserModel) -> UserOutputStream {
 // query implement
 impl UserModel {
     /// get user by username
+    /// need by middleware
     pub fn get_user_by_username(
         user_name: &str,
         conn: &mut MysqlConnection,

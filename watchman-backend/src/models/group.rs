@@ -114,6 +114,7 @@ impl GroupModel {
     }
 
     /// get all of user
+    /// need by middleware
     pub fn get_groups_by_uid(uid: u32, conn: &mut MysqlConnection) -> Result<Vec<GroupOutputStream>, (u8, String)> {
         match group_table
             .filter(is_enable.eq(1))

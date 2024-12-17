@@ -141,6 +141,7 @@ impl ServiceModel {
     }
 
     /// get all id by service route
+    /// need by middle ware
     pub fn get_sids_by_route(
         route: &String,
         conn: &mut MysqlConnection,
