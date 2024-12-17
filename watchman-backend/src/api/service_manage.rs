@@ -3,19 +3,19 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
     MysqlConnection,
 };
+use serde_json::{Map, Value};
 
 use crate::{
-    models::service::ServiceInputStream,
-    services::service_service,
+    models::service::ServiceInputStream, services::service_service,
     utils::err_mapping::MailManErrResponser,
 };
 
-
 // GET api/service_control/all_service
 pub async fn all_service(
+    query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match service_service::all_service(&pool) {
+    match service_service::all_service(&query, &pool) {
         Ok(group_data) => Ok(HttpResponse::Ok().json(group_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
