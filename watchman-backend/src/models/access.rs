@@ -192,7 +192,7 @@ impl AccessModel {
 
     /// get all access
     pub fn get_all_with_filter(
-        filter: serde_json::Map<String, serde_json::Value>,
+        filter: Map<String, Value>,
         conn: &mut MysqlConnection,
     ) -> Result<Vec<AccessOutputStream>, (u8, String)> {
         let mut query = access_table.into_boxed().select(AccessModel::as_select());
