@@ -4,6 +4,7 @@ use diesel::{
     MysqlConnection,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 
 use crate::{models::user::*, services::account_service, utils::err_mapping::MailManErrResponser};
 
@@ -36,9 +37,10 @@ fn deserialization_input_json_struct(input: InputJsonStruct) -> UserInputStream 
 
 // GET api/auth/all_user
 pub async fn get_all(
+    query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match account_service::get_all(&pool) {
+    match account_service::get_all(&query, &pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
