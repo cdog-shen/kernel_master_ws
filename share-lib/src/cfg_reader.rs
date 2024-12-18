@@ -1,17 +1,37 @@
 use serde_json::{Map, Value};
-use std::fs;
+use std::{
+    fs::File,
+    io::{Read, Seek, SeekFrom},
+};
 
 use crate::data_structure;
 
-pub fn read_config<P>(path: P) -> Result<Map<String, Value>, data_structure::MailManErr<'static>>
-where
-    P: AsRef<std::path::Path> + std::fmt::Display,
-{
-    let path_str = path.to_string();
+pub fn read_config(
+    file_ptr: &mut File,
+) -> Result<Map<String, Value>, data_structure::MailManErr<'static>> {
+    match file_ptr.seek(SeekFrom::Start(0)) {
+        Ok(_) => {
+            data_structure::MailManOk::new(0, "Config file reset success", None::<&str>);
+            ()
+        }
+        Err(e) => {
+            return Err(data_structure::MailManErr::new(
+                500,
+                "Config loading - failed to reset file",
+                e,
+                2,
+            ));
+        }
+    }
+    let mut file_contents = String::new();
 
-    let cfg_content = match fs::read_to_string(&path_str) {
+    let _cfg_length = match file_ptr.read_to_string(&mut file_contents) {
         Ok(content) => {
-            data_structure::MailManOk::new(0, "Config file read success", None::<&str>);
+            data_structure::MailManOk::new(
+                0,
+                "Config file read success",
+                Some(format!("length: {}", content)),
+            );
             content
         }
         Err(e) => {
@@ -24,7 +44,7 @@ where
         }
     };
 
-    let config: Map<String, Value> = match toml::de::from_str(&cfg_content) {
+    let config: Map<String, Value> = match toml::de::from_str(&file_contents) {
         Ok(parsed) => parsed,
         Err(e) => {
             return Err(data_structure::MailManErr::new(
@@ -38,8 +58,8 @@ where
 
     data_structure::MailManOk::new(
         0,
-        "Config file load done",
-        Some(format!("path is : {}", path)),
+        "Config file reload done",
+        Some(format!("path is : {:?}", file_ptr)),
     );
 
     Ok(config)
@@ -52,12 +72,15 @@ mod tests {
     #[test]
     fn test_read_config_success() {
         let path = "Cargo.toml";
-        let result = read_config(path);
+        let mut file = std::fs::File::open(&path).expect("Unable to open config file");
+        let result = read_config(&mut file);
+
+        println!("{:?}", result);
         assert!(result.is_ok());
+
         let config = result.unwrap();
 
         println!("{:?}", config);
-
         assert_eq!(config["package"]["name"], "share-lib");
     }
 }
