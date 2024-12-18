@@ -19,17 +19,32 @@ use futures::future::{ok, LocalBoxFuture, Ready};
 use share_lib::data_structure::MailManErr;
 // use share_lib::{log_debug, log_error};
 
-use crate::models::{
-    access::AccessModel,
-    group::GroupModel,
-    service::ServiceModel,
-    user::UserModel,
-    user_token::{TokenModel, UserToken},
+use crate::{
+    models::{
+        access::AccessModel,
+        group::GroupModel,
+        service::ServiceModel,
+        user::UserModel,
+        user_token::{TokenModel, UserToken},
+    },
+    server::GLOBAL_CONFIG,
 };
 
 // those routes dose not need pass this middleware
-const AUTHENTICATE_BYPASS: [&str; 4] = ["/api/auth/signup", "/api/auth/login", "/webhook", "/api/hey"];
-const PERMIT_BYPASS: [&str; 4] = ["/api/auth/signup", "/api/auth/login", "/webhook", "/api/hey"];
+// const AUTHENTICATE_BYPASS: [&str; 5] = [
+//     "/api/auth/signup",
+//     "/api/auth/login",
+//     "/webhook",
+//     "/api/hey",
+//     "/api/reload",
+// ];
+// const PERMIT_BYPASS: [&str; 5] = [
+//     "/api/auth/signup",
+//     "/api/auth/login",
+//     "/webhook",
+//     "/api/hey",
+//     "/api/reload",
+// ];
 
 // used to crate a middleware
 pub struct Authentication;
@@ -84,7 +99,7 @@ where
         if Method::OPTIONS == *req.method() {
             authenticate_pass = true;
         } else {
-            for ignore_route in AUTHENTICATE_BYPASS.iter() {
+            for ignore_route in GLOBAL_CONFIG.read().unwrap().authenticate_bypass.iter() {
                 if req.path().starts_with(ignore_route) {
                     authenticate_pass = true;
                     break;
@@ -101,7 +116,7 @@ where
         if Method::OPTIONS == *req.method() {
             permit_pass = true;
         } else {
-            for ignore_route in PERMIT_BYPASS.iter() {
+            for ignore_route in GLOBAL_CONFIG.read().unwrap().permit_bypass.iter() {
                 if req.path().starts_with(ignore_route) {
                     permit_pass = true;
                     break;

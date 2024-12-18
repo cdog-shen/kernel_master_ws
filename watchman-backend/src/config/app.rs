@@ -12,6 +12,7 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                 .route(web::get().to(hey_hi_hello::hey))
                 .route(web::post().to(hey_hi_hello::hey))
             )
+            .service(web::resource("/reload").route(web::post().to(system_manage::reload_config)))
             .service(web::scope("/auth")
                 .service(web::resource("/all_user").route(web::get().to(account_manage::get_all)))
                 .service(web::resource("/me/{id}").route(web::get().to(account_manage::get_me)))

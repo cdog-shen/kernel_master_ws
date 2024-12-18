@@ -19,12 +19,19 @@ pub struct AllConfigs {
     pub listen_addr: String,
     pub listen_port: u16,
 
-    pub pub_key_path: Option<String>,
-    pub pri_key_path: Option<String>,
-    pub secret_key_path: Option<String>,
+    pub pub_key_path: String,
+    pub pri_key_path: String,
+    pub secret_key_path: String,
 
     pub authenticate_bypass: Vec<String>,
     pub permit_bypass: Vec<String>,
+}
+
+fn get_string_from_config(config: &Map<String, Value>, path: &[&str]) -> String {
+    match config[path[0]][path[1]].as_str() {
+        Some(data) => data.to_string(),
+        None => "".to_string(),
+    }
 }
 
 impl AllConfigs {
@@ -35,9 +42,9 @@ impl AllConfigs {
             db_str: String::new(),
             listen_addr: String::new(),
             listen_port: 8000,
-            pub_key_path: None,
-            pri_key_path: None,
-            secret_key_path: None,
+            pub_key_path: String::new(),
+            pri_key_path: String::new(),
+            secret_key_path: String::new(),
             authenticate_bypass: vec![],
             permit_bypass: vec![],
         }
@@ -51,25 +58,26 @@ impl AllConfigs {
 
         println!("{:?}", config["server_config"]["log_path"]);
 
-        self.log_path = config["server_config"]["log_path"];
-        self.log_level = config["server_config"]["log_level"].to_string();
-        self.db_str = config["server_config"]["db_str"].to_string();
-        self.listen_addr = config["server_config"]["listen_addr"].to_string();
+        self.log_path = get_string_from_config(&config, &["server_config", "log_path"]);
+        self.db_str = get_string_from_config(&config, &["db_config", "db_str"]);
+        self.listen_addr = get_string_from_config(&config, &["server_config", "listen_addr"]);
         self.listen_port = config["server_config"]["listen_port"].as_u64().unwrap() as u16;
-        self.pub_key_path = Some(config["server_config"]["pub_key_path"].to_string());
-        self.pri_key_path = Some(config["server_config"]["pri_key_path"].to_string());
-        self.secret_key_path = Some(config["server_config"]["secret_key_path"].to_string());
+        self.pub_key_path = get_string_from_config(&config, &["server_config", "pub_key_path"]);
+        self.pri_key_path = get_string_from_config(&config, &["server_config", "pri_key_path"]);
+        self.secret_key_path = get_string_from_config(&config, &["server_config", "secret_key_path"]);
         self.authenticate_bypass = match &config["server_config"]["authenticate_bypass"] {
             Value::Array(vec) => vec
                 .into_iter()
-                .filter_map(|intem| Some(intem.to_string()))
+                .filter_map(|item| item.as_str())
+                .filter_map(|item| Some(item.to_string()))
                 .collect(),
             _ => vec![],
         };
         self.permit_bypass = match &config["server_config"]["permit_bypass"] {
             Value::Array(vec) => vec
                 .into_iter()
-                .filter_map(|intem| Some(intem.to_string()))
+                .filter_map(|item| item.as_str())
+                .filter_map(|item| Some(item.to_string()))
                 .collect(),
             _ => vec![],
         };
