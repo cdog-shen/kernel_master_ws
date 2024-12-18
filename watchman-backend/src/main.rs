@@ -19,7 +19,6 @@ use share_lib;
 // local import
 use config::server;
 use share_lib::data_structure::MailManOk;
-use utils::cfg_reader::GLOBAL_CONFIG_HANDLER;
 
 // local modules
 mod api;

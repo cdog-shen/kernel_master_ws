@@ -9,8 +9,10 @@ use uuid::Uuid;
 
 use share_lib::log_debug;
 
-use crate::models::schema::token_table::{self, dsl::*};
-use crate::utils::cfg_reader::SECRET_KEY;
+use crate::{
+    models::schema::token_table::{self, dsl::*},
+    server::SECRET_KEY,
+};
 
 // expire time const var
 static EXP_CONST: i64 = 60 * 60 * 24 * 7; // in seconds Week
@@ -201,7 +203,7 @@ impl UserToken {
         match encode(
             &Header::default(),
             &payload,
-            &EncodingKey::from_secret(&*SECRET_KEY.as_bytes()),
+            &EncodingKey::from_secret(&SECRET_KEY.read().unwrap().as_bytes()),
         ) {
             Ok(jwt) => Ok(jwt),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
@@ -210,7 +212,7 @@ impl UserToken {
 
     /// decode a JWT string back to token claim object and map it into a TokenModel
     pub fn decode_token(token_str: String) -> Result<TokenModel, (u8, String)> {
-        let decoding_key = DecodingKey::from_secret(&*SECRET_KEY.as_bytes());
+        let decoding_key = DecodingKey::from_secret(&SECRET_KEY.read().unwrap().as_bytes());
         match decode::<UserToken>(
             &token_str,
             &decoding_key,

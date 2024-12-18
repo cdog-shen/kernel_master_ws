@@ -2,7 +2,6 @@ use once_cell::sync::Lazy;
 use serde::Deserialize;
 use serde_json::{Map, Value};
 use std::{
-    cell::RefCell,
     fs::{read_to_string, File},
     sync::{Mutex, RwLock},
 };
@@ -64,7 +63,8 @@ impl AllConfigs {
         self.listen_port = config["server_config"]["listen_port"].as_u64().unwrap() as u16;
         self.pub_key_path = get_string_from_config(&config, &["server_config", "pub_key_path"]);
         self.pri_key_path = get_string_from_config(&config, &["server_config", "pri_key_path"]);
-        self.secret_key_path = get_string_from_config(&config, &["server_config", "secret_key_path"]);
+        self.secret_key_path =
+            get_string_from_config(&config, &["server_config", "secret_key_path"]);
         self.authenticate_bypass = match &config["server_config"]["authenticate_bypass"] {
             Value::Array(vec) => vec
                 .into_iter()
@@ -95,6 +95,18 @@ pub static CONFIG_FILE_HANDLE: Lazy<Mutex<File>> = Lazy::new(|| {
 });
 
 pub static GLOBAL_CONFIG: Lazy<RwLock<AllConfigs>> = Lazy::new(|| RwLock::new(AllConfigs::new()));
+pub static SECRET_KEY: Lazy<RwLock<String>> = Lazy::new(|| {
+    RwLock::new({
+        let secret_path = &GLOBAL_CONFIG.read().unwrap().secret_key_path;
+        match read_to_string(secret_path) {
+            Ok(key) => key,
+            Err(e) => {
+                MailManErr::new(500, "SECRET key read error :", e, 1);
+                "".to_string()
+            }
+        }
+    })
+});
 
 #[cfg(test)]
 mod tests {
