@@ -3,19 +3,19 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
     MysqlConnection,
 };
+use serde_json::{Map, Value};
 
 use crate::{
-    models::access::AccessInputStream,
-    services::access_service,
+    models::access::AccessInputStream, services::access_service,
     utils::err_mapping::MailManErrResponser,
 };
 
-
 // GET api/access_control/all_access
 pub async fn all_access(
+    query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match access_service::all_access(&pool) {
+    match access_service::all_access(&query, &pool) {
         Ok(access_data) => Ok(HttpResponse::Ok().json(access_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

@@ -6,7 +6,7 @@ use diesel::{
     MysqlConnection,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{Map, Value};
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
@@ -42,7 +42,7 @@ pub fn login<'a>(
     let token_obj = UserToken::new(&query_result.username.unwrap());
 
     let response = match token_obj.encode_token() {
-        Ok(jwt) => json!({
+        Ok(jwt) => serde_json::json!({
             "uid": query_result.id,
             "token": jwt,
             "token_type": "bearer",
@@ -153,10 +153,11 @@ pub fn user_update<'a>(
 }
 
 /// get all user info
-pub fn get_all(
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<Vec<UserOutputStream>>, MailManErr> {
-    match UserModel::get_user_info(&mut pool.get().unwrap()) {
+pub fn get_all<'a>(
+    filter: &'a Map<String, Value>,
+    pool: &'a web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<MailManOk<'a, Vec<UserOutputStream>>, MailManErr<'a>> {
+    match UserModel::get_user_info_with_filter(filter.clone(), &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "All user info", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
@@ -216,10 +217,10 @@ pub fn get_me(
         },
     };
 
-    result.insert("ubi".to_string(), json!(&user_basic_info));
-    result.insert("ugi".to_string(), json!(&user_group_info));
-    result.insert("uai".to_string(), json!(&user_access_info));
-    result.insert("usi".to_string(), json!(&user_service_info));
+    result.insert("ubi".to_string(), serde_json::json!(&user_basic_info));
+    result.insert("ugi".to_string(), serde_json::json!(&user_group_info));
+    result.insert("uai".to_string(), serde_json::json!(&user_access_info));
+    result.insert("usi".to_string(), serde_json::json!(&user_service_info));
 
     Ok(result)
 }

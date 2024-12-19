@@ -4,6 +4,7 @@ use diesel::{
     MysqlConnection,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 
 use crate::{
     models::group::GroupInputStream, services::group_service,
@@ -33,9 +34,10 @@ fn deserialization_input_json_struct(input: InputJsonStruct) -> GroupInputStream
 
 // GET api/group_control/all_group
 pub async fn all_group(
+    query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match group_service::all_group(&pool) {
+    match group_service::all_group(&query, &pool) {
         Ok(group_data) => Ok(HttpResponse::Ok().json(group_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

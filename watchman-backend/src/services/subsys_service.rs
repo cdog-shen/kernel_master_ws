@@ -3,6 +3,7 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
     MysqlConnection,
 };
+use serde_json::{Map, Value};
 use ureq;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
@@ -11,9 +12,10 @@ use crate::models::{access::*, service::*, subsys::*};
 
 /// all_subsys api logic
 pub fn all_subsys<'a>(
+    filter: &Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, Vec<SubsysOutputStream>>, MailManErr<'a>> {
-    match SubsysModel::get_all(&mut pool.get().unwrap()) {
+    match SubsysModel::get_all_with_filter(filter.clone(), &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "All Subsystem info", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
@@ -158,7 +160,7 @@ pub fn delete_subsys<'a>(
 
 pub fn call<'a>(
     subsys_name: String,
-    subsys_params: std::collections::HashMap<Option<String>, Option<serde_json::Value>>,
+    subsys_params: serde_json::Map<String, serde_json::Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, serde_json::Value>, MailManErr<'a>> {
     let target =

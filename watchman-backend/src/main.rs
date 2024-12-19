@@ -17,7 +17,8 @@ use diesel::MysqlConnection;
 // share-lib import
 use share_lib;
 // local import
-use utils::cfg_reader::GLOBAL_CONFIG_HANDLER;
+use config::server;
+use share_lib::data_structure::MailManOk;
 
 // local modules
 mod api;
@@ -29,18 +30,28 @@ mod utils;
 
 #[actix_rt::main]
 async fn main() -> io::Result<()> {
+    // reload config
+    match server::GLOBAL_CONFIG.write().unwrap().reload() {
+        Ok(_) => {
+            MailManOk::new(200, "config load DONE", None::<&str>);
+        }
+        Err(e) => {
+            panic!("config load error! {}", e);
+        }
+    }
+
     // config out put
-    println!("config is {:#?}", &*GLOBAL_CONFIG_HANDLER);
+    println!("config is {:#?}", &*server::GLOBAL_CONFIG);
 
     // init logger
     share_lib::logger::init_logger(
-        &GLOBAL_CONFIG_HANDLER.server_config.log_path,
-        &*GLOBAL_CONFIG_HANDLER.server_config.log_level,
+        &server::GLOBAL_CONFIG.read().unwrap().log_path,
+        &server::GLOBAL_CONFIG.read().unwrap().log_level,
     );
 
     // init mysql connection pool
     let manager =
-        ConnectionManager::<MysqlConnection>::new(GLOBAL_CONFIG_HANDLER.db_config.db_str.clone());
+        ConnectionManager::<MysqlConnection>::new(&*server::GLOBAL_CONFIG.read().unwrap().db_str);
     let pool = diesel::r2d2::Pool::builder()
         .build(manager)
         .expect("Failed to create pool.");
@@ -48,8 +59,8 @@ async fn main() -> io::Result<()> {
     // setting listen addr
     let app_url = format!(
         "{}:{}",
-        &GLOBAL_CONFIG_HANDLER.server_config.listen_addr,
-        &GLOBAL_CONFIG_HANDLER.server_config.listen_port
+        &*server::GLOBAL_CONFIG.read().unwrap().listen_addr,
+        &server::GLOBAL_CONFIG.read().unwrap().listen_port
     );
 
     HttpServer::new(move || {

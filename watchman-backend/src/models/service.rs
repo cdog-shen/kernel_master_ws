@@ -72,26 +72,6 @@ fn map_model_to_output_stream(service_info: ServiceModel) -> ServiceOutputStream
 
 // query implement
 impl ServiceModel {
-    /// get all services
-    pub fn get_all(conn: &mut MysqlConnection) -> Result<Vec<ServiceOutputStream>, (u8, String)> {
-        match service_table
-            .select(ServiceModel::as_select())
-            .get_results::<ServiceModel>(conn)
-        {
-            Ok(service_table_data) => {
-                let service_output_stream_data: Vec<ServiceOutputStream> = service_table_data
-                    .into_iter()
-                    .map(|service_info| map_model_to_output_stream(service_info))
-                    .collect();
-                Ok(service_output_stream_data)
-            }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
-        }
-    }
-
     /// get all enable services
     pub fn get_all_enable(
         conn: &mut MysqlConnection,
@@ -141,6 +121,7 @@ impl ServiceModel {
     }
 
     /// get all id by service route
+    /// need by middle ware
     pub fn get_sids_by_route(
         route: &String,
         conn: &mut MysqlConnection,
@@ -178,6 +159,50 @@ impl ServiceModel {
             }
         }
         Err((NOT_FOUND_CODE, format!("No matching permissions.")))
+    }
+
+    /// get all services
+    pub fn get_all_with_filter(
+        filter: serde_json::Map<String, serde_json::Value>,
+        conn: &mut MysqlConnection,
+    ) -> Result<Vec<ServiceOutputStream>, (u8, String)> {
+        let mut query = service_table.into_boxed().select(ServiceModel::as_select());
+
+        for (q_k, q_v) in filter.iter() {
+            match q_k.as_str() {
+                "service_name" => {
+                    if let Some(value) = q_v.as_str() {
+                        query = query.filter(service_name.eq(value));
+                    }
+                }
+                "is_enable" => {
+                    if let Ok(value) = q_v.as_str().unwrap().parse::<u8>() {
+                        query = query.filter(is_enable.eq(value));
+                    }
+                }
+                "service_point" => {
+                    if let Some(value) = q_v.as_str() {
+                        let pattern = format!("%{}%", value);
+                        query = query.filter(service_point.like(pattern));
+                    }
+                }
+                _ => continue,
+            }
+        }
+
+        match query.get_results::<ServiceModel>(conn) {
+            Ok(service_table_data) => {
+                let service_output_stream_data: Vec<ServiceOutputStream> = service_table_data
+                    .into_iter()
+                    .map(|service_info| map_model_to_output_stream(service_info))
+                    .collect();
+                Ok(service_output_stream_data)
+            }
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
+        }
     }
 }
 

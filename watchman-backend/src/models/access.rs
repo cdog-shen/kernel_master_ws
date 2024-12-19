@@ -3,6 +3,7 @@ use diesel::{
     prelude::*, result::Error::NotFound, Insertable, MysqlConnection, Queryable, Selectable,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 
 use crate::models::schema::access_table::{self, dsl::*};
 
@@ -90,26 +91,6 @@ fn map_model_to_output_stream(access_info: AccessModel) -> AccessOutputStream {
 
 // query implement
 impl AccessModel {
-    /// get all access
-    pub fn get_all(conn: &mut MysqlConnection) -> Result<Vec<AccessOutputStream>, (u8, String)> {
-        match access_table
-            .select(AccessModel::as_select())
-            .get_results::<AccessModel>(conn)
-        {
-            Ok(access_table_data) => {
-                let group_output_stream_data: Vec<AccessOutputStream> = access_table_data
-                    .into_iter()
-                    .map(|access_info| map_model_to_output_stream(access_info))
-                    .collect();
-                Ok(group_output_stream_data)
-            }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
-        }
-    }
-
     /// get all enable access
     pub fn get_all_enable(
         conn: &mut MysqlConnection,
@@ -176,6 +157,7 @@ impl AccessModel {
     }
 
     /// get user's max access
+    /// need by middleware
     pub fn get_max_permission(
         gid_list: Vec<u32>,
         sid_list: Vec<u32>,
@@ -207,6 +189,60 @@ impl AccessModel {
             )),
         }
     }
+
+    /// get all access
+    pub fn get_all_with_filter(
+        filter: Map<String, Value>,
+        conn: &mut MysqlConnection,
+    ) -> Result<Vec<AccessOutputStream>, (u8, String)> {
+        let mut query = access_table.into_boxed().select(AccessModel::as_select());
+
+        for (q_k, q_v) in filter.iter() {
+            match q_k.as_str() {
+                "service_id" => {
+                    if let Ok(value) = q_v.as_str().unwrap().parse::<u32>() {
+                        query = query.filter(service_id.eq(value));
+                    }
+                }
+                "group_id" => {
+                    if let Ok(value) = q_v.as_str().unwrap().parse::<u32>() {
+                        query = query.filter(group_id.eq(value));
+                    }
+                }
+                "group_access" => {
+                    if let Ok(value) = q_v.as_str().unwrap().parse::<u8>() {
+                        query = query.filter(group_access.eq(value));
+                    }
+                }
+                "is_enable" => {
+                    if let Ok(value) = q_v.as_str().unwrap().parse::<u8>() {
+                        query = query.filter(is_enable.eq(value));
+                    }
+                }
+                "comment" => {
+                    if let Some(value) = q_v.as_str() {
+                        let pattern = format!("%{}%", value);
+                        query = query.filter(comment.like(pattern));
+                    }
+                }
+                _ => continue,
+            }
+        }
+
+        match query.get_results::<AccessModel>(conn) {
+            Ok(access_table_data) => {
+                let group_output_stream_data: Vec<AccessOutputStream> = access_table_data
+                    .into_iter()
+                    .map(|access_info| map_model_to_output_stream(access_info))
+                    .collect();
+                Ok(group_output_stream_data)
+            }
+            Err(e) => Err((
+                UNKNOW_ERROR_CODE,
+                format!("Unknow Error: {}.", e.to_string()),
+            )),
+        }
+    }
 }
 
 // update implement
@@ -222,7 +258,10 @@ impl AccessModel {
                 group_access.eq(access_info.group_access.unwrap()),
                 is_enable.eq(access_info.is_enable.unwrap_or(0)),
                 update_time.eq(Local::now().naive_local()),
-                comment.eq(access_info.comment.clone().unwrap_or("none set".to_string()))
+                comment.eq(access_info
+                    .comment
+                    .clone()
+                    .unwrap_or("none set".to_string())),
             ))
             .execute(conn)
         {

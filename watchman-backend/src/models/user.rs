@@ -67,6 +67,7 @@ fn map_model_to_output_stream(user_info: UserModel) -> UserOutputStream {
 // query implement
 impl UserModel {
     /// get user by username
+    /// need by middleware
     pub fn get_user_by_username(
         user_name: &str,
         conn: &mut MysqlConnection,
@@ -105,22 +106,6 @@ impl UserModel {
         }
     }
 
-    /// get user full data
-    pub fn get_user_info(
-        conn: &mut MysqlConnection,
-    ) -> Result<Vec<UserOutputStream>, (u8, String)> {
-        match user_table
-            .select(UserModel::as_select()) // 选择 UserInfo 结构体中定义的字段
-            .get_results::<UserModel>(conn)
-        {
-            Ok(vec_user_info) => Ok(vec_user_info
-                .into_iter()
-                .map(|user_info| map_model_to_output_stream(user_info))
-                .collect()),
-            Err(_) => Err((NOT_FOUND_CODE, "can NOT find any user".to_string())),
-        }
-    }
-
     /// login query
     pub fn login(
         user_data: &UserInputStream,
@@ -142,6 +127,44 @@ impl UserModel {
                 UNKNOW_ERROR_CODE,
                 format!("Unknow Error: {}.", e.to_string()),
             )),
+        }
+    }
+
+    /// get user full data
+    pub fn get_user_info_with_filter(
+        filter: serde_json::Map<String, serde_json::Value>,
+        conn: &mut MysqlConnection,
+    ) -> Result<Vec<UserOutputStream>, (u8, String)> {
+        let mut query = user_table.into_boxed().select(UserModel::as_select());
+
+        for (q_k, q_v) in filter.iter() {
+            match q_k.as_str() {
+                "username" => {
+                    if let Some(value) = q_v.as_str() {
+                        query = query.filter(username.eq(value));
+                    }
+                }
+                "is_enable" => {
+                    if let Ok(value) = q_v.as_str().unwrap().parse::<u8>() {
+                        query = query.filter(is_enable.eq(value));
+                    }
+                }
+                "name" => {
+                    if let Some(value) = q_v.as_str() {
+                        let pattern = format!("%{}%", value);
+                        query = query.filter(name.like(pattern));
+                    }
+                }
+                _ => continue,
+            }
+        }
+
+        match query.get_results::<UserModel>(conn) {
+            Ok(vec_user_info) => Ok(vec_user_info
+                .into_iter()
+                .map(|user_info| map_model_to_output_stream(user_info))
+                .collect()),
+            Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 }
