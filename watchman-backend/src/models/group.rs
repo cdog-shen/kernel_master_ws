@@ -82,14 +82,11 @@ impl GroupModel {
             Ok(group_table_data) => {
                 let group_output_stream_data: Vec<GroupOutputStream> = group_table_data
                     .into_iter()
-                    .map(|group_info| map_model_to_output_stream(group_info))
+                    .map(map_model_to_output_stream)
                     .collect();
                 Ok(group_output_stream_data)
             }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 
@@ -107,8 +104,8 @@ impl GroupModel {
             Ok(group_table_data) => {
                 let result_gids: Vec<GroupOutputStream> = group_table_data
                     .into_iter()
-                    .map(|group_info| map_model_to_output_stream(group_info))
-                    .map(|group_info| {
+                    .map(map_model_to_output_stream)
+                    .filter_map(|group_info| {
                         group_info
                             .user_ids
                             .clone()
@@ -127,15 +124,11 @@ impl GroupModel {
                             })
                             .then_some(group_info)
                     })
-                    .filter_map(|opt| opt)
                     .collect();
 
                 Ok(result_gids)
             }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 
@@ -175,14 +168,11 @@ impl GroupModel {
             Ok(group_table_data) => {
                 let group_output_stream_data: Vec<GroupOutputStream> = group_table_data
                     .into_iter()
-                    .map(|group_info| map_model_to_output_stream(group_info))
+                    .map(map_model_to_output_stream)
                     .collect();
                 Ok(group_output_stream_data)
             }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 }

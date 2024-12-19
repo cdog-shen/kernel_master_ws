@@ -84,14 +84,11 @@ impl ServiceModel {
             Ok(service_table_data) => {
                 let service_output_stream_data: Vec<ServiceOutputStream> = service_table_data
                     .into_iter()
-                    .map(|service_info| map_model_to_output_stream(service_info))
+                    .map(map_model_to_output_stream)
                     .collect();
                 Ok(service_output_stream_data)
             }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 
@@ -109,21 +106,18 @@ impl ServiceModel {
             Ok(service_table_data) => {
                 let service_output_stream_data: Vec<ServiceOutputStream> = service_table_data
                     .into_iter()
-                    .map(|service_info| map_model_to_output_stream(service_info))
+                    .map(map_model_to_output_stream)
                     .collect();
                 Ok(service_output_stream_data)
             }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 
     /// get all id by service route
     /// need by middle ware
     pub fn get_sids_by_route(
-        route: &String,
+        route: &str,
         conn: &mut MysqlConnection,
     ) -> Result<Vec<u32>, (u8, String)> {
         let stash_index: Vec<usize> = route
@@ -150,15 +144,10 @@ impl ServiceModel {
                     0 => continue,
                     _ => return Ok(sids),
                 },
-                Err(e) => {
-                    return Err((
-                        UNKNOW_ERROR_CODE,
-                        format!("Unknow Error: {}.", e.to_string()),
-                    ))
-                }
+                Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
             }
         }
-        Err((NOT_FOUND_CODE, format!("No matching permissions.")))
+        Err((NOT_FOUND_CODE, "No matching permissions.".to_string()))
     }
 
     /// get all services
@@ -194,14 +183,11 @@ impl ServiceModel {
             Ok(service_table_data) => {
                 let service_output_stream_data: Vec<ServiceOutputStream> = service_table_data
                     .into_iter()
-                    .map(|service_info| map_model_to_output_stream(service_info))
+                    .map(map_model_to_output_stream)
                     .collect();
                 Ok(service_output_stream_data)
             }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 }

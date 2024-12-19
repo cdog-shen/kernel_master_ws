@@ -88,7 +88,7 @@ where
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let mut authenticate_pass: bool = false;
         let mut permit_pass: bool = false;
-        let mut internal_error: (bool, String) = (false, format!(""));
+        let mut internal_error: (bool, String) = (false, String::new());
 
         // Bypass some account routes
         let mut headers = req.headers().clone();
@@ -144,21 +144,17 @@ where
                                             &mut pool.get().unwrap(),
                                         ) {
                                             Ok(user_info) => {
-                                                let gid_list = match GroupModel::get_groups_by_uid(
+                                                let gid_list = GroupModel::get_groups_by_uid(
                                                     user_info.id.unwrap(),
                                                     &mut pool.get().unwrap(),
-                                                ) {
-                                                    Ok(v) => v,
-                                                    Err(_) => vec![],
-                                                };
+                                                )
+                                                .unwrap_or_default();
 
-                                                let sid_list = match ServiceModel::get_sids_by_route(
+                                                let sid_list = ServiceModel::get_sids_by_route(
                                                     &req.uri().to_string(),
                                                     &mut pool.get().unwrap(),
-                                                ) {
-                                                    Ok(v) => v,
-                                                    Err(_) => vec![],
-                                                };
+                                                )
+                                                .unwrap_or_default();
 
                                                 match AccessModel::get_max_permission(
                                                     gid_list
@@ -178,19 +174,18 @@ where
                                                         _ => (),
                                                     },
                                                     Err(e) => {
-                                                        internal_error = (true, e.1.clone().into());
+                                                        internal_error = (true, e.1.clone());
                                                     }
                                                 };
                                                 // log_debug!("find {:?}", req.uri());
                                             }
                                             Err(e) => {
-                                                internal_error = (true, e.1.clone().into());
+                                                internal_error = (true, e.1.clone());
                                             }
                                         };
                                     }
                                     Err(_) => {
                                         // log_debug!("Valid token");
-                                        ()
                                     }
                                 }
                             }

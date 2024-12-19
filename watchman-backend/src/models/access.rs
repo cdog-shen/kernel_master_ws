@@ -103,14 +103,11 @@ impl AccessModel {
             Ok(access_table_data) => {
                 let group_output_stream_data: Vec<AccessOutputStream> = access_table_data
                     .into_iter()
-                    .map(|access_info| map_model_to_output_stream(access_info))
+                    .map(map_model_to_output_stream)
                     .collect();
                 Ok(group_output_stream_data)
             }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 
@@ -126,12 +123,9 @@ impl AccessModel {
         {
             Ok(access_table_data) => Ok(access_table_data
                 .into_iter()
-                .map(|access_info| map_model_to_output_stream(access_info))
+                .map(map_model_to_output_stream)
                 .collect()),
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 
@@ -147,12 +141,9 @@ impl AccessModel {
         {
             Ok(access_table_data) => Ok(access_table_data
                 .into_iter()
-                .map(|access_info| map_model_to_output_stream(access_info))
+                .map(map_model_to_output_stream)
                 .collect()),
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 
@@ -171,22 +162,18 @@ impl AccessModel {
             .get_results::<AccessModel>(conn)
         {
             Ok(access_table_data) => {
-                let mut max_access_strea: u8 = 0;
+                let mut max_access: u8 = 0;
                 for access_info in access_table_data
                     .into_iter()
-                    .map(|access_info| map_model_to_output_stream(access_info))
+                    .map(map_model_to_output_stream)
                 {
-                    match access_info.group_access.unwrap_or(0) > max_access_strea {
-                        true => max_access_strea = access_info.group_access.unwrap_or(0),
-                        false => (),
+                    if access_info.group_access.unwrap_or(0) > max_access {
+                        max_access = access_info.group_access.unwrap_or(0)
                     };
                 }
-                Ok(max_access_strea)
+                Ok(max_access)
             }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 
@@ -233,14 +220,11 @@ impl AccessModel {
             Ok(access_table_data) => {
                 let group_output_stream_data: Vec<AccessOutputStream> = access_table_data
                     .into_iter()
-                    .map(|access_info| map_model_to_output_stream(access_info))
+                    .map(map_model_to_output_stream)
                     .collect();
                 Ok(group_output_stream_data)
             }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 }
@@ -267,7 +251,7 @@ impl AccessModel {
         {
             Ok(num_of_change) => Ok(format!(
                 "Access {} created. line: {}",
-                &access_info.service_id.clone().unwrap(),
+                &access_info.service_id.unwrap(),
                 num_of_change
             )),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),

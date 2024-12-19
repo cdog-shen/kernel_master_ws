@@ -107,7 +107,7 @@ pub fn login<'a>(
         }
     }
 
-    return output;
+    output
 }
 
 /// signup api logic
