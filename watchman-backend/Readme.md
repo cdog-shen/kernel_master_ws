@@ -16,7 +16,7 @@ it should be the FIRST launched service in Kernel master compoment.
 
 - All interface processing logic should be placed in the ***services*** directory.
 
-    When inputting data structures, you should use `Models::table::InputStream`, or use other data types as needed.
+    When inputting data structures, you should use `Models::table::InputStream`, or use other data types(i recommand `serde_json::Map<String, serde_json::Value>`) as needed.
 
 - The logic related to API responses should be placed under the corresponding API mod in the ***apis*** directory.
 
@@ -24,11 +24,80 @@ it should be the FIRST launched service in Kernel master compoment.
 
     And if POST data include any JSON object, deserialize it to String in this file.
 
+## APIs
+
+all api started with `/api` scope.
+
+### /hey
+
+| resource | method support | function                      | comment              |
+| :------: | :------------: | :---------------------------- | :------------------- |
+|    /     |  `POST`/`GET`  | return `hi hello!` raw string | test API for service |
+
+
+### /reload
+
+| resource | method support | function           | comment                                         |
+| :------: | :------------: | :----------------- | :---------------------------------------------- |
+|    /     |     `POST`     | reload config data | Hot reload config to refresh any dynamic config |
+
+### /auth
+
+|   resource   | method support | function                           | comment                 |
+| :----------: | :------------: | :--------------------------------- | :---------------------- |
+|  /all_user   |     `GET`      | get all user info with get query   |                         |
+|   /me/{id}   |     `GET`      | get user's all info with user's id | contain user's all info |
+|   /signup    |     `POST`     | just a signup                      |                         |
+|    /login    |     `POST`     | login with username and password   |                         |
+|   /logout    |     `POST`     | logout                             |                         |
+| /user_update |     `POST`     | update user's info                 |                         |
+
+### /group_control
+
+|   resource    | method support | function                 | comment |
+| :-----------: | :------------: | :----------------------- | :------ |
+|  /all_group   |     `GET`      | get all group with query |         |
+|  /new_group   |     `POST`     | create a group           |         |
+| /update_group |     `POST`     | update a group           |         |
+| /delete_group |    `DELETE`    | delete a group           |         |
+
+### /service_control
+
+|    resource     | method support | function                   | comment                            |
+| :-------------: | :------------: | :------------------------- | :--------------------------------- |
+|  /all_service   |     `GET`      | get all service with query |                                    |
+|  /new_service   |     `POST`     | create a service           |                                    |
+| /update_service |     `POST`     | update a service           |                                    |
+| /delete_service |    `DELETE`    | delete a service           | it also disable any related access |
+
+### /access_control
+
+|    resource    | method support | function                  | comment |
+| :------------: | :------------: | :------------------------ | :------ |
+|  /all_access   |     `GET`      | get all access with query |         |
+|  /new_access   |     `POST`     | create a access           |         |
+| /update_access |     `POST`     | update a access           |         |
+| /delete_access |    `DELETE`    | delete a access           |         |
+
+### /subsystem_control
+
+|     resource      | method support | function                     | comment                                                            |
+| :---------------: | :------------: | :--------------------------- | :----------------------------------------------------------------- |
+|  /all_subsystem   |     `GET`      | get all subsystem with query |                                                                    |
+|  /new_subsystem   |     `POST`     | create a subsystem           | and also create bind services                                      |
+| /update_subsystem |     `POST`     | update a subsystem           |                                                                    |
+| /delete_subsystem |    `DELETE`    | delete a subsystem           | it also disable any related access and delete any related services |
+
+### /subsystem_call
+
+|     resource      | method support | function                          | comment                                                            |
+| :---------------: | :------------: | :-------------------------------- | :----------------------------------------------------------------- |
+| /{subsystem_name} |     `POST`     | call subsystem services with JSON | if return not a JSON, it will be jsonify as `{"data":"any data" }` |
+
 ## Dependence
 
 - basic support dependencies
     - once_cell = "1.20.2"
-    - toml = "0.8.19"
     - log = "0.4.22"
     - chrono = { version = "0.4.39", features = ["serde"] }
 - basic web dependencies
@@ -51,9 +120,53 @@ it should be the FIRST launched service in Kernel master compoment.
 - share-lib utils
     - share-lib = { path = "../share-lib" }
 
+## DB structure
+
+- User table
+
+    |  id   |     user      |    passwd     | is_enable |     name      |         contact         |        date_joined         |         last_login         |
+    | :---: | :-----------: | :-----------: | :-------: | :-----------: | :---------------------: | :------------------------: | :------------------------: |
+    | uint  | varchar - str | varchar - str |  tinyint  | varchar - str |          JSON           |          datetime          |          datetime          |
+    |   0   |   testuser    |   00000000    |     1     |     test      | {email:"test@test.com"} | 2024-10-25 00:00:00.000000 | 2024-11-11 09:15:26.978272 |
+
+- Token table
+
+    |     user      |         token         |                  exp_time                  |
+    | :-----------: | :-------------------: | :----------------------------------------: |
+    | varchar - str |     varchar - str     |                datetime/int                |
+    |     test      | ahsodhajkshdkanshdjka | 2024-10-25 00:00:00.000000/UNIX_TIME_STAMP |
+
+- Group table
+
+    |  id   |     name      | is_enable | user_id_list |        date_update         |
+    | :---: | :-----------: | :-------: | :----------: | :------------------------: |
+    |  int  | varchar - str |  tinyint  |     JSON     |          datetime          |
+    |   0   |      dev      |     0     |  [1,2,3,4]   | 2024-10-25 00:00:00.000000 |
+
+- Service table
+
+    |  id   | service_name  | service_point | is_enable |        date_update         |
+    | :---: | :-----------: | :-----------: | :-------: | :------------------------: |
+    |  int  | varchar - str | varchar - str |  tinyint  |          datetime          |
+    |   0   |     CMDB      | /an/api/route |     0     | 2024-10-25 00:00:00.000000 |
+
+- Access table
+
+    |  id   | service_id | access_id | group_access | is_enable |        date_update         |
+    | :---: | :--------: | :-------: | :----------: | :-------: | :------------------------: |
+    |  int  |    int     |    int    |   tinyint    |  tinyint  |          datetime          |
+    |   0   |     0      |     0     |    accINT    |     0     | 2024-10-25 00:00:00.000000 |
+
+- subsystem_table
+
+    |  id   |  uuid   | service_name |              url              |   is_enable   |        date_update         | relate_service |
+    | :---: | :-----: | :----------: | :---------------------------: | :-----------: | :------------------------: | :------------: |
+    |  int  | varchar |   varchar    |            varchar            | varchar - str |          tinyint           |    datetime    | int |
+    |   0   | XXXXXXX |   unnamed    | http://127.0.0.1:8000/api/hey |       0       | 2024-10-25 00:00:00.000000 |       0        |
+
 ## Deployment
 
-## Config file
+### Config file
 
 The name of the configuration file is `watchman_server.cfg`.
 
