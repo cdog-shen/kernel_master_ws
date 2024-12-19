@@ -96,13 +96,13 @@ impl SubsysModel {
             Ok(subsystem_table_data) => {
                 let service_output_stream_data: Vec<SubsysOutputStream> = subsystem_table_data
                     .into_iter()
-                    .map(|subsys_info| map_model_to_output_stream(subsys_info))
+                    .map(map_model_to_output_stream)
                     .collect();
                 Ok(service_output_stream_data)
             }
             Err(e) => Err((
                 UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
+                format!("Unknow Error: {}.", e),
             )),
         }
     }
@@ -123,7 +123,7 @@ impl SubsysModel {
             )),
             Err(e) => Err((
                 UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
+                format!("Unknow Error: {}.", e),
             )),
         }
     }
@@ -145,7 +145,7 @@ impl SubsysModel {
             )),
             Err(e) => Err((
                 UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
+                format!("Unknow Error: {}.", e),
             )),
         }
     }
@@ -190,14 +190,11 @@ impl SubsysModel {
             Ok(subsystem_table_data) => {
                 let group_output_stream_data: Vec<SubsysOutputStream> = subsystem_table_data
                     .into_iter()
-                    .map(|subsys_info| map_model_to_output_stream(subsys_info))
+                    .map(map_model_to_output_stream)
                     .collect();
                 Ok(group_output_stream_data)
             }
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 }

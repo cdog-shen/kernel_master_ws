@@ -52,7 +52,7 @@ pub fn new_subsys<'a>(
         },
     };
 
-    match SubsysModel::new_meta(&subsys_info, &mut pool.get().unwrap()) {
+    match SubsysModel::new_meta(subsys_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Subsystem meta data created",
@@ -70,7 +70,7 @@ pub fn update_subsys<'a>(
     subsys_info: &SubsysInputStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
-    match SubsysModel::update_meta_by_id(&subsys_info, &mut pool.get().unwrap()) {
+    match SubsysModel::update_meta_by_id(subsys_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Subsystem meta data updated",
@@ -177,7 +177,7 @@ pub fn call<'a>(
         .set("Token", &target.token.unwrap())
         .send_json(&subsys_params);
 
-    let _resp = match req {
+    match req {
         Ok(resp) => {
             return Ok(MailManOk::new(
                 200,
@@ -195,15 +195,14 @@ pub fn call<'a>(
                 }),
             ));
         }
-        Err(msg) => match msg.kind() {
-            _ => {
-                return Err(MailManErr::new(
-                    500,
-                    "Internal Server Error",
-                    format!("Subsystem: {}. Error kind: {}", &subsys_name, msg),
-                    1,
-                ))
-            }
-        },
+        Err(msg) => {
+            msg.kind();
+            return Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                format!("Subsystem: {}. Error kind: {}", &subsys_name, msg),
+                1,
+            ));
+        }
     };
 }

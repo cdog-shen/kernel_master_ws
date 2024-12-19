@@ -50,7 +50,7 @@ impl AllConfigs {
     }
 
     pub fn reload(&mut self) -> Result<u8, MailManErr<'static>> {
-        let config = match read_config(&mut *CONFIG_FILE_HANDLE.lock().unwrap()) {
+        let config = match read_config(&mut CONFIG_FILE_HANDLE.lock().unwrap()) {
             Ok(json) => json,
             Err(e) => return Err(e),
         };
@@ -67,17 +67,17 @@ impl AllConfigs {
             get_string_from_config(&config, &["server_config", "secret_key_path"]);
         self.authenticate_bypass = match &config["server_config"]["authenticate_bypass"] {
             Value::Array(vec) => vec
-                .into_iter()
+                .iter()
                 .filter_map(|item| item.as_str())
-                .filter_map(|item| Some(item.to_string()))
+                .map(|item| item.to_string())
                 .collect(),
             _ => vec![],
         };
         self.permit_bypass = match &config["server_config"]["permit_bypass"] {
             Value::Array(vec) => vec
-                .into_iter()
+                .iter()
                 .filter_map(|item| item.as_str())
-                .filter_map(|item| Some(item.to_string()))
+                .map(|item| item.to_string())
                 .collect(),
             _ => vec![],
         };

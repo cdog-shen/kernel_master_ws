@@ -82,7 +82,7 @@ impl UserModel {
             Err(NotFound) => Err((NOT_FOUND_CODE, format!("NotFound {}.", user_name))),
             Err(e) => Err((
                 UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
+                format!("Unknow Error: {}.", e),
             )),
         }
     }
@@ -101,7 +101,7 @@ impl UserModel {
             Err(NotFound) => Err((NOT_FOUND_CODE, format!("NotFound {}.", uid))),
             Err(e) => Err((
                 UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
+                format!("Unknow Error: {}.", e),
             )),
         }
     }
@@ -125,7 +125,7 @@ impl UserModel {
             )),
             Err(e) => Err((
                 UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e.to_string()),
+                format!("Unknow Error: {}.", e),
             )),
         }
     }
@@ -162,7 +162,7 @@ impl UserModel {
         match query.get_results::<UserModel>(conn) {
             Ok(vec_user_info) => Ok(vec_user_info
                 .into_iter()
-                .map(|user_info| map_model_to_output_stream(user_info))
+                .map(map_model_to_output_stream)
                 .collect()),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }

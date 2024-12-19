@@ -42,7 +42,7 @@ pub struct TokenModel {
 }
 
 // query implement
-impl<'a> TokenModel {
+impl TokenModel {
     /// find token by username
     pub fn find_token_by_username(
         user_token: &UserToken,
@@ -57,7 +57,7 @@ impl<'a> TokenModel {
                 NOT_FOUND_CODE,
                 format!("can NOT find {}'s token.", &user_token.user),
             )),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow error {}", e.to_string()))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow error {}", e))),
         }
     }
 
@@ -75,11 +75,11 @@ impl<'a> TokenModel {
                 if Local::now().naive_local() < token_line.exp_time {
                     Ok(token_line.username)
                 } else {
-                    Err((NOT_FOUND_CODE, format!("token expired.")))
+                    Err((NOT_FOUND_CODE, "token expired.".to_string()))
                 }
             }
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("token invaild."))),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow error {}", e.to_string()))),
+            Err(NotFound) => Err((NOT_FOUND_CODE, "token invaild.".to_string())),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow error {}", e))),
         }
     }
 }
@@ -96,7 +96,7 @@ impl TokenModel {
             .values(TokenModel {
                 tokenid: user_token.uuid.clone(),
                 username: user_token.user.clone(),
-                exp_time: chrono::NaiveDateTime::from_timestamp(user_token.exp.clone(), 0),
+                exp_time: chrono::NaiveDateTime::from_timestamp(user_token.exp, 0),
             })
             .execute(conn)
         {
@@ -132,10 +132,7 @@ impl TokenModel {
         match diesel::update(target)
             .set((
                 tokenid.eq(user_token.uuid.to_string()),
-                exp_time.eq(chrono::NaiveDateTime::from_timestamp(
-                    user_token.exp.clone(),
-                    0,
-                )),
+                exp_time.eq(chrono::NaiveDateTime::from_timestamp(user_token.exp, 0)),
             ))
             .execute(conn)
         {
@@ -176,9 +173,9 @@ pub struct UserToken {
 impl UserToken {
     /// generate a token claim object
     #[allow(deprecated)]
-    pub fn new(login_user: &String) -> UserToken {
+    pub fn new(login_user: &str) -> UserToken {
         UserToken {
-            user: login_user.clone(),
+            user: login_user.to_owned(),
             uuid: Uuid::new_v4().to_string(),
             exp: Local::now().naive_local().timestamp() + EXP_CONST,
         }
@@ -203,7 +200,7 @@ impl UserToken {
         match encode(
             &Header::default(),
             &payload,
-            &EncodingKey::from_secret(&SECRET_KEY.read().unwrap().as_bytes()),
+            &EncodingKey::from_secret(SECRET_KEY.read().unwrap().as_bytes()),
         ) {
             Ok(jwt) => Ok(jwt),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
@@ -212,7 +209,7 @@ impl UserToken {
 
     /// decode a JWT string back to token claim object and map it into a TokenModel
     pub fn decode_token(token_str: String) -> Result<TokenModel, (u8, String)> {
-        let decoding_key = DecodingKey::from_secret(&SECRET_KEY.read().unwrap().as_bytes());
+        let decoding_key = DecodingKey::from_secret(SECRET_KEY.read().unwrap().as_bytes());
         match decode::<UserToken>(
             &token_str,
             &decoding_key,

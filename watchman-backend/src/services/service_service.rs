@@ -29,7 +29,7 @@ pub fn new_service<'a>(
     service_info: &ServiceInputStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
-    match ServiceModel::new_service(&service_info, &mut pool.get().unwrap()) {
+    match ServiceModel::new_service(service_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "Service created", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
@@ -43,7 +43,7 @@ pub fn update_service<'a>(
     service_info: &ServiceInputStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
-    match ServiceModel::update_service_by_id(&service_info, &mut pool.get().unwrap()) {
+    match ServiceModel::update_service_by_id(service_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "Service info updated", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),

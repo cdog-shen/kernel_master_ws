@@ -37,7 +37,7 @@ impl MailManErrResponser {
     }
 }
 
-impl<'a> fmt::Display for MailManErrResponser {
+impl fmt::Display for MailManErrResponser {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "msg: {}", self.msg)
     }
@@ -45,7 +45,7 @@ impl<'a> fmt::Display for MailManErrResponser {
 
 // implement unified error responses for MailManErrResponser
 // so that can make MailManErrResponser in error response
-impl<'a> ResponseError for MailManErrResponser {
+impl ResponseError for MailManErrResponser {
     fn error_response(&self) -> HttpResponse {
         HttpResponse::build(self.status_code())
             .insert_header(ContentType::json())
