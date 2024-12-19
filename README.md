@@ -15,3 +15,9 @@
 🆔 [Watch man readme file](./watchman-backend/Readme.md)
 
 ## Subsystems
+
+Subsystem link to `watchman` service, called by `POST`ing `watchman/api/subsystem_call/{subsystem_name}/{operate}` from `watchman`
+
+### CMDB: Configuration Management Database for all instance
+
+🗂️ [CMDB readme file](./cmdb-backend/Readme.md)
