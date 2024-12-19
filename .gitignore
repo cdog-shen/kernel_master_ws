@@ -4,5 +4,6 @@
 **/Cargo.lock
 **/.DS_Store
 watchman-backend/watchman_server.cfg
+cmdb-backend/cmdb_server.cfg
 **/.vscode/**
 **/migrations/**
