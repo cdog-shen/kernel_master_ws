@@ -24,7 +24,7 @@ use share_lib::data_structure::MailManOk;
 mod api;
 mod config;
 // mod middleware;
-// mod models;
+mod models;
 // mod services;
 // mod utils;
 
