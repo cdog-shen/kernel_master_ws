@@ -4,6 +4,8 @@
 
 ## Acknowledgements
 
+🙏 Thank the user [Jami](https://github.com/jami1024) for providing the system architecture ideas.
+
 🙏 Thank the user [SakaDream](https://github.com/SakaDream) for providing coding ideas on the project [actix-web-rest-api-with-jwt](https://github.com/SakaDream/actix-web-rest-api-with-jwt).
 
 ## share-lib : the public utils for all service
