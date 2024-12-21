@@ -1,4 +1,4 @@
-use chrono::{self, Local, TimeZone};
+use chrono::{self, Local};
 use diesel::{prelude::*, result::Error::NotFound};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -7,7 +7,7 @@ use crate::models::schema::light_ecs_table::{self, dsl::*};
 
 static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
-static TMI_ERROR_CODE: u8 = 2;
+// static TMI_ERROR_CODE: u8 = 2;
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
 #[diesel(table_name = light_ecs_table)]
@@ -149,19 +149,11 @@ impl LightEcsModel {
                     .clone();
                 item_map.insert(
                     "create_at".to_string(),
-                    Value::String(
-                        Local
-                            .timestamp(item_info.create_at.unwrap().timestamp(), 0)
-                            .to_string(),
-                    ),
+                    Value::String(Local::now().naive_local().to_string()),
                 );
                 item_map.insert(
                     "update_at".to_string(),
-                    Value::String(
-                        Local
-                            .timestamp(item_info.update_at.unwrap().timestamp(), 0)
-                            .to_string(),
-                    ),
+                    Value::String(Local::now().naive_local().to_string()),
                 );
                 Ok(Value::Object(item_map))
             }
@@ -222,19 +214,11 @@ impl LightEcsModel {
                         .clone();
                     item_map.insert(
                         "create_at".to_string(),
-                        Value::String(
-                            Local
-                                .timestamp(item.create_at.unwrap().timestamp(), 0)
-                                .to_string(),
-                        ),
+                        Value::String(Local::now().naive_local().to_string()),
                     );
                     item_map.insert(
                         "update_at".to_string(),
-                        Value::String(
-                            Local
-                                .timestamp(item.update_at.unwrap().timestamp(), 0)
-                                .to_string(),
-                        ),
+                        Value::String(Local::now().naive_local().to_string()),
                     );
                     Value::Object(item_map)
                 })
@@ -249,7 +233,7 @@ impl LightEcsModel {
     pub fn new_ecs(
         ecs_info: Map<String, Value>,
         conn: &mut MysqlConnection,
-    ) -> Result<Value, (u8, String)> {
+    ) -> Result<usize, (u8, String)> {
         let ecs_info = match LightEcsModel::from_map(ecs_info) {
             Ok(info) => info,
             Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
@@ -258,34 +242,38 @@ impl LightEcsModel {
             .values(&ecs_info)
             .execute(conn)
         {
-            Ok(_) => Ok(Value::Null),
+            Ok(num_of_eff) => Ok(num_of_eff),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 
     /// update ecs by id
     pub fn update_ecs(
-        ecs_id: u64,
         ecs_info: Map<String, Value>,
         conn: &mut MysqlConnection,
-    ) -> Result<Value, (u8, String)> {
+    ) -> Result<usize, (u8, String)> {
         let ecs_info = match LightEcsModel::from_map(ecs_info) {
             Ok(info) => info,
             Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
         };
-        match diesel::update(light_ecs_table.filter(id.eq(ecs_id)))
+        match diesel::update(light_ecs_table.filter(id.eq(ecs_info.id)))
             .set(&ecs_info)
             .execute(conn)
         {
-            Ok(_) => Ok(Value::Null),
+            Ok(num_of_eff) => Ok(num_of_eff),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 
     /// delete ecs by id
-    pub fn delete_ecs(ecs_id: u64, conn: &mut MysqlConnection) -> Result<Value, (u8, String)> {
-        match diesel::delete(light_ecs_table.filter(id.eq(ecs_id))).execute(conn) {
-            Ok(_) => Ok(Value::Null),
+    pub fn delete_ecs(
+        ecs_info: Map<String, Value>,
+        conn: &mut MysqlConnection,
+    ) -> Result<usize, (u8, String)> {
+        match diesel::delete(light_ecs_table.filter(id.eq(ecs_info["id"].as_u64().unwrap())))
+            .execute(conn)
+        {
+            Ok(num_of_eff) => Ok(num_of_eff),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }

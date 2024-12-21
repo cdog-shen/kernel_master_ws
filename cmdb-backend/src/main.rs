@@ -15,17 +15,18 @@ use diesel::MysqlConnection;
 // db models
 
 // share-lib import
-use share_lib;
+use share_lib::data_structure::MailManOk;
+use share_lib::logger;
+
 // local import
 use config::server;
-use share_lib::data_structure::MailManOk;
 
 // local modules
 mod api;
 mod config;
 // mod middleware;
 mod models;
-// mod services;
+mod services;
 // mod utils;
 
 #[actix_rt::main]
@@ -44,7 +45,7 @@ async fn main() -> io::Result<()> {
     println!("config is {:#?}", &*server::GLOBAL_CONFIG);
 
     // init logger
-    share_lib::logger::init_logger(
+    logger::init_logger(
         &server::GLOBAL_CONFIG.read().unwrap().log_path,
         &server::GLOBAL_CONFIG.read().unwrap().log_level,
     );

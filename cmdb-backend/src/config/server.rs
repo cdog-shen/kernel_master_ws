@@ -1,11 +1,11 @@
 use once_cell::sync::Lazy;
 use serde::Deserialize;
 use serde_json::{Map, Value};
-use uuid::Uuid;
 use std::{
     fs::File,
     sync::{Mutex, RwLock},
 };
+use uuid::Uuid;
 
 use share_lib::{cfg_reader::read_config, data_structure::MailManErr};
 
@@ -21,6 +21,10 @@ pub struct AllConfigs {
 
     pub authenticate_bypass: Vec<String>,
     pub subsys_uuid: String,
+
+    pub master_addr: String,
+    pub master_port: u16,
+    pub register_name: String,
 }
 
 fn get_string_from_config(config: &Map<String, Value>, path: &[&str]) -> String {
@@ -40,11 +44,14 @@ impl AllConfigs {
             listen_port: 9001,
             authenticate_bypass: vec![],
             subsys_uuid: String::new(),
+            master_addr: String::new(),
+            master_port: 8000,
+            register_name: String::new(),
         }
     }
 
     pub fn reload(&mut self) -> Result<u8, MailManErr<'static>> {
-        let config = match read_config(&mut *CONFIG_FILE_HANDLE.lock().unwrap()) {
+        let config = match read_config(&mut CONFIG_FILE_HANDLE.lock().unwrap()) {
             Ok(json) => json,
             Err(e) => return Err(e),
         };
@@ -57,13 +64,16 @@ impl AllConfigs {
         self.listen_port = config["server_config"]["listen_port"].as_u64().unwrap() as u16;
         self.authenticate_bypass = match &config["server_config"]["authenticate_bypass"] {
             Value::Array(vec) => vec
-                .into_iter()
+                .iter()
                 .filter_map(|item| item.as_str())
-                .filter_map(|item| Some(item.to_string()))
+                .map(|item| item.to_string())
                 .collect(),
             _ => vec![],
         };
         self.subsys_uuid = Uuid::new_v4().to_string();
+        self.master_addr = get_string_from_config(&config, &["server_config", "master_addr"]);
+        self.master_port = config["server_config"]["master_port"].as_u64().unwrap() as u16;
+        self.register_name = get_string_from_config(&config, &["server_config", "register_name"]);
 
         Ok(0)
     }
@@ -78,4 +88,3 @@ pub static CONFIG_FILE_HANDLE: Lazy<Mutex<File>> = Lazy::new(|| {
 });
 
 pub static GLOBAL_CONFIG: Lazy<RwLock<AllConfigs>> = Lazy::new(|| RwLock::new(AllConfigs::new()));
-
