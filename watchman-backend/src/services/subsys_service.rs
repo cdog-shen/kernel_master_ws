@@ -172,10 +172,18 @@ pub fn call<'a>(
             },
         };
 
-    let req = ureq::post(&target.url.unwrap())
-        .set("Content-Type", "application/json")
-        .set("Token", &target.token.unwrap())
-        .send_json(&subsys_params);
+    let req = ureq::post(
+        format!(
+            "{}/{}/{}",
+            &target.url.unwrap(),
+            &subsys_params["operation"],
+            &subsys_params["target"]
+        )
+        .as_str(),
+    )
+    .set("Content-Type", "application/json")
+    .set("Token", &target.token.unwrap())
+    .send_json(&subsys_params["data"]);
 
     let _resp = match req {
         Ok(resp) => {
