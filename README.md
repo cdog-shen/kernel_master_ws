@@ -18,7 +18,9 @@
 
 ## Subsystems
 
-Subsystem link to `watchman` service, called by `POST`ing `watchman/api/subsystem_call/{subsystem_name}/{operate}` from `watchman`
+Subsystem link to `watchman` service
+
+Called by `POST` to `watchman/api/subsystem_call/{subsystem_name}/{operate}` from `watchman`
 
 ### CMDB: Configuration Management Database for all instance
 
