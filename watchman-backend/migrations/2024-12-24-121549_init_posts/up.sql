@@ -9,11 +9,59 @@ CREATE TABLE `access_table` (
     `group_access` TINYINT UNSIGNED NOT NULL COMMENT "access type",
     `is_enable` TINYINT UNSIGNED NOT NULL COMMENT "status",
     `update_time` DATETIME NULL,
-    `comment` VARCHAR(255) NULL,
+    `comment` VARCHAR(255) NULL COMMENT "access comment",
     PRIMARY KEY (`id`),
     KEY `service_id_key` (`service_id`),
-    KEY `group_id_key` (`group_id`),
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT "access table";
+    KEY `group_id_key` (`group_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+INSERT INTO
+    `access_table`
+VALUES (
+        1,
+        1,
+        1,
+        2,
+        1,
+        '2024-12-01 00:00:00',
+        'auth:admin'
+    ),
+    (
+        2,
+        2,
+        1,
+        2,
+        1,
+        '2024-12-01 00:00:00',
+        'group_control:admin'
+    ),
+    (
+        3,
+        3,
+        1,
+        2,
+        1,
+        '2024-12-01 00:00:00',
+        'service_control:admin'
+    ),
+    (
+        4,
+        4,
+        1,
+        2,
+        1,
+        '2024-12-01 00:00:00',
+        'access_control:admin'
+    ),
+    (
+        5,
+        5,
+        1,
+        2,
+        1,
+        '2024-12-01 00:00:00',
+        'subsys_control:admin'
+    );
 
 -- 创建 group_table 表
 DROP TABLE IF EXISTS `group_table`;
@@ -26,7 +74,17 @@ CREATE TABLE `group_table` (
     `user_ids` VARCHAR(255) NOT NULL COMMENT "users in the group JSON array",
     PRIMARY KEY (`id`),
     UNIQUE KEY `name_unique` (`name`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT "group table";
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+INSERT INTO
+    `group_table`
+VALUES (
+        1,
+        'admin',
+        1,
+        '2024-12-01 00:00:00',
+        '[0]'
+    );
 
 -- 创建 service_table 表
 DROP TABLE IF EXISTS `service_table`;
@@ -41,7 +99,45 @@ CREATE TABLE `service_table` (
     UNIQUE KEY `service_name_unique` (`service_name`),
     KEY `service_name_key` (`service_name`),
     KEY `service_point_key` (`service_point`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT "service table";
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+INSERT INTO
+    `service_table`
+VALUES (
+        1,
+        'auth',
+        '/api/auth',
+        1,
+        '2024-12-01 00:00:00'
+    ),
+    (
+        2,
+        'group_control',
+        '/api/group_control',
+        1,
+        '2024-12-01 00:00:00'
+    ),
+    (
+        3,
+        'service_control',
+        '/api/service_control',
+        1,
+        '2024-12-01 00:00:00'
+    ),
+    (
+        4,
+        'access_control',
+        '/api/access_control',
+        1,
+        '2024-12-01 00:00:00'
+    ),
+    (
+        5,
+        'subsys_control',
+        '/api/subsystem_control',
+        1,
+        '2024-12-01 00:00:00'
+    );
 
 -- 创建 subsystem_table 表
 DROP TABLE IF EXISTS `subsystem_table`;
@@ -59,7 +155,7 @@ CREATE TABLE `subsystem_table` (
     KEY `subsys_name_key` (`subsys_name`),
     KEY `url_key` (`url`),
     KEY `relate_service_key` (`relate_service`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT "subsystem table";
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- 创建 token_table 表
 DROP TABLE IF EXISTS `token_table`;
@@ -70,7 +166,7 @@ CREATE TABLE `token_table` (
     `exp_time` TIMESTAMP NOT NULL COMMENT "token expire time",
     PRIMARY KEY (`tokenid`),
     UNIQUE KEY `username_unique` (`username`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT "token table";
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- 创建 user_table 表
 DROP TABLE IF EXISTS `user_table`;
@@ -88,4 +184,17 @@ CREATE TABLE `user_table` (
     UNIQUE KEY `username_unique` (`username`),
     KEY `username_key` (`username`),
     KEY `name_key` (`name`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT "user table";
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+INSERT INTO
+    `user_table`
+VALUES (
+        1,
+        'root',
+        'root',
+        1,
+        'root as admin',
+        NULL,
+        '2024-12-01 00:00:00',
+        NULL
+    );
