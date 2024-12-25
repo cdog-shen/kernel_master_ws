@@ -182,7 +182,7 @@ pub fn call<'a>(
         .as_str(),
     )
     .set("Content-Type", "application/json")
-    .set("Token", &target.token.unwrap())
+    .set("Authorization", &format!("uuid {}", &target.token.unwrap()))
     .send_json(&subsys_params["data"]);
 
     let _resp = match req {
