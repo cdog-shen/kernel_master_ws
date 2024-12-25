@@ -1,8 +1,10 @@
-# kernel_master_ws
+# About
 
 🎓 The workspace for my persional project kernel master (now it just a graduation project)
 
 ## Acknowledgements
+
+🙏 Thank the user [Jami](https://github.com/jami1024) for providing the system architecture ideas.
 
 🙏 Thank the user [SakaDream](https://github.com/SakaDream) for providing coding ideas on the project [actix-web-rest-api-with-jwt](https://github.com/SakaDream/actix-web-rest-api-with-jwt).
 
@@ -15,3 +17,11 @@
 🆔 [Watch man readme file](./watchman-backend/Readme.md)
 
 ## Subsystems
+
+Subsystem link to `watchman` service
+
+Called by `POST` to `watchman/api/subsystem_call/{subsystem_name}/{operate}` from `watchman`
+
+### CMDB: Configuration Management Database for all instance
+
+🗂️ [CMDB readme file](./cmdb-backend/Readme.md)
