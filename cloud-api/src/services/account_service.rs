@@ -65,7 +65,10 @@ pub fn delete<'a>(
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a>> {
     match CloudAccountModel::delete_account(
-        data.get("id").and_then(Value::as_u64).unwrap_or(0) as u32,
+        match data.get("id").and_then(Value::as_u64) {
+            Some(value) => value as u32,
+            None => return Err(MailManErr::new(400, "Bad requests", "id not found", 1)),
+        },
         &mut pool.get().unwrap(),
     ) {
         Ok(msg) => Ok(MailManOk::new(

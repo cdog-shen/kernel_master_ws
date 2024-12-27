@@ -26,6 +26,9 @@ pub struct AllConfigs {
     pub master_addr: String,
     pub master_port: u16,
     pub register_name: String,
+
+    pub python_path: String,
+    pub script_dir: String,
 }
 
 fn get_string_from_config(config: &Map<String, Value>, path: &[&str]) -> String {
@@ -49,6 +52,8 @@ impl AllConfigs {
             master_addr: String::new(),
             master_port: 8000,
             register_name: String::new(),
+            python_path: String::new(),
+            script_dir: String::new(),
         }
     }
 
@@ -77,6 +82,8 @@ impl AllConfigs {
         self.master_addr = get_string_from_config(&config, &["server_config", "master_addr"]);
         self.master_port = config["server_config"]["master_port"].as_u64().unwrap() as u16;
         self.register_name = get_string_from_config(&config, &["server_config", "register_name"]);
+        self.python_path = get_string_from_config(&config, &["server_config", "python_path"]);
+        self.script_dir = get_string_from_config(&config, &["server_config", "script_dir"]);
 
         Ok(0)
     }

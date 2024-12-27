@@ -36,105 +36,123 @@ pub struct LightEcsModel {
     pub update_at: Option<chrono::NaiveDateTime>,
 }
 
-impl LightEcsModel {
+#[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
+#[diesel(table_name = light_ecs_table)]
+pub struct LightEcsInfo {
+    pub id: Option<u64>,
+    pub project: Option<String>,
+    pub cloud_name: Option<String>,
+    pub region: Option<String>,
+    pub zone: Option<String>,
+    pub instance_id: Option<String>,
+    pub instance_name: Option<String>,
+    pub wip: Option<String>,
+    pub nip: Option<String>,
+    pub vpc_id: Option<String>,
+    pub subnet_id: Option<String>,
+    pub instance_type: Option<String>,
+    pub internet_charge_type: Option<String>,
+    pub status: Option<String>,
+    pub os_name: Option<String>,
+    pub os_type: Option<String>,
+    pub image_id: Option<String>,
+    pub bandwidth: Option<String>,
+    pub cloud_account: Option<String>,
+    pub is_link_server: Option<bool>,
+    pub create_at: Option<chrono::NaiveDateTime>,
+    pub update_at: Option<chrono::NaiveDateTime>,
+}
+
+impl LightEcsInfo {
     fn from_map(map: Map<String, Value>) -> Result<Self, String> {
-        Ok(LightEcsModel {
-            id: map.get("id").and_then(Value::as_u64).ok_or("id missing")?,
-            project: map
-                .get("project")
-                .and_then(Value::as_str)
-                .ok_or("project missing")?
-                .to_string(),
-            cloud_name: map
-                .get("cloud_name")
-                .and_then(Value::as_str)
-                .ok_or("cloud_name missing")?
-                .to_string(),
-            region: map
-                .get("region")
-                .and_then(Value::as_str)
-                .ok_or("region missing")?
-                .to_string(),
-            zone: map
-                .get("zone")
-                .and_then(Value::as_str)
-                .ok_or("zone missing")?
-                .to_string(),
-            instance_id: map
-                .get("instance_id")
-                .and_then(Value::as_str)
-                .ok_or("instance_id missing")?
-                .to_string(),
-            instance_name: map
-                .get("instanÏce_name")
-                .and_then(Value::as_str)
-                .ok_or("instance_name missing")?
-                .to_string(),
-            wip: map.get("wip").and_then(Value::as_str).map(String::from),
-            nip: map
-                .get("nip")
-                .and_then(Value::as_str)
-                .ok_or("nip missing")?
-                .to_string(),
-            vpc_id: map.get("vpc_id").and_then(Value::as_str).map(String::from),
-            subnet_id: map
-                .get("subnet_id")
-                .and_then(Value::as_str)
-                .map(String::from),
-            instance_type: map
-                .get("instance_type")
-                .and_then(Value::as_str)
-                .map(String::from),
-            internet_charge_type: map
-                .get("internet_charge_type")
-                .and_then(Value::as_str)
-                .ok_or("internet_charge_type missing")?
-                .to_string(),
-            status: map
-                .get("status")
-                .and_then(Value::as_str)
-                .ok_or("status missing")?
-                .to_string(),
-            os_name: map
-                .get("os_name")
-                .and_then(Value::as_str)
-                .ok_or("os_name missing")?
-                .to_string(),
-            os_type: map
-                .get("os_type")
-                .and_then(Value::as_str)
-                .ok_or("os_type missing")?
-                .to_string(),
-            image_id: map
-                .get("image_id")
-                .and_then(Value::as_str)
-                .ok_or("image_id missing")?
-                .to_string(),
-            bandwidth: map
-                .get("bandwidth")
-                .and_then(Value::as_str)
-                .ok_or("bandwidth missing")?
-                .to_string(),
-            cloud_account: map
-                .get("cloud_account")
-                .and_then(Value::as_str)
-                .ok_or("cloud_account missing")?
-                .to_string(),
-            is_link_server: map
-                .get("is_link_server")
-                .and_then(Value::as_bool)
-                .ok_or("is_link_server missing")?,
-            create_at: map
-                .get("create_at")
-                .and_then(Value::as_str)
-                .and_then(|s| chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S").ok()),
-            update_at: map
-                .get("update_at")
-                .and_then(Value::as_str)
-                .and_then(|s| chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S").ok()),
+        Ok(LightEcsInfo {
+            id: match map.get("id") {
+                Some(value) => Some(value.as_u64().unwrap()),
+                None => None,
+            },
+            project: match map.get("project") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            cloud_name: match map.get("cloud_name") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            region: match map.get("region") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            zone: match map.get("zone") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            instance_id: match map.get("instance_id") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            instance_name: match map.get("instance_name") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            wip: match map.get("wip") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            nip: match map.get("nip") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            vpc_id: match map.get("vpc_id") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            subnet_id: match map.get("subnet_id") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            instance_type: match map.get("instance_type") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            internet_charge_type: match map.get("internet_charge_type") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            status: match map.get("status") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            os_name: match map.get("os_name") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            os_type: match map.get("os_type") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            image_id: match map.get("image_id") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            bandwidth: match map.get("bandwidth") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            cloud_account: match map.get("cloud_account") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            is_link_server: match map.get("is_link_server") {
+                Some(value) => Some(value.as_bool().unwrap()),
+                None => None,
+            },
+            create_at: None,
+            update_at: Some(Local::now().naive_local()),
         })
     }
+}
 
+impl LightEcsModel {
     /// get user by id
     pub fn get_user_by_id(ecs_id: u64, conn: &mut MysqlConnection) -> Result<Value, (u8, String)> {
         match light_ecs_table
@@ -234,7 +252,7 @@ impl LightEcsModel {
         ecs_info: Map<String, Value>,
         conn: &mut MysqlConnection,
     ) -> Result<usize, (u8, String)> {
-        let ecs_info = match LightEcsModel::from_map(ecs_info) {
+        let ecs_info = match LightEcsInfo::from_map(ecs_info) {
             Ok(info) => info,
             Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
         };
@@ -252,11 +270,11 @@ impl LightEcsModel {
         ecs_info: Map<String, Value>,
         conn: &mut MysqlConnection,
     ) -> Result<usize, (u8, String)> {
-        let ecs_info = match LightEcsModel::from_map(ecs_info) {
+        let ecs_info = match LightEcsInfo::from_map(ecs_info) {
             Ok(info) => info,
             Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
         };
-        match diesel::update(light_ecs_table.filter(id.eq(ecs_info.id)))
+        match diesel::update(light_ecs_table.filter(id.eq(ecs_info.id.unwrap())))
             .set(&ecs_info)
             .execute(conn)
         {

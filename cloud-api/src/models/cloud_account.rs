@@ -22,54 +22,56 @@ pub struct CloudAccountModel {
     pub comment: Option<String>,
 }
 
-impl CloudAccountModel {
+#[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
+#[diesel(table_name = cloud_account)]
+pub struct CloudAccountInfo {
+    pub id: Option<u32>,
+    pub cloud_provider: Option<String>,
+    pub nick_name: Option<String>,
+    pub ak: Option<String>,
+    pub sk: Option<String>,
+    pub is_enable: Option<u8>,
+    pub update_time: Option<chrono::NaiveDateTime>,
+    pub comment: Option<String>,
+}
+
+impl CloudAccountInfo {
     fn from_map(map: Map<String, Value>) -> Result<Self, String> {
-        Ok(CloudAccountModel {
-            id: map
-                .get("id")
-                .and_then(Value::as_u64)
-                .and_then(|v| u32::try_from(v).ok())
-                .ok_or("id missing")?,
-            cloud_provider: map
-                .get("cloud_provider")
-                .and_then(Value::as_str)
-                .ok_or("cloud_provider missing")?
-                .to_string(),
-            nick_name: map
-                .get("nick_name")
-                .and_then(Value::as_str)
-                .ok_or("nick_name missing")?
-                .to_string(),
-            ak: map
-                .get("ak")
-                .and_then(Value::as_str)
-                .ok_or("ak missing")?
-                .to_string(),
-            sk: map
-                .get("sk")
-                .and_then(Value::as_str)
-                .ok_or("sk missing")?
-                .to_string(),
-            is_enable: map
-                .get("is_enable")
-                .and_then(Value::as_u64)
-                .and_then(|v| u8::try_from(v).ok())
-                .ok_or("is_enable missing")?,
-            update_time: map
-                .get("update_time")
-                .and_then(Value::as_str)
-                .map(|s| {
-                    chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S")
-                        .map_err(|_| "update_time parse error")
-                })
-                .transpose()?,
-            comment: map
-                .get("comment")
-                .and_then(Value::as_str)
-                .map(|s| s.to_string()),
+        Ok(CloudAccountInfo {
+            id: match map.get("id") {
+                Some(value) => Some(value.as_u64().unwrap() as u32),
+                None => None,
+            },
+            cloud_provider: match map.get("cloud_provider") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            nick_name: match map.get("nick_name") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            ak: match map.get("ak") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            sk: match map.get("sk") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
+            is_enable: match map.get("is_enable") {
+                Some(value) => Some(value.as_u64().unwrap() as u8),
+                None => None,
+            },
+            update_time: Some(Local::now().naive_local()),
+            comment: match map.get("comment") {
+                Some(value) => Some(value.as_str().unwrap().to_string()),
+                None => None,
+            },
         })
     }
+}
 
+impl CloudAccountModel {
     /// get account by id
     pub fn get_account_by_id(
         account_id: u32,
@@ -113,19 +115,11 @@ impl CloudAccountModel {
             Ok(vec_item_info) => Ok(vec_item_info
                 .into_iter()
                 .map(|item| {
-                    let mut item_map = serde_json::to_value(&item)
+                    let item_map = serde_json::to_value(&item)
                         .unwrap()
                         .as_object()
                         .unwrap()
                         .clone();
-                    item_map.insert(
-                        "create_at".to_string(),
-                        Value::String(Local::now().naive_local().to_string()),
-                    );
-                    item_map.insert(
-                        "update_at".to_string(),
-                        Value::String(Local::now().naive_local().to_string()),
-                    );
                     Value::Object(item_map)
                 })
                 .collect()),
@@ -139,7 +133,7 @@ impl CloudAccountModel {
         account_map: Map<String, Value>,
         conn: &mut MysqlConnection,
     ) -> Result<usize, (u8, String)> {
-        let new_account = match CloudAccountModel::from_map(account_map) {
+        let new_account = match CloudAccountInfo::from_map(account_map) {
             Ok(account) => account,
             Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
         };
@@ -156,11 +150,17 @@ impl CloudAccountModel {
         account_map: Map<String, Value>,
         conn: &mut MysqlConnection,
     ) -> Result<usize, (u8, String)> {
-        let update_account = match CloudAccountModel::from_map(account_map) {
-            Ok(account) => account,
+        let update_account = match CloudAccountInfo::from_map(account_map) {
+            Ok(account) => {
+                if let Some(_uid) = account.id {
+                    account
+                } else {
+                    return Err((UNKNOW_ERROR_CODE, "id is required".to_string()));
+                }
+            }
             Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
         };
-        match diesel::update(cloud_account.filter(id.eq(update_account.id)))
+        match diesel::update(cloud_account.filter(id.eq(update_account.id.unwrap())))
             .set(&update_account)
             .execute(conn)
         {

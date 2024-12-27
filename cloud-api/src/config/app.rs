@@ -25,7 +25,7 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                     .service(web::resource("/delete").route(web::delete().to(account_manage::delete))),
             )
             .service(
-                web::resource("/{provider}/{api_name}").route(web::post().to(script_caller::run)),
+                web::resource("/call").route(web::post().to(script_caller::run)),
             ),
     );
 }
