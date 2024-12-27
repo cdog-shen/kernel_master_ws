@@ -6,3 +6,4 @@
 watchman-backend/watchman_server.cfg
 cmdb-backend/cmdb_server.cfg
 **/.vscode/**
+**/__pycache__/**
