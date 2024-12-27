@@ -7,7 +7,6 @@ use crate::server::GLOBAL_CONFIG;
 
 // run cloud api script
 pub async fn run(req: web::Json<Value>) -> HttpResponse {
-    // let res: Result<String, String> = Ok(format!("need to impl. data: {}", req.to_string()));
     let api_name_str = req["api_name"].as_str().unwrap().to_string();
     let name_list = api_name_str.split("_").into_iter().collect::<Vec<&str>>();
     let script_path = GLOBAL_CONFIG.read().unwrap().script_dir.clone()
@@ -16,7 +15,6 @@ pub async fn run(req: web::Json<Value>) -> HttpResponse {
         + "/"
         + &api_name_str
         + ".py";
-    println!("script_path: {:?}", script_path);
 
     let output = std::process::Command::new(GLOBAL_CONFIG.read().unwrap().python_path.clone())
         .arg(script_path)
