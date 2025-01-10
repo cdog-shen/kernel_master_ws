@@ -34,6 +34,8 @@ diesel::table! {
         service_point -> Varchar,
         is_enable -> Unsigned<Tinyint>,
         create_time -> Nullable<Datetime>,
+        #[max_length = 255]
+        nick_name -> Varchar,
     }
 }
 

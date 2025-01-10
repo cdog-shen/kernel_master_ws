@@ -92,6 +92,7 @@ DROP TABLE IF EXISTS `service_table`;
 CREATE TABLE `service_table` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT "service id",
     `service_name` VARCHAR(255) NOT NULL COMMENT "service name",
+    `nick_name` VARCHAR(255) NOT NULL COMMENT "service nick name for web",
     `service_point` VARCHAR(255) NOT NULL COMMENT "service point route",
     `is_enable` TINYINT UNSIGNED NOT NULL COMMENT "status",
     `create_time` DATETIME NULL,
@@ -106,6 +107,7 @@ INSERT INTO
 VALUES (
         1,
         'auth',
+        '认证服务',
         '/api/auth',
         1,
         '2024-12-01 00:00:00'
@@ -113,6 +115,7 @@ VALUES (
     (
         2,
         'group_control',
+        '用户组控制',
         '/api/group_control',
         1,
         '2024-12-01 00:00:00'
@@ -120,6 +123,7 @@ VALUES (
     (
         3,
         'service_control',
+        '服务控制',
         '/api/service_control',
         1,
         '2024-12-01 00:00:00'
@@ -127,6 +131,7 @@ VALUES (
     (
         4,
         'access_control',
+        '权限控制',
         '/api/access_control',
         1,
         '2024-12-01 00:00:00'
@@ -134,6 +139,7 @@ VALUES (
     (
         5,
         'subsys_control',
+        '子系统控制',
         '/api/subsystem_control',
         1,
         '2024-12-01 00:00:00'
