@@ -36,6 +36,10 @@ pub fn new_subsys<'a>(
                 "bind_{}",
                 &subsys_info.subsys_name.clone().unwrap()
             )),
+            nick_name: Some(format!(
+                "subsystem_{}",
+                &subsys_info.subsys_name.clone().unwrap()
+            )),
             service_point: Some(format!(
                 "/subsystem/{}",
                 &subsys_info.subsys_name.clone().unwrap()

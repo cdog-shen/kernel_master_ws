@@ -33,6 +33,8 @@ pub struct ServiceModel {
     pub id: u32,
     #[diesel(column_name = service_name)]
     pub service_name: String,
+    #[diesel(column_name = nick_name)]
+    pub nick_name: String,
     #[diesel(column_name = service_point)]
     pub service_point: String,
     #[diesel(column_name = is_enable)]
@@ -46,6 +48,7 @@ pub struct ServiceModel {
 pub struct ServiceInputStream {
     pub id: Option<u32>,
     pub service_name: Option<String>,
+    pub nick_name: Option<String>,
     pub service_point: Option<String>,
     pub is_enable: Option<u8>,
     pub create_time: Option<chrono::NaiveDateTime>,
@@ -55,6 +58,7 @@ pub struct ServiceInputStream {
 pub struct ServiceOutputStream {
     pub id: Option<u32>,
     pub service_name: Option<String>,
+    pub nick_name: Option<String>,
     pub service_point: Option<String>,
     pub is_enable: Option<u8>,
     pub create_time: Option<chrono::NaiveDateTime>,
@@ -64,6 +68,7 @@ fn map_model_to_output_stream(service_info: ServiceModel) -> ServiceOutputStream
     ServiceOutputStream {
         id: Some(service_info.id),
         service_name: Some(service_info.service_name),
+        nick_name: Some(service_info.nick_name),
         service_point: Some(service_info.service_point),
         is_enable: Some(service_info.is_enable),
         create_time: service_info.create_time,
