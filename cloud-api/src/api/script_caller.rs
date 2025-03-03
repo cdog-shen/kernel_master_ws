@@ -43,3 +43,36 @@ pub async fn run(req: web::Json<Value>) -> HttpResponse {
         Err(err_data) => HttpResponse::InternalServerError().json(err_data.to_string()),
     }
 }
+
+// get cloud api script
+pub async fn get(req: web::Json<Value>) -> HttpResponse {
+    let script_path = GLOBAL_CONFIG.read().unwrap().script_dir.clone()
+        + "/"
+        + req["provider_name"].as_str().unwrap()
+        + "/"
+        + req["product_name"].as_str().unwrap();
+    let output = std::process::Command::new("ls").arg(script_path).output();
+
+    let res = match output {
+        Ok(output) => {
+            // 标准输出
+            if !output.stdout.is_empty() {
+                Ok(String::from_utf8(output.stdout).expect("Error: stdout is not utf8"))
+            } else if !output.stderr.is_empty() {
+                Ok(String::from_utf8(output.stderr).expect("Error: stdout is not utf8"))
+            } else {
+                Err("Nothing in stdout".to_string())
+            }
+        }
+        Err(e) => Err(format!("Error: {}", e)),
+    };
+
+    match res {
+        Ok(res_data) => HttpResponse::Ok().json(MailManOk::new(
+            200,
+            "Get success",
+            Some(serde_json::to_value(res_data).unwrap()),
+        )),
+        Err(err_data) => HttpResponse::InternalServerError().json(err_data.to_string()),
+    }
+}

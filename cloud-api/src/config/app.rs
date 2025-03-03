@@ -22,10 +22,14 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                     .service(web::resource("/get").route(web::get().to(account_manage::get_all)))
                     .service(web::resource("/new").route(web::post().to(account_manage::new)))
                     .service(web::resource("/update").route(web::post().to(account_manage::update)))
-                    .service(web::resource("/delete").route(web::delete().to(account_manage::delete))),
+                    .service(
+                        web::resource("/delete").route(web::delete().to(account_manage::delete)),
+                    ),
             )
             .service(
-                web::resource("/call").route(web::post().to(script_caller::run)),
+                web::scope("/script")
+                    .service(web::resource("/call").route(web::post().to(script_caller::run)))
+                    .service(web::resource("/get").route(web::post().to(script_caller::get)))
             ),
     );
 }
