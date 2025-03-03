@@ -41,7 +41,7 @@ pub fn new_subsys<'a>(
                 &subsys_info.subsys_name.clone().unwrap()
             )),
             service_point: Some(format!(
-                "/subsystem/{}",
+                "/api/subsystem_call/{}",
                 &subsys_info.subsys_name.clone().unwrap()
             )),
             is_enable: Some(1),
