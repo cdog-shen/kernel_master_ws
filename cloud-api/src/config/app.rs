@@ -10,7 +10,6 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
         web::scope("/api")
             .service(
                 web::resource("/hey")
-                    .route(web::get().to(hey_hi_hello::hey))
                     .route(web::post().to(hey_hi_hello::hey)),
             )
             .service(
@@ -19,11 +18,11 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
             )
             .service(
                 web::scope("/account_db")
-                    .service(web::resource("/get").route(web::get().to(account_manage::get_all)))
+                    .service(web::resource("/get").route(web::post().to(account_manage::get_all)))
                     .service(web::resource("/new").route(web::post().to(account_manage::new)))
                     .service(web::resource("/update").route(web::post().to(account_manage::update)))
                     .service(
-                        web::resource("/delete").route(web::delete().to(account_manage::delete)),
+                        web::resource("/delete").route(web::post().to(account_manage::delete)),
                     ),
             )
             .service(
