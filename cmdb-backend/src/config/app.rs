@@ -16,9 +16,20 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                 ),
             )
             .service(
-                web::scope("/{operation}").service(
-                    web::resource("/{db}").route(web::post().to(table_manage::db_operation)),
-                ),
+                web::scope("/get")
+                    .service(web::resource("/{db}").route(web::post().to(table_manage::get_table))),
+            )
+            .service(
+                web::scope("/new")
+                    .service(web::resource("/{db}").route(web::post().to(table_manage::new_table))),
+            )
+            .service(
+                web::scope("/update").service(
+                    web::resource("/{db}").route(web::post().to(table_manage::update_table))),
+            )
+            .service(
+                web::scope("/delete").service(
+                    web::resource("/{db}").route(web::post().to(table_manage::delete_table))),
             ),
     );
 }
