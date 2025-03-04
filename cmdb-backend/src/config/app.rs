@@ -14,23 +14,15 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                     .route(web::post().to(system_manage::refresh_master)),
             )
             .service(
-                web::scope("/cmdb")
-                    .service(
-                        web::resource("/get_all_table")
-                            .route(web::post().to(table_manage::get_all_table)),
-                    )
-                    .service(web::scope("/get").service(
-                        web::resource("/{table}").route(web::post().to(table_manage::get_table)),
-                    ))
-                    .service(web::scope("/new").service(
-                        web::resource("/{table}").route(web::post().to(table_manage::new_table)),
-                    ))
-                    .service(web::scope("/update").service(
-                        web::resource("/{table}").route(web::post().to(table_manage::update_table)),
-                    ))
-                    .service(web::scope("/delete").service(
-                        web::resource("/{table}").route(web::post().to(table_manage::delete_table)),
-                    )),
+                web::scope("/{table}")
+                    // .service(
+                    //     web::resource("/get_all_table")
+                    //         .route(web::post().to(table_manage::get_all_table)),
+                    // )
+                    .service(web::resource("/get").route(web::post().to(table_manage::get_table)))
+                    .service(web::resource("/new").route(web::post().to(table_manage::new_table)))
+                    .service(web::resource("/update").route(web::post().to(table_manage::update_table)))
+                    .service(web::resource("/delete").route(web::post().to(table_manage::delete_table)))
             ),
     );
 }
