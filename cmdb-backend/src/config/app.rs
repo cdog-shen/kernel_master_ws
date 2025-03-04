@@ -10,19 +10,15 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
         web::scope("/api")
             .service(web::resource("/hey").route(web::post().to(hey_hi_hello::hey)))
             .service(
-                web::resource("/refresh_master")
-                    .route(web::post().to(system_manage::refresh_master)),
+                web::scope("/manage").service(
+                    web::resource("/refresh_master")
+                        .route(web::post().to(system_manage::refresh_master)),
+                ),
             )
             .service(
-                web::scope("/{table}")
-                    // .service(
-                    //     web::resource("/get_all_table")
-                    //         .route(web::post().to(table_manage::get_all_table)),
-                    // )
-                    .service(web::resource("/get").route(web::post().to(table_manage::get_table)))
-                    .service(web::resource("/new").route(web::post().to(table_manage::new_table)))
-                    .service(web::resource("/update").route(web::post().to(table_manage::update_table)))
-                    .service(web::resource("/delete").route(web::post().to(table_manage::delete_table)))
+                web::scope("/{operation}").service(
+                    web::resource("/{db}").route(web::post().to(table_manage::db_operation)),
+                ),
             ),
     );
 }

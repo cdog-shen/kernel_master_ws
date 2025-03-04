@@ -15,16 +15,32 @@ use crate::services::instance::light_ecs_service;
 //     Ok(HttpResponse::Ok().json(data))
 // }
 
-// POST api/{table}/get
-pub async fn get_table(
-    table_name: web::Path<String>,
+// POST api/{operation}/{db}
+pub async fn db_operation(
+    operation: web::Path<String>,
+    db: web::Path<String>,
     data: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let table_name = table_name.into_inner();
+    let operation = operation.into_inner();
+    let db = db.into_inner();
     let data = data.into_inner();
 
-    match table_name.as_str() {
+    match operation.as_str() {
+        "get" => get_table(db.into(), data, pool).await,
+        "new" => new_table(db.into(), data, pool).await,
+        "update" => update_table(db.into(), data, pool).await,
+        "delete" => delete_table(db.into(), data, pool).await,
+        _ => Ok(HttpResponse::BadRequest().json("Operation not found")),
+    }
+}
+
+async fn get_table(
+    table_name: String,
+    data: Map<String, Value>,
+    pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<HttpResponse, actix_web::Error> {
+    match &table_name[..] {
         "light_ecs" => {
             let result = light_ecs_service::get_all(&data, &pool);
             match result {
@@ -36,16 +52,12 @@ pub async fn get_table(
     }
 }
 
-// POST api/{table}/new
-pub async fn new_table(
-    table_name: web::Path<String>,
-    data: web::Json<Map<String, Value>>,
+async fn new_table(
+    table_name: String,
+    data: Map<String, Value>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let table_name = table_name.into_inner();
-    let data = data.into_inner();
-
-    match table_name.as_str() {
+    match &table_name[..] {
         "light_ecs" => {
             let result = light_ecs_service::new_table(&data, &pool);
             match result {
@@ -57,16 +69,12 @@ pub async fn new_table(
     }
 }
 
-// POST api/{table}/update
-pub async fn update_table(
-    table_name: web::Path<String>,
-    data: web::Json<Map<String, Value>>,
+async fn update_table(
+    table_name: String,
+    data: Map<String, Value>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let table_name = table_name.into_inner();
-    let data = data.into_inner();
-
-    match table_name.as_str() {
+    match &table_name[..] {
         "light_ecs" => {
             let result = light_ecs_service::update_table(&data, &pool);
             match result {
@@ -78,16 +86,12 @@ pub async fn update_table(
     }
 }
 
-// POST api/{table}/delete
 pub async fn delete_table(
-    table_name: web::Path<String>,
-    data: web::Json<Map<String, Value>>,
+    table_name: String,
+    data: Map<String, Value>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let table_name = table_name.into_inner();
-    let data = data.into_inner();
-
-    match table_name.as_str() {
+    match &table_name[..] {
         "light_ecs" => {
             let result = light_ecs_service::delete_table(&data, &pool);
             match result {
