@@ -42,8 +42,8 @@ pub async fn run(
 
     let output = std::process::Command::new(GLOBAL_CONFIG.read().unwrap().python_path.clone())
         .arg(script_path)
-        .arg(cloud_user[0]["AK"].as_str().unwrap())
-        .arg(cloud_user[0]["SK"].as_str().unwrap())
+        .arg(cloud_user[0]["ak"].as_str().unwrap())
+        .arg(cloud_user[0]["sk"].as_str().unwrap())
         .arg(req["region"].as_str().unwrap())
         .arg(req["params"].as_str().unwrap())
         .output();
