@@ -26,10 +26,10 @@ pub async fn run(
     let mut filter = serde_json::Map::new();
     filter.insert(
         "nick_name".to_string(),
-        serde_json::Value::String(req["nick_name"].as_str().unwrap().to_string()),
+        serde_json::Value::String(req["cloud_user"].as_str().unwrap().to_string()),
     );
 
-    let cloud_access = match account_service::get_all(&filter, &pool) {
+    let cloud_user = match account_service::get_all(&filter, &pool) {
         Ok(data) => {
             let data_unwrapped = data.data.unwrap();
             if data_unwrapped.len() == 0 {
@@ -42,8 +42,8 @@ pub async fn run(
 
     let output = std::process::Command::new(GLOBAL_CONFIG.read().unwrap().python_path.clone())
         .arg(script_path)
-        .arg(cloud_access[0]["AK"].as_str().unwrap())
-        .arg(cloud_access[0]["SK"].as_str().unwrap())
+        .arg(cloud_user[0]["AK"].as_str().unwrap())
+        .arg(cloud_user[0]["SK"].as_str().unwrap())
         .arg(req["region"].as_str().unwrap())
         .arg(req["params"].as_str().unwrap())
         .output();
