@@ -1,12 +1,20 @@
 use actix_web::{web, HttpResponse};
+use diesel::{
+    r2d2::{ConnectionManager, Pool},
+    MysqlConnection,
+};
 use serde_json::Value;
 
 use share_lib::data_structure::MailManOk;
 
 use crate::server::GLOBAL_CONFIG;
+use crate::services::account_service;
 
 // run cloud api script
-pub async fn run(req: web::Json<Value>) -> HttpResponse {
+pub async fn run(
+    req: web::Json<Value>,
+    pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> HttpResponse {
     let api_name_str = req["api_name"].as_str().unwrap().to_string();
     let name_list = api_name_str.split("_").into_iter().collect::<Vec<&str>>();
     let script_path = GLOBAL_CONFIG.read().unwrap().script_dir.clone()
@@ -15,9 +23,29 @@ pub async fn run(req: web::Json<Value>) -> HttpResponse {
         + "/"
         + &api_name_str
         + ".py";
+    let mut filter = serde_json::Map::new();
+    filter.insert(
+        "nick_name".to_string(),
+        serde_json::Value::String(req["nick_name"].as_str().unwrap().to_string()),
+    );
+
+    let cloud_access = match account_service::get_all(&filter, &pool) {
+        Ok(data) => {
+            let data_unwrapped = data.data.unwrap();
+            if data_unwrapped.len() == 0 {
+                return HttpResponse::BadRequest().json("No account found");
+            }
+            data_unwrapped.clone()
+        }
+        Err(err) => return HttpResponse::BadRequest().json(err),
+    };
 
     let output = std::process::Command::new(GLOBAL_CONFIG.read().unwrap().python_path.clone())
         .arg(script_path)
+        .arg(cloud_access[0]["AK"].as_str().unwrap())
+        .arg(cloud_access[0]["SK"].as_str().unwrap())
+        .arg(req["region"].as_str().unwrap())
+        .arg(req["params"].as_str().unwrap())
         .output();
 
     let res = match output {
