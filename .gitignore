@@ -1,9 +1,15 @@
-**/target
-**/logs
-**/keys
-**/Cargo.lock
-**/.DS_Store
-watchman-backend/watchman_server.cfg
-cmdb-backend/cmdb_server.cfg
+# workspace files
 **/.vscode/**
 **/__pycache__/**
+**/keys
+**/target
+**/.DS_Store
+**/Cargo.lock
+
+# log files
+**/logs
+
+# config files
+watchman-backend/watchman_server.cfg
+cmdb-backend/cmdb_server.cfg
+cloud-api/cloud_api_server.cfg
