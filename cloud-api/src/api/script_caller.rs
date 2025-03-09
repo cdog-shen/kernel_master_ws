@@ -66,7 +66,7 @@ pub async fn run(
         Ok(res_data) => HttpResponse::Ok().json(MailManOk::new(
             200,
             "Call success",
-            Some(serde_json::to_value(res_data).unwrap()),
+            Some(serde_json::from_str::<Value>(&res_data).unwrap()),
         )),
         Err(err_data) => HttpResponse::InternalServerError().json(err_data.to_string()),
     }
