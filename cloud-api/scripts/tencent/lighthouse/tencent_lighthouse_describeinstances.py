@@ -12,7 +12,9 @@ import sys
 
 try:
     if len(sys.argv) != 5:
-        print("Usage: python tencent_lighthouse_describeinstances.py <AK> <SK> <region> <params>")
+        print(
+            "Usage: python tencent_lighthouse_describeinstances.py <AK> <SK> <region> <params>"
+        )
         sys.exit(1)
 
     AK = sys.argv[1]
@@ -28,8 +30,7 @@ try:
 
     resp = client.ClientHandler().DescribeInstances(req)
 
-    print(resp.to_json_string())
-
+    print(resp.to_json_string(), end="")
 
 except TencentCloudSDKException as err:
     print(err)
