@@ -15,7 +15,6 @@ pub struct AllConfigs {
     pub log_level: String,
 
     pub db_str: String,
-    pub mq_str: String,
 
     pub listen_addr: String,
     pub listen_port: u16,
@@ -44,7 +43,6 @@ impl AllConfigs {
             log_path: String::new(),
             log_level: String::new(),
             db_str: String::new(),
-            mq_str: String::new(),
             listen_addr: String::new(),
             listen_port: 9001,
             authenticate_bypass: vec![],
@@ -67,7 +65,6 @@ impl AllConfigs {
 
         self.log_path = get_string_from_config(&config, &["server_config", "log_path"]);
         self.db_str = get_string_from_config(&config, &["db_config", "db_str"]);
-        self.mq_str = get_string_from_config(&config, &["db_config", "mq_str"]);
         self.listen_addr = get_string_from_config(&config, &["server_config", "listen_addr"]);
         self.listen_port = config["server_config"]["listen_port"].as_u64().unwrap() as u16;
         self.authenticate_bypass = match &config["server_config"]["authenticate_bypass"] {
