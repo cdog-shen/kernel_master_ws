@@ -5,15 +5,15 @@ edition = "2021"
 
 [dependencies]
 # std dependencies
-once_cell = "1.20.3"
+once_cell = "1.21.0"
 log = "0.4.26"
 chrono = { version = "0.4.40", features = ["serde"] }
 # toml = "0.8.19"
 # basic web dependencies
-actix-web = "4.9.0"
+actix-web = "4.10.2"
 actix-rt = "2.10.0"
 actix-service = "2.0.3"
-actix-cors = "0.7.0"
+actix-cors = "0.7.1"
 futures = "0.3.31"
 # DB dependencies
 diesel_migrations = "2.2.0"
