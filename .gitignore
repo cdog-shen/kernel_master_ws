@@ -1,13 +1,17 @@
 # workspace files
 **/.vscode/**
 **/__pycache__/**
-**/keys
 **/target
 **/.DS_Store
 **/Cargo.lock
 
+# key files
+**/keys
+**/key
+
 # log files
 **/logs
+**/log
 
 # config files
 watchman-backend/watchman_server.cfg
