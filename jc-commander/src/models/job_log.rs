@@ -13,11 +13,12 @@ static UNKNOW_ERROR_CODE: u8 = 0;
 #[diesel(table_name = job_log)]
 pub struct JobLogModel {
     pub id: String,
+    pub script: String,
     pub type_: String,
     pub worker: Option<String>,
     pub status: u8,
     pub params: String,
-    pub result: String, // Added field
+    pub result: String, 
     pub create_time: Option<chrono::NaiveDateTime>,
     pub finish_time: Option<chrono::NaiveDateTime>,
     pub update_time: Option<chrono::NaiveDateTime>,
@@ -28,11 +29,12 @@ pub struct JobLogModel {
 #[diesel(table_name = job_log)]
 pub struct JobLogInfo {
     pub id: Option<String>,
+    pub script: Option<String>,
     pub type_: Option<String>,
     pub worker: Option<String>,
     pub status: Option<u8>,
     pub params: Option<String>,
-    pub result: Option<String>, // Added field
+    pub result: Option<String>,
     pub create_time: Option<chrono::NaiveDateTime>,
     pub finish_time: Option<chrono::NaiveDateTime>,
     pub update_time: Option<chrono::NaiveDateTime>,
@@ -44,6 +46,9 @@ impl JobLogInfo {
         Ok(JobLogInfo {
             id: map
                 .get("id")
+                .and_then(|v| v.as_str().map(|s| s.to_string())),
+            script: map
+                .get("script")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
             type_: map
                 .get("type")

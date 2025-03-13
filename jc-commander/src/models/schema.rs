@@ -4,6 +4,8 @@ diesel::table! {
     job_log (id) {
         #[max_length = 255]
         id -> Varchar,
+        #[max_length = 255]
+        script -> Varchar,
         #[sql_name = "type"]
         #[max_length = 255]
         type_ -> Varchar,

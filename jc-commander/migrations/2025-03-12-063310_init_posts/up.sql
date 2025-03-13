@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS `job_log`;
 
 CREATE TABLE `job_log` (
     `id` VARCHAR(255) NOT NULL COMMENT "job id",
+    `script` VARCHAR(255) NOT NULL COMMENT "script name",
     `type` VARCHAR(255) NOT NULL COMMENT "task type",
     `worker` VARCHAR(255) COMMENT "worker name",
     `status` TINYINT UNSIGNED NOT NULL COMMENT "status",
