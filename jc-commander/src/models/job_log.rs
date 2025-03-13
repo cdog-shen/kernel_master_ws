@@ -17,6 +17,7 @@ pub struct JobLogModel {
     pub worker: Option<String>,
     pub status: u16,
     pub params: String,
+    pub result: String, // Added field
     pub create_time: Option<chrono::NaiveDateTime>,
     pub finish_time: Option<chrono::NaiveDateTime>,
     pub update_time: Option<chrono::NaiveDateTime>,
@@ -31,6 +32,7 @@ pub struct JobLogInfo {
     pub worker: Option<String>,
     pub status: Option<u16>,
     pub params: Option<String>,
+    pub result: Option<String>, // Added field
     pub create_time: Option<chrono::NaiveDateTime>,
     pub finish_time: Option<chrono::NaiveDateTime>,
     pub update_time: Option<chrono::NaiveDateTime>,
@@ -53,6 +55,9 @@ impl JobLogInfo {
             params: map
                 .get("params")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
+            result: map
+                .get("result")
+                .and_then(|v| v.as_str().map(|s| s.to_string())), // Added field
             create_time: map.get("create_time").and_then(|v| {
                 v.as_str().and_then(|s| {
                     chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S").ok()

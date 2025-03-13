@@ -12,6 +12,8 @@ diesel::table! {
         status -> Unsigned<Smallint>,
         #[max_length = 255]
         params -> Varchar,
+        #[max_length = 255]
+        result -> Varchar,
         create_time -> Nullable<Datetime>,
         finish_time -> Nullable<Datetime>,
         update_time -> Nullable<Datetime>,
