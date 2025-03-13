@@ -9,6 +9,20 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 
 use crate::models::job_log::*;
 
+// get job by id
+pub fn get_by_id<'a>(
+    id: String,
+    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+) -> Result<MailManOk<'a, JobLogModel>, MailManErr<'a>> {
+    match JobLogModel::get_log_by_id(id, &mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "Job log found", Some(msg))),
+        Err(msg) => match msg.0 {
+            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
+    }
+}
+
 // get all job logs
 pub fn get_all<'a>(
     filter: &'a Map<String, Value>,
