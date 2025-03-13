@@ -8,6 +8,7 @@ CREATE TABLE `job_log` (
     `worker` VARCHAR(255) COMMENT "worker name",
     `status` SMALLINT UNSIGNED NOT NULL COMMENT "status",
     `params` VARCHAR(255) NOT NULL DEFAULT '{}' COMMENT "task params",
+    `result` VARCHAR(255) NOT NULL DEFAULT '{}' COMMENT "task result",
     `create_time` DATETIME NULL COMMENT "task create time",
     `finish_time` DATETIME NULL COMMENT "task finish time",
     `update_time` DATETIME NULL COMMENT "log update time",
