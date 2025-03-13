@@ -9,7 +9,7 @@ diesel::table! {
         type_ -> Varchar,
         #[max_length = 255]
         worker -> Nullable<Varchar>,
-        status -> Unsigned<Smallint>,
+        status -> Unsigned<Tinyint>,
         #[max_length = 255]
         params -> Varchar,
         #[max_length = 255]
