@@ -12,6 +12,7 @@ use share_lib::{cfg_reader::read_config, data_structure::MailManErr};
 #[derive(Debug, Deserialize)]
 pub struct AllConfigs {
     pub subsys_uuid: String,
+    pub commander_addr: String,
 
     pub log_path: String,
     pub log_level: String,
@@ -34,6 +35,7 @@ impl AllConfigs {
     pub fn new() -> Self {
         Self {
             subsys_uuid: String::new(),
+            commander_addr: String::new(),
             log_path: String::new(),
             log_level: String::new(),
             mq_str: String::new(),
@@ -49,12 +51,11 @@ impl AllConfigs {
             Err(e) => return Err(e),
         };
 
-        println!("{:?}", config["server_config"]["log_path"]);
-
+        self.subsys_uuid = Uuid::new_v4().to_string();
+        self.commander_addr = get_string_from_config(&config, &["server_config", "commander_addr"]);
         self.log_path = get_string_from_config(&config, &["server_config", "log_path"]);
         self.mq_str = get_string_from_config(&config, &["mq_config", "mq_str"]);
         self.mq_queue_prefix = get_string_from_config(&config, &["mq_config", "queue_prefix"]);
-        self.subsys_uuid = Uuid::new_v4().to_string();
         self.python_path = get_string_from_config(&config, &["server_config", "python_path"]);
         self.script_dir = get_string_from_config(&config, &["server_config", "script_dir"]);
 
