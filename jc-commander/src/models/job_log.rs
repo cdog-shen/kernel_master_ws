@@ -15,6 +15,7 @@ pub struct JobLogModel {
     pub id: String,
     pub script: String,
     pub type_: String,
+    pub commander: String,
     pub worker: Option<String>,
     pub status: u8,
     pub params: String,
@@ -31,6 +32,7 @@ pub struct JobLogInfo {
     pub id: Option<String>,
     pub script: Option<String>,
     pub type_: Option<String>,
+    pub commander: Option<String>,
     pub worker: Option<String>,
     pub status: Option<u8>,
     pub params: Option<String>,
@@ -52,6 +54,9 @@ impl JobLogInfo {
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
             type_: map
                 .get("type")
+                .and_then(|v| v.as_str().map(|s| s.to_string())),
+            commander: map
+                .get("commander")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
             worker: map
                 .get("worker")

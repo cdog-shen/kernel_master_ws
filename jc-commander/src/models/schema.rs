@@ -10,6 +10,8 @@ diesel::table! {
         #[max_length = 255]
         type_ -> Varchar,
         #[max_length = 255]
+        commander -> Varchar,
+        #[max_length = 255]
         worker -> Nullable<Varchar>,
         status -> Unsigned<Tinyint>,
         #[max_length = 255]

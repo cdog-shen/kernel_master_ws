@@ -6,6 +6,7 @@ CREATE TABLE `job_log` (
     `id` VARCHAR(255) NOT NULL COMMENT "job id",
     `script` VARCHAR(255) NOT NULL COMMENT "script name",
     `type` VARCHAR(255) NOT NULL COMMENT "task type",
+    `commander` VARCHAR(255) NOT NULL COMMENT "commander id",
     `worker` VARCHAR(255) COMMENT "worker name",
     `status` TINYINT UNSIGNED NOT NULL COMMENT "status",
     `params` VARCHAR(255) NOT NULL DEFAULT '{}' COMMENT "task params",
