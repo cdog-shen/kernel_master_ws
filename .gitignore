@@ -1,8 +1,21 @@
+# workspace files
+**/.vscode/**
+**/__pycache__/**
 **/target
-**/logs
-**/keys
-**/Cargo.lock
 **/.DS_Store
+**/Cargo.lock
+
+# key files
+**/keys
+**/key
+
+# log files
+**/logs
+**/log
+
+# config files
 watchman-backend/watchman_server.cfg
 cmdb-backend/cmdb_server.cfg
-**/.vscode/**
+cloud-api/cloud_api_server.cfg
+jc-commander/job_center_commander.cfg
+jc-worker/job_center_worker.cfg

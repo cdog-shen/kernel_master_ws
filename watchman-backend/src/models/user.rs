@@ -80,10 +80,7 @@ impl UserModel {
         {
             Ok(user_info) => Ok(map_model_to_output_stream(user_info)),
             Err(NotFound) => Err((NOT_FOUND_CODE, format!("NotFound {}.", user_name))),
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 
@@ -99,10 +96,7 @@ impl UserModel {
         {
             Ok(user_info) => Ok(map_model_to_output_stream(user_info)),
             Err(NotFound) => Err((NOT_FOUND_CODE, format!("NotFound {}.", uid))),
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 
@@ -123,10 +117,7 @@ impl UserModel {
                 NOT_FOUND_CODE,
                 format!("Login filed: {}.", &user_data.username.clone().unwrap()),
             )),
-            Err(e) => Err((
-                UNKNOW_ERROR_CODE,
-                format!("Unknow Error: {}.", e),
-            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
 
@@ -180,6 +171,7 @@ impl UserModel {
             .values((
                 username.eq(&user_data.username.clone().unwrap()),
                 passwd.eq(&user_data.passwd.clone().unwrap_or("".to_string())),
+                is_enable.eq(0),
                 date_joined.eq(Local::now().naive_local()),
             ))
             .execute(conn)

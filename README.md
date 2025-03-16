@@ -25,3 +25,7 @@ Called by `POST` to `watchman/api/subsystem_call/{subsystem_name}/{operate}` fro
 ### CMDB: Configuration Management Database for all instance
 
 🗂️ [CMDB readme file](./cmdb-backend/Readme.md)
+
+### Cloud-API: A unified interface subsystem for cloud asset rights management and invocation
+
+☁️ [Cloud-API readme file](./cloud-api/Readme.md)

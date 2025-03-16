@@ -10,15 +10,15 @@ use serde_json::{Map, Value};
 use crate::services::instance::light_ecs_service;
 
 // GET api/cmdb/get_all_table
-pub async fn get_all_table() -> Result<HttpResponse, actix_web::Error> {
-    let data = serde_json::json!(["light_ecs",]);
-    Ok(HttpResponse::Ok().json(data))
-}
+// pub async fn get_all_table() -> Result<HttpResponse, actix_web::Error> {
+//     let data = serde_json::json!(["light_ecs",]);
+//     Ok(HttpResponse::Ok().json(data))
+// }
 
-// GET api/cmdb/get/{table}
+// POST api/get/{table}
 pub async fn get_table(
     table_name: web::Path<String>,
-    query: web::Query<Map<String, Value>>,
+    query: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let table_name = table_name.into_inner();
@@ -36,7 +36,7 @@ pub async fn get_table(
     }
 }
 
-// POST api/cmdb/new/{table}
+// POST api/new/{table}
 pub async fn new_table(
     table_name: web::Path<String>,
     data: web::Json<Map<String, Value>>,
@@ -57,7 +57,7 @@ pub async fn new_table(
     }
 }
 
-// POST api/cmdb/update/{table}
+// POST api/update/{table}
 pub async fn update_table(
     table_name: web::Path<String>,
     data: web::Json<Map<String, Value>>,
@@ -78,7 +78,7 @@ pub async fn update_table(
     }
 }
 
-// DELETE api/cmdb/delete/{table}
+// DELETE api/delete/{table}
 pub async fn delete_table(
     table_name: web::Path<String>,
     data: web::Json<Map<String, Value>>,

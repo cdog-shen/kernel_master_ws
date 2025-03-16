@@ -1,0 +1,27 @@
+[package]
+name = "jc-worker"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# std dependencies
+once_cell = "1.21.1"
+log = "0.4.26"
+chrono = { version = "0.4.40", features = ["serde"] }
+futures = "0.3.31"
+tokio = { version = "1.44.1", features = ["full"] }
+# toml = "0.8.19"
+# DB dependencies
+# diesel_migrations = "2.2.0"
+# diesel = { version = "2.2.8", features = ["mysql", "r2d2", "chrono"] }
+# serializtion dependencies
+serde = "1.0.219"
+serde_derive = "1.0.219"
+serde_json = "1.0.140"
+uuid = { version = "1.16.0", features = ["v4"] }
+# RPC dependencies
+ureq = { version = "3.0.9" }
+# MQ dependencies
+lapin = "2.5.1"
+# share-lib utils
+share-lib = { path = "../share-lib" }

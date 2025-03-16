@@ -36,8 +36,12 @@ pub fn new_subsys<'a>(
                 "bind_{}",
                 &subsys_info.subsys_name.clone().unwrap()
             )),
+            nick_name: Some(format!(
+                "subsystem_{}",
+                &subsys_info.subsys_name.clone().unwrap()
+            )),
             service_point: Some(format!(
-                "/subsystem/{}",
+                "/api/subsystem_call/{}",
                 &subsys_info.subsys_name.clone().unwrap()
             )),
             is_enable: Some(1),
@@ -176,8 +180,8 @@ pub fn call<'a>(
         format!(
             "{}/{}/{}",
             &target.url.unwrap(),
-            &subsys_params["operation"],
-            &subsys_params["target"]
+            &subsys_params["operation"].as_str().unwrap(),
+            &subsys_params["target"].as_str().unwrap(),
         )
         .as_str(),
     )
