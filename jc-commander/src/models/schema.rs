@@ -6,9 +6,8 @@ diesel::table! {
         id -> Varchar,
         #[max_length = 255]
         script -> Varchar,
-        #[sql_name = "type"]
         #[max_length = 255]
-        type_ -> Varchar,
+        exec_type -> Varchar,
         #[max_length = 255]
         commander -> Varchar,
         #[max_length = 255]

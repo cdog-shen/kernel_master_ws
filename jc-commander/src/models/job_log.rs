@@ -14,7 +14,7 @@ static UNKNOW_ERROR_CODE: u8 = 0;
 pub struct JobLogModel {
     pub id: String,
     pub script: String,
-    pub type_: String,
+    pub exec_type: String,
     pub commander: String,
     pub worker: Option<String>,
     pub status: u8,
@@ -31,7 +31,7 @@ pub struct JobLogModel {
 pub struct JobLogInfo {
     pub id: Option<String>,
     pub script: Option<String>,
-    pub type_: Option<String>,
+    pub exec_type: Option<String>,
     pub commander: Option<String>,
     pub worker: Option<String>,
     pub status: Option<u8>,
@@ -52,7 +52,7 @@ impl JobLogInfo {
             script: map
                 .get("script")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
-            type_: map
+            exec_type: map
                 .get("type")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
             commander: map
@@ -105,9 +105,9 @@ impl JobLogModel {
 
         for (q_k, q_v) in filter.iter() {
             match q_k.as_str() {
-                "type_" => {
+                "exec_type" => {
                     if let Some(value) = q_v.as_str() {
-                        query = query.filter(type_.eq(value));
+                        query = query.filter(exec_type.eq(value));
                     }
                 }
                 "worker" => {
