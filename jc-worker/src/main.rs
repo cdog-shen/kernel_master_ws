@@ -180,7 +180,7 @@ async fn main() {
             let mut consumer = sync_consumer;
             while let Some(delivery) = consumer.next().await {
                 if let Ok(delivery) = delivery {
-                    println!("Received from SYNC queue: {:?}", delivery.data);
+                    MailManOk::new(200, "Recv new SYNC task", None::<&str>);
                     sync_task::execute(&delivery.data).await;
                     delivery.ack(BasicAckOptions::default()).await.expect("Failed to ack");
                 }
@@ -190,7 +190,7 @@ async fn main() {
             let mut consumer = async_consumer;
             while let Some(delivery) = consumer.next().await {
                 if let Ok(delivery) = delivery {
-                    println!("Received from ASYNC queue: {:?}", delivery.data);
+                    MailManOk::new(200, "Recv new ASYNC task", None::<&str>);
                     async_task::execute(&delivery.data).await;
                     delivery.ack(BasicAckOptions::default()).await.expect("Failed to ack");
                 }
