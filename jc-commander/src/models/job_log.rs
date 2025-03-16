@@ -53,7 +53,7 @@ impl JobLogInfo {
                 .get("script")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
             exec_type: map
-                .get("type")
+                .get("exec_type")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
             commander: map
                 .get("commander")
