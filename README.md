@@ -1,6 +1,6 @@
 # About
 
-🎓 The workspace for my persional project kernel master (now it just a graduation project)
+🎓 The workspace for my personal project kernel master (now it just a graduation project)
 
 ## Acknowledgements
 
@@ -29,3 +29,11 @@ Called by `POST` to `watchman/api/subsystem_call/{subsystem_name}/{operate}` fro
 ### Cloud-API: A unified interface subsystem for cloud asset rights management and invocation
 
 ☁️ [Cloud-API readme file](./cloud-api/Readme.md)
+
+### Job-Center: A subsystem for executing synchronous/asynchronous scripts
+
+This subsystem is divided into two parts: the worker and the commander.
+
+📡 [controller readme file](./jc-commander/Readme.md)
+
+📋 [worker readme file](./jc-worker/Readme.md)
