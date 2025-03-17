@@ -31,6 +31,11 @@ The Cloud API service is responsible for managing cloud resources and providing 
 
 ## Deployment
 
+- dependence service
+
+    - MySQL >= 8.0
+    - Python >= 3.9 (with  requirement)
+
 ### Config file
 
 The name of the configuration file is `cloud_api_server.cfg`.

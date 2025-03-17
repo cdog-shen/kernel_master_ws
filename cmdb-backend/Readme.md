@@ -31,6 +31,10 @@ The CMDB service is responsible for managing all configuration information, whic
 
 ## Deployment
 
+- dependence service
+
+    - MySQL >= 8.0
+
 ### Config file
 
 The name of the configuration file is `cmdb_server.cfg`.

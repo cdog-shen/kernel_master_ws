@@ -33,6 +33,11 @@ The worker is not directly connected to the database.
 
 ## Deployment
 
+- dependence service
+
+    - rabbitMQ >= 4.0
+    - Python >= 3.9 (with requirement)
+
 ### Config file
 
 The name of the configuration file is `job_center_worker.cfg`.

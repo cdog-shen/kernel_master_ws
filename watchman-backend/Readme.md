@@ -166,6 +166,10 @@ all api started with `/api` scope.
 
 ## Deployment
 
+- dependence service
+
+    - MySQL >= 8.0
+
 ### Config file
 
 The name of the configuration file is `watchman_server.cfg`.

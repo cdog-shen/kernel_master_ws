@@ -39,6 +39,12 @@ The commander is used to publish task messages to the message queue and record a
 
 ## Deployment
 
+- dependence service
+
+    - MySQL >= 8.0
+
+    - rabbitMQ >= 4.0
+
 ### Config file
 
 The name of the configuration file is `job_center_commander.cfg`.
