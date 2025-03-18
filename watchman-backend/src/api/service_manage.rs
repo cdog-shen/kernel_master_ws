@@ -6,8 +6,8 @@ use diesel::{
 use serde_json::{Map, Value};
 
 use crate::{
-    models::service::ServiceInputStream, services::service_service,
-    utils::err_mapping::MailManErrResponser,
+    model::service::ServiceInputStream, service::service_service,
+    util::err_mapping::MailManErrResponser,
 };
 
 // GET api/service_control/all_service

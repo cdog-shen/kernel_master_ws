@@ -8,7 +8,7 @@ use serde_json::{Map, Value};
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::models::{access::*, service::*};
+use crate::model::{access::*, service::*};
 
 /// all_service api logic
 pub fn all_service<'a>(

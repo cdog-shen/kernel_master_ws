@@ -8,7 +8,7 @@ use ureq;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::models::{access::*, service::*, subsys::*};
+use crate::model::{access::*, service::*, subsys::*};
 
 /// all_subsys api logic
 pub fn all_subsys<'a>(

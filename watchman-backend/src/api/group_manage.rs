@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 use crate::{
-    models::group::GroupInputStream, services::group_service,
-    utils::err_mapping::MailManErrResponser,
+    model::group::GroupInputStream, service::group_service,
+    util::err_mapping::MailManErrResponser,
 };
 
 #[derive(Serialize, Deserialize, Debug)]

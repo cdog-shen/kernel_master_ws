@@ -5,7 +5,7 @@ use diesel::{
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use crate::models::schema::access_table::{self, dsl::*};
+use crate::model::schema::access_table::{self, dsl::*};
 
 static NOT_FOUND_CODE: u8 = 1;
 static TMI_ERROR_CODE: u8 = 2;

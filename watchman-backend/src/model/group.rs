@@ -2,7 +2,7 @@ use chrono::{self, Local};
 use diesel::{prelude::*, result::Error::NotFound};
 use serde::{Deserialize, Serialize};
 
-use crate::models::schema::group_table::{self, dsl::*};
+use crate::model::schema::group_table::{self, dsl::*};
 
 static NOT_FOUND_CODE: u8 = 1;
 static TMI_ERROR_CODE: u8 = 2;

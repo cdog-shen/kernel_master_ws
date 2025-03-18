@@ -6,8 +6,8 @@ use diesel::{
 use serde_json::{Map, Value};
 
 use crate::{
-    models::subsys::SubsysInputStream, services::subsys_service,
-    utils::err_mapping::MailManErrResponser,
+    model::subsys::SubsysInputStream, service::subsys_service,
+    util::err_mapping::MailManErrResponser,
 };
 
 // GET api/subsystem_control/all_subsystem

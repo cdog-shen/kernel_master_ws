@@ -10,7 +10,7 @@ use serde_json::{Map, Value};
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::models::{access::*, group::*, service::*, user::*, user_token::*};
+use crate::model::{access::*, group::*, service::*, user::*, user_token::*};
 
 /// token Response json data
 #[derive(Serialize, Deserialize)]

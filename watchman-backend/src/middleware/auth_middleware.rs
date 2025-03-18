@@ -20,7 +20,7 @@ use share_lib::data_structure::MailManErr;
 // use share_lib::{log_debug, log_error};
 
 use crate::{
-    models::{
+    model::{
         access::AccessModel,
         group::GroupModel,
         service::ServiceModel,

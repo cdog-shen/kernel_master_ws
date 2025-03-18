@@ -10,7 +10,7 @@ use uuid::Uuid;
 use share_lib::log_debug;
 
 use crate::{
-    models::schema::token_table::{self, dsl::*},
+    model::schema::token_table::{self, dsl::*},
     server::SECRET_KEY,
 };
 

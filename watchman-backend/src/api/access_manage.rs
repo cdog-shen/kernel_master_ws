@@ -6,8 +6,8 @@ use diesel::{
 use serde_json::{Map, Value};
 
 use crate::{
-    models::access::AccessInputStream, services::access_service,
-    utils::err_mapping::MailManErrResponser,
+    model::access::AccessInputStream, service::access_service,
+    util::err_mapping::MailManErrResponser,
 };
 
 // GET api/access_control/all_access

@@ -3,7 +3,7 @@ use diesel::{prelude::*, result::Error::NotFound, MysqlConnection};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use crate::models::schema::subsystem_table::{self, dsl::*};
+use crate::model::schema::subsystem_table::{self, dsl::*};
 
 static NOT_FOUND_CODE: u8 = 1;
 static TMI_ERROR_CODE: u8 = 2;

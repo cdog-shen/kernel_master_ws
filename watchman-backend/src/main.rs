@@ -24,9 +24,9 @@ use config::server;
 mod api;
 mod config;
 mod middleware;
-mod models;
-mod services;
-mod utils;
+mod model;
+mod service;
+mod util;
 
 #[actix_rt::main]
 async fn main() -> io::Result<()> {
