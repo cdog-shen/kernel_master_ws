@@ -1,3 +1,11 @@
+
+<div align="center">
+  <p>
+    <a href="./README_ZH-CN.md">🇨🇳 简体中文</a> | 
+    <a href="./README.md">🇺🇸 English</a> | 
+  </p>
+</div>
+
 # About
 
 🎓 The workspace for my personal project kernel master (now it just a graduation project)
