@@ -1,49 +1,49 @@
 # cloud-api
 
-The Cloud API service is responsible for managing cloud resources and providing APIs for other services.
+Cloud API 服务负责管理云资源并为其他服务提供 API。
 
-## Dependence
+## 依赖
 
-- std dependencies
+- 标准依赖
     - once_cell = "1.20.2"
     - log = "0.4.22"
     - chrono = { version = "0.4.39", features = ["serde"] }
 
-- basic web dependencies
+- 基本 web 依赖
     - actix-web = "4.9.0"
     - actix-rt = "2.10.0"
     - actix-service = "2.0.2"
     - actix-cors = "0.7.0"
     - futures = "0.3.31"
 
-- DB dependencies
+- 数据库依赖
     - diesel_migrations = "2.2.0"
     - diesel = { version = "2.2.6", features = ["mysql", "r2d2", "chrono"] }
 
-- serialization dependencies
+- 序列化依赖
     - serde = "1.0.216"
     - serde_derive = "1.0.216"
     - serde_json = "1.0.133"
     - uuid = { version = "1.11.0", features = ["v4"] }
 
-- RPC dependencies
+- RPC 依赖
     - ureq = { version = "2.12.1", features = ["charset", "json"] }
 
-- share-lib utils
+- 共享库工具
     - share-lib = { path = "../share-lib" }
 
-## DB structure
+## 数据库结构
 
-## Deployment
+## 部署
 
-- dependence service
+- 依赖服务
 
     - MySQL >= 8.0
-    - Python >= 3.9 (with  requirement)
+    - Python >= 3.9 (有相关需求)
 
-### Config file
+### 配置文件
 
-The name of the configuration file is `cloud_api_server.cfg`.
+配置文件的名称是 `cloud_api_server.cfg`。
 
 ```toml
 [server_config]

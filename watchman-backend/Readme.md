@@ -100,15 +100,18 @@ all api started with `/api` scope.
     - once_cell = "1.20.2"
     - log = "0.4.22"
     - chrono = { version = "0.4.39", features = ["serde"] }
+
 - basic web dependencies
     - actix-web = "4.9.0"
     - actix-rt = "2.10.0"
     - actix-service = "2.0.2"
     - actix-cors = "0.7.0"
     - futures = "0.3.31"
+
 - DB dependencies
     - diesel_migrations = "2.2.0"
     - diesel = { version = "2.2.6", features = ["mysql", "r2d2", "chrono"] }
+
 - serializtion dependencies
     - serde = "1.0.216"
     - serde_derive = "1.0.216"
@@ -117,6 +120,7 @@ all api started with `/api` scope.
     - bcrypt = "0.16.0"
     - base64 = "0.22.1"
     - uuid = { version = "1.11.0", features = ["v4"] }
+
 - share-lib utils
     - share-lib = { path = "../share-lib" }
 
@@ -166,6 +170,10 @@ all api started with `/api` scope.
 
 ## Deployment
 
+- dependence service
+
+    - MySQL >= 8.0
+
 ### Config file
 
 The name of the configuration file is `watchman_server.cfg`.
@@ -194,7 +202,7 @@ key1 = "v1"
 
     I choose the latest version [(9.1.0)](https://cdn.mysql.com/archives/mysql-9.0/mysql-9.0.1-winx64.zip)
 
-    Or the C++ connector, I think it is OKEY but I'm too tired to try it `:(`
+    Or the `C++ connector`, I think it is OKEY but I'm too tired to try it `:(`
 
 2. create a copy of **mysql-9.0.1-winx64\lib\mysqlclient.lib** and name it **mysql-9.0.1-winx64\lib\libmysqlclient.lib**
 
