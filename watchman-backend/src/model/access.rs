@@ -262,8 +262,18 @@ impl AccessModel {
         access_info: &AccessInputStream,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
+        let access_info = AccessInputStream {
+            id: access_info.id,
+            service_id: access_info.service_id,
+            group_id: access_info.group_id,
+            group_access: access_info.group_access,
+            is_enable: access_info.is_enable,
+            update_time: Some(Local::now().naive_local()),
+            comment: access_info.comment.clone(),
+        };
+
         match diesel::update(access_table.find(access_info.id.unwrap()))
-            .set(access_info)
+            .set(&access_info)
             .execute(conn)
         {
             Ok(num_of_eff) => match num_of_eff {
