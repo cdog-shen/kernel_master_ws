@@ -12,9 +12,9 @@ use crate::model::{access::*, service::*, subsys::*};
 
 /// all_subsys api logic
 pub fn all_subsys<'a>(
-    filter: &Map<String, Value>,
+    filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, Vec<SubsysOutputStream>>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, Vec<SubsysModel>>, MailManErr<'a>> {
     match SubsysModel::get_all_with_filter(filter.clone(), &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "All Subsystem info", Some(msg))),
         Err(msg) => match msg.0 {
@@ -26,29 +26,29 @@ pub fn all_subsys<'a>(
 
 /// new_subsys api logic
 pub fn new_subsys<'a>(
-    subsys_info: &SubsysInputStream,
+    subsys_info: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
-    match ServiceModel::new_service(
-        &ServiceInputStream {
-            id: None,
-            service_name: Some(format!(
-                "bind_{}",
-                &subsys_info.subsys_name.clone().unwrap()
-            )),
-            nick_name: Some(format!(
-                "subsystem_{}",
-                &subsys_info.subsys_name.clone().unwrap()
-            )),
-            service_point: Some(format!(
-                "/api/subsystem_call/{}",
-                &subsys_info.subsys_name.clone().unwrap()
-            )),
-            is_enable: Some(1),
-            create_time: None,
-        },
-        &mut pool.get().unwrap(),
-    ) {
+    let subsys_name = subsys_info.get("subsys_name").unwrap().to_string();
+
+    let bind_service_info: Map<String, Value> = serde_json::from_value(serde_json::json!({
+        "service_name": Some(format!(
+            "bind_{}",
+            &subsys_name
+        )),
+        "nick_name": Some(format!(
+            "subsystem_{}",
+            &subsys_name
+        )),
+        "service_point": Some(format!(
+            "/api/subsystem_call/{}",
+            &subsys_name
+        )),
+        "is_enable": Some(1),
+    }))
+    .unwrap();
+
+    match ServiceModel::new_service(bind_service_info, &mut pool.get().unwrap()) {
         Ok(msg) => MailManOk::new(200, "Subsystem bind service created", Some(msg)),
         Err(msg) => match msg.0 {
             0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
@@ -71,7 +71,7 @@ pub fn new_subsys<'a>(
 
 /// update_subsys api logic
 pub fn update_subsys<'a>(
-    subsys_info: &SubsysInputStream,
+    subsys_info: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
     match SubsysModel::update_meta_by_id(subsys_info, &mut pool.get().unwrap()) {
@@ -89,17 +89,18 @@ pub fn update_subsys<'a>(
 
 /// delete_subsys api logic
 pub fn delete_subsys<'a>(
-    subsys_meta_id: u32,
+    subsys_meta_id: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
-    let bind_service_id =
-        match SubsysModel::get_meta_by_id(subsys_meta_id, &mut pool.get().unwrap()) {
-            Ok(sub_meta) => sub_meta.relate_service.unwrap(),
-            Err(msg) => match msg.0 {
-                0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-                _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
-            },
-        };
+    let subsys_id = subsys_meta_id.get("id").unwrap().as_u64().unwrap() as u32;
+
+    let bind_service_id = match SubsysModel::get_meta_by_id(subsys_id, &mut pool.get().unwrap()) {
+        Ok(sub_meta) => sub_meta.relate_service.unwrap(),
+        Err(msg) => match msg.0 {
+            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+        },
+    };
 
     let access_target: Vec<u32> =
         match AccessModel::get_access_by_sids(vec![bind_service_id], &mut pool.get().unwrap()) {
@@ -149,7 +150,7 @@ pub fn delete_subsys<'a>(
         },
     };
 
-    match SubsysModel::delete_meta_by_id(subsys_meta_id, &mut pool.get().unwrap()) {
+    match SubsysModel::delete_meta_by_id(subsys_id, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Subsystem meta data deleted",
@@ -179,14 +180,14 @@ pub fn call<'a>(
     let req = ureq::post(
         format!(
             "{}/{}/{}",
-            &target.url.unwrap(),
+            &target.url,
             &subsys_params["operation"].as_str().unwrap(),
             &subsys_params["target"].as_str().unwrap(),
         )
         .as_str(),
     )
     .set("Content-Type", "application/json")
-    .set("Authorization", &format!("uuid {}", &target.token.unwrap()))
+    .set("Authorization", &format!("uuid {}", &target.token))
     .send_json(&subsys_params["data"]);
 
     match req {
