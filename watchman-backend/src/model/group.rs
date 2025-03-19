@@ -172,7 +172,7 @@ impl GroupModel {
             Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
         };
 
-        let new_group_name = new_group.name.clone().unwrap();
+        let this_group_name = new_group.name.clone().unwrap();
 
         match diesel::insert_into(group_table)
             .values(new_group)
@@ -180,7 +180,7 @@ impl GroupModel {
         {
             Ok(num_of_change) => Ok(format!(
                 "Group {} created. line: {}",
-                new_group_name, num_of_change
+                this_group_name, num_of_change
             )),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
@@ -195,21 +195,21 @@ impl GroupModel {
             Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
         };
 
-        let update_group_id = update_group.id.unwrap();
+        let this_group_id = update_group.id.unwrap();
 
-        match diesel::update(group_table.find(update_group_id))
+        match diesel::update(group_table.find(this_group_id))
             .set(update_group)
             .execute(conn)
         {
             Ok(num_of_eff) => match num_of_eff {
-                0 => Err((NOT_FOUND_CODE, format!("id: {} not found", update_group_id))),
+                0 => Err((NOT_FOUND_CODE, format!("id: {} not found", this_group_id))),
                 1 => Ok(format!(
                     "{}'s data updated. lines: {}",
-                    update_group_id, num_of_eff
+                    this_group_id, num_of_eff
                 )),
                 _ => Err((
                     TMI_ERROR_CODE,
-                    format!("id: {} Too much info", &update_group_id),
+                    format!("id: {} Too much info", this_group_id),
                 )),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
