@@ -14,7 +14,7 @@ use crate::model::{access::*, service::*};
 pub fn all_service<'a>(
     filter: &Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, Vec<ServiceOutputStream>>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, Vec<ServiceModel>>, MailManErr<'a>> {
     match ServiceModel::get_all_with_filter(filter.clone(), &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "All service info", Some(msg))),
         Err(msg) => match msg.0 {
@@ -26,7 +26,7 @@ pub fn all_service<'a>(
 
 /// new_service api logic
 pub fn new_service<'a>(
-    service_info: &ServiceInputStream,
+    service_info: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
     match ServiceModel::new_service(service_info, &mut pool.get().unwrap()) {
@@ -40,7 +40,7 @@ pub fn new_service<'a>(
 
 /// update_service api logic
 pub fn update_service<'a>(
-    service_info: &ServiceInputStream,
+    service_info: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
     match ServiceModel::update_service_by_id(service_info, &mut pool.get().unwrap()) {
@@ -54,11 +54,13 @@ pub fn update_service<'a>(
 
 /// delete_service api logic
 pub fn delete_service<'a>(
-    service_id: u32,
+    service_id: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
+    let id = service_id.get("id").and_then(Value::as_u64).unwrap_or(0) as u32;
+
     let access_target: Vec<u32> =
-        match AccessModel::get_access_by_sids(vec![service_id], &mut pool.get().unwrap()) {
+        match AccessModel::get_access_by_sids(vec![id], &mut pool.get().unwrap()) {
             Ok(access_info_list) => access_info_list
                 .into_iter()
                 .filter_map(|access_info| access_info.id)
@@ -90,7 +92,7 @@ pub fn delete_service<'a>(
         }
     }
 
-    match ServiceModel::delete_service_by_id(service_id, &mut pool.get().unwrap()) {
+    match ServiceModel::delete_service_by_id(id, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Service deleted",

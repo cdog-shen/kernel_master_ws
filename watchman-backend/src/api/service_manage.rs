@@ -5,10 +5,7 @@ use diesel::{
 };
 use serde_json::{Map, Value};
 
-use crate::{
-    model::service::ServiceInputStream, service::service_service,
-    util::err_mapping::MailManErrResponser,
-};
+use crate::{service::service_service, util::err_mapping::MailManErrResponser};
 
 // GET api/service_control/all_service
 pub async fn all_service(
@@ -23,10 +20,10 @@ pub async fn all_service(
 
 // POST api/service_control/new_service
 pub async fn new_service(
-    group_info: web::Json<ServiceInputStream>,
+    service_info: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match service_service::new_service(&group_info, &pool) {
+    match service_service::new_service(service_info.0, &pool) {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -34,10 +31,10 @@ pub async fn new_service(
 
 // POST api/service_control/update_service
 pub async fn update_service(
-    user_info: web::Json<ServiceInputStream>,
+    service_info: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match service_service::update_service(&user_info.0, &pool) {
+    match service_service::update_service(service_info.0, &pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -45,10 +42,10 @@ pub async fn update_service(
 
 // DEL api/service_control/delete_service
 pub async fn delete_service(
-    group_id: web::Json<ServiceInputStream>,
+    service_id: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match service_service::delete_service(group_id.0.id.unwrap(), &pool) {
+    match service_service::delete_service(service_id.0, &pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
