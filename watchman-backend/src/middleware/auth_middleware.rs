@@ -159,7 +159,7 @@ where
                                                 match AccessModel::get_max_permission(
                                                     gid_list
                                                         .into_iter()
-                                                        .filter_map(|group_info| group_info.id)
+                                                        .map(|group_info| group_info.id)
                                                         .collect(),
                                                     sid_list,
                                                     &mut pool.get().unwrap(),
