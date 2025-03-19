@@ -11,10 +11,10 @@ use crate::model::group::*;
 
 /// all_group api logic
 pub fn all_group<'a>(
-    filter: &'a Map<String, Value>,
+    filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, Vec<GroupOutputStream>>, MailManErr<'a>> {
-    match GroupModel::get_all_with_filter(filter.clone(), &mut pool.get().unwrap()) {
+) -> Result<MailManOk<'a, Vec<GroupModel>>, MailManErr<'a>> {
+    match GroupModel::get_all_with_filter(filter, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "All group info", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
@@ -25,7 +25,7 @@ pub fn all_group<'a>(
 
 /// new_group api logic
 pub fn new_group<'a>(
-    group_info: &GroupInputStream,
+    group_info: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
     match GroupModel::new_group(group_info, &mut pool.get().unwrap()) {
@@ -39,7 +39,7 @@ pub fn new_group<'a>(
 
 /// update_group api logic
 pub fn update_group<'a>(
-    user_info: &GroupInputStream,
+    user_info: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
     match GroupModel::update_group_by_id(user_info, &mut pool.get().unwrap()) {
@@ -53,10 +53,12 @@ pub fn update_group<'a>(
 
 /// delete_group api logic
 pub fn delete_group<'a>(
-    group_id: u32,
+    group_id_map: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
-    match GroupModel::delete_group_by_id(group_id, &mut pool.get().unwrap()) {
+    let id = group_id_map.get("id").and_then(Value::as_u64).unwrap_or(0) as u32;
+
+    match GroupModel::delete_group_by_id(id, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "Group deleted", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
