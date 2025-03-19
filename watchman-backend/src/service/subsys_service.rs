@@ -106,7 +106,7 @@ pub fn delete_subsys<'a>(
         match AccessModel::get_access_by_sids(vec![bind_service_id], &mut pool.get().unwrap()) {
             Ok(access_info_list) => access_info_list
                 .into_iter()
-                .filter_map(|access_info| access_info.id)
+                .map(|access_info| access_info.id)
                 .collect(),
             Err(msg) => match msg.0 {
                 0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
@@ -115,18 +115,13 @@ pub fn delete_subsys<'a>(
         };
 
     for access_id in &access_target {
-        match AccessModel::update_access_by_id(
-            &AccessInputStream {
-                id: Some(*access_id),
-                is_enable: Some(0),
-                service_id: None,
-                group_id: None,
-                group_access: None,
-                update_time: None,
-                comment: None,
-            },
-            &mut pool.get().unwrap(),
-        ) {
+        let disable_json = serde_json::from_value(serde_json::json!({
+            "id": *access_id,
+            "is_enable": 0,
+        }))
+        .unwrap();
+
+        match AccessModel::update_access_by_id(disable_json, &mut pool.get().unwrap()) {
             Ok(_) => (),
             Err(msg) => match msg.0 {
                 0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),

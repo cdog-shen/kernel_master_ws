@@ -12,7 +12,7 @@ pub async fn all_service(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match service_service::all_service(&query, &pool) {
+    match service_service::all_service(query.0, &pool) {
         Ok(group_data) => Ok(HttpResponse::Ok().json(group_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

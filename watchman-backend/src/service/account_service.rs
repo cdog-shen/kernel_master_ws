@@ -206,7 +206,7 @@ pub fn get_me(
     let user_service_info = match ServiceModel::get_services_by_id(
         user_access_info
             .iter()
-            .filter_map(|access| access.service_id)
+            .map(|access| access.service_id)
             .collect(),
         &mut pool.get().unwrap(),
     ) {
