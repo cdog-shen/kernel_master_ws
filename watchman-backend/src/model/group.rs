@@ -59,11 +59,7 @@ impl GroupInfo {
             is_enable: map
                 .get("is_enable")
                 .and_then(|v| v.as_u64().map(|v| v as u8)),
-            date_update: map.get("date_update").and_then(|v| {
-                v.as_str().and_then(|s| {
-                    chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S").ok()
-                })
-            }),
+            date_update: Some(Local::now().naive_local()),
             user_ids: map
                 .get("user_ids")
                 .and_then(|v| v.as_str().map(|v| v.to_string())),
