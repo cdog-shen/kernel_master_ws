@@ -67,7 +67,7 @@ impl LightEcsInfo {
     fn from_map(map: Map<String, Value>) -> Result<Self, String> {
         Ok(LightEcsInfo {
             id: match map.get("id") {
-                Some(value) => value.as_u64().map(|s| s),
+                Some(value) => value.as_u64(),
                 None => None,
             },
             project: match map.get("project") {
@@ -143,7 +143,7 @@ impl LightEcsInfo {
                 None => None,
             },
             is_link_server: match map.get("is_link_server") {
-                Some(value) => value.as_bool().map(|s| s),
+                Some(value) => value.as_bool(),
                 None => None,
             },
             create_at: None,

@@ -26,8 +26,8 @@ pub async fn get_table(
         "light_ecs" => {
             let result = light_ecs_service::get_all(&query, &pool);
             match result {
-                Ok(data) => return Ok(HttpResponse::Ok().json(data)),
-                Err(err) => return Ok(HttpResponse::BadRequest().json(err)),
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Ok(HttpResponse::BadRequest().json(err)),
             }
         }
         _ => Ok(HttpResponse::BadRequest().json("Table not found")),
@@ -47,8 +47,8 @@ pub async fn new_table(
         "light_ecs" => {
             let result = light_ecs_service::new_table(&new, &pool);
             match result {
-                Ok(data) => return Ok(HttpResponse::Ok().json(data)),
-                Err(err) => return Ok(HttpResponse::InternalServerError().json(err)),
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Ok(HttpResponse::InternalServerError().json(err)),
             }
         }
         _ => Ok(HttpResponse::BadRequest().json("Table not found")),
@@ -68,8 +68,8 @@ pub async fn update_table(
         "light_ecs" => {
             let result = light_ecs_service::update_table(&update, &pool);
             match result {
-                Ok(data) => return Ok(HttpResponse::Ok().json(data)),
-                Err(err) => return Ok(HttpResponse::InternalServerError().json(err)),
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Ok(HttpResponse::InternalServerError().json(err)),
             }
         }
         _ => Ok(HttpResponse::BadRequest().json("Table not found")),
@@ -89,8 +89,8 @@ pub async fn delete_table(
         "light_ecs" => {
             let result = light_ecs_service::delete_table(&delete, &pool);
             match result {
-                Ok(data) => return Ok(HttpResponse::Ok().json(data)),
-                Err(err) => return Ok(HttpResponse::InternalServerError().json(err)),
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Ok(HttpResponse::InternalServerError().json(err)),
             }
         }
         _ => Ok(HttpResponse::BadRequest().json("Table not found")),
