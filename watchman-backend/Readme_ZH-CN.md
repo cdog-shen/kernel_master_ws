@@ -166,6 +166,14 @@ watchman 是整个 Kernel master 项目的 IAM 和调度服务。
 
 ## 部署
 
+- 密钥生成
+
+    在启动服务之前，生成一个随机密钥用于加密JWT。
+
+    ```sh
+    openssl rand -hex 32 > key/jwt_secret.key
+    ```
+
 - 依赖服务
 
     - MySQL >= 8.0

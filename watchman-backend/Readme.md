@@ -169,6 +169,14 @@ All APIs start with the `/api` scope.
 
 ## Deployment
 
+- key gen
+
+    Before start up service, generate a secret for JWT token
+
+    ```sh
+    openssl rand -hex 32 > key/jwt_secret.key
+    ```
+
 - dependence service
 
     - MySQL >= 8.0
