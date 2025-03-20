@@ -67,83 +67,83 @@ impl LightEcsInfo {
     fn from_map(map: Map<String, Value>) -> Result<Self, String> {
         Ok(LightEcsInfo {
             id: match map.get("id") {
-                Some(value) => Some(value.as_u64().unwrap()),
+                Some(value) => value.as_u64().map(|s| s),
                 None => None,
             },
             project: match map.get("project") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             cloud_name: match map.get("cloud_name") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             region: match map.get("region") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             zone: match map.get("zone") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             instance_id: match map.get("instance_id") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             instance_name: match map.get("instance_name") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             wip: match map.get("wip") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             nip: match map.get("nip") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             vpc_id: match map.get("vpc_id") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             subnet_id: match map.get("subnet_id") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             instance_type: match map.get("instance_type") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             internet_charge_type: match map.get("internet_charge_type") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             status: match map.get("status") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             os_name: match map.get("os_name") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             os_type: match map.get("os_type") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             image_id: match map.get("image_id") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             bandwidth: match map.get("bandwidth") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             cloud_account: match map.get("cloud_account") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
+                Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
             is_link_server: match map.get("is_link_server") {
-                Some(value) => Some(value.as_bool().unwrap()),
+                Some(value) => value.as_bool().map(|s| s),
                 None => None,
             },
             create_at: None,
