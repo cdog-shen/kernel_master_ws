@@ -38,35 +38,26 @@ pub struct CloudAccountInfo {
 impl CloudAccountInfo {
     fn from_map(map: Map<String, Value>) -> Result<Self, String> {
         Ok(CloudAccountInfo {
-            id: match map.get("id") {
-                Some(value) => Some(value.as_u64().unwrap() as u32),
-                None => None,
-            },
-            cloud_provider: match map.get("cloud_provider") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
-                None => None,
-            },
-            nick_name: match map.get("nick_name") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
-                None => None,
-            },
-            ak: match map.get("ak") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
-                None => None,
-            },
-            sk: match map.get("sk") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
-                None => None,
-            },
-            is_enable: match map.get("is_enable") {
-                Some(value) => Some(value.as_u64().unwrap() as u8),
-                None => None,
-            },
+            id: map.get("id").map(|value| value.as_u64().unwrap() as u32),
+            cloud_provider: map
+                .get("cloud_provider")
+                .map(|value| value.as_str().unwrap().to_string()),
+            nick_name: map
+                .get("nick_name")
+                .map(|value| value.as_str().unwrap().to_string()),
+            ak: map
+                .get("ak")
+                .map(|value| value.as_str().unwrap().to_string()),
+            sk: map
+                .get("sk")
+                .map(|value| value.as_str().unwrap().to_string()),
+            is_enable: map
+                .get("is_enable")
+                .map(|value| value.as_u64().unwrap() as u8),
             update_time: Some(Local::now().naive_local()),
-            comment: match map.get("comment") {
-                Some(value) => Some(value.as_str().unwrap().to_string()),
-                None => None,
-            },
+            comment: map
+                .get("comment")
+                .map(|value| value.as_str().unwrap().to_string()),
         })
     }
 }
