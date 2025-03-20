@@ -14,7 +14,7 @@
 **/log
 
 # config files
-watchman-backend/watchman_server.cfg
+watchman-backend/watchman_backend.cfg
 cmdb-backend/cmdb_server.cfg
 cloud-api/cloud_api_server.cfg
 jc-commander/job_center_commander.cfg

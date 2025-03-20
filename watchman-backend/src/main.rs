@@ -14,8 +14,8 @@ use diesel::r2d2::ConnectionManager;
 use diesel::MysqlConnection;
 
 // share-lib import
-use share_lib::logger;
 use share_lib::data_structure::MailManOk;
+use share_lib::logger;
 
 // local import
 use config::server;
@@ -24,9 +24,9 @@ use config::server;
 mod api;
 mod config;
 mod middleware;
-mod models;
-mod services;
-mod utils;
+mod model;
+mod service;
+mod util;
 
 #[actix_rt::main]
 async fn main() -> io::Result<()> {
@@ -41,7 +41,7 @@ async fn main() -> io::Result<()> {
     }
 
     // config out put
-    println!("config is {:#?}", &*server::GLOBAL_CONFIG);
+    println!("config is {:#?}", &server::GLOBAL_CONFIG);
 
     // init logger
     logger::init_logger(
@@ -51,7 +51,7 @@ async fn main() -> io::Result<()> {
 
     // init mysql connection pool
     let manager =
-        ConnectionManager::<MysqlConnection>::new(&*server::GLOBAL_CONFIG.read().unwrap().db_str);
+        ConnectionManager::<MysqlConnection>::new(&server::GLOBAL_CONFIG.read().unwrap().db_str);
     let pool = diesel::r2d2::Pool::builder()
         .build(manager)
         .expect("Failed to create pool.");
@@ -59,16 +59,25 @@ async fn main() -> io::Result<()> {
     // setting listen addr
     let app_url = format!(
         "{}:{}",
-        &*server::GLOBAL_CONFIG.read().unwrap().listen_addr,
+        &server::GLOBAL_CONFIG.read().unwrap().listen_addr,
         &server::GLOBAL_CONFIG.read().unwrap().listen_port
     );
+    let allowed_origin_list = server::GLOBAL_CONFIG
+        .read()
+        .unwrap()
+        .allowed_origin_list
+        .clone();
 
     HttpServer::new(move || {
         App::new()
             .wrap(
                 Cors::default() // allowed_origin return access-control-allow-origin: * by default
-                    .allowed_origin("http://127.0.0.1:3000")
-                    .allowed_origin("http://localhost:3000")
+                    .allowed_origin_fn({
+                        let value = allowed_origin_list.clone();
+                        move |origin, _req_head| {
+                            value.iter().any(|allowed_origin| origin == allowed_origin)
+                        }
+                    })
                     .send_wildcard()
                     .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
                     .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])

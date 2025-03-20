@@ -2,7 +2,7 @@ use actix_web::HttpResponse;
 
 use share_lib::data_structure::MailManOk;
 
-use crate::{server, utils::err_mapping::MailManErrResponser};
+use crate::{server, util::err_mapping::MailManErrResponser};
 
 // POST api/reload
 pub async fn reload_config() -> Result<HttpResponse, MailManErrResponser> {

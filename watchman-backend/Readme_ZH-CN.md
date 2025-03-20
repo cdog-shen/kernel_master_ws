@@ -9,9 +9,9 @@ watchman 是整个 Kernel master 项目的 IAM 和调度服务。
 
 - 所有 ORM 模型对应的操作方法应放置在 ***models*** 目录下的相应模块中。
 
-    每个数据表对应一个模型文件，其中包含三个结构（Model/InputStream/OutputStream）。
+    每个数据表对应一个模型文件，其中包含三个结构（Model/Info）。
 
-    只实现 Model 结构，通过 InputStream 结构输入，通过 OutputStream 结构输出结果。为了方便输出，每个 Model 应定义一个 map_model_to_output_stream 函数。
+    只实现 Model 结构，通过 Info 结构输出， 通过JSON映射到Info结构进行输入。
 
     Model 结构有两个 impl 块，一个实现所有查询方法，另一个实现所有修改方法。
 
@@ -166,6 +166,14 @@ watchman 是整个 Kernel master 项目的 IAM 和调度服务。
 
 ## 部署
 
+- 密钥生成
+
+    在启动服务之前，生成一个随机密钥用于加密JWT。
+
+    ```sh
+    openssl rand -hex 32 > key/jwt_secret.key
+    ```
+
 - 依赖服务
 
     - MySQL >= 8.0
@@ -176,20 +184,20 @@ watchman 是整个 Kernel master 项目的 IAM 和调度服务。
 
 ```toml
 [server_config]
+log_path = "logs/watchman.log"
+log_level = "DEBUG"
 listen_addr = "127.0.0.1"
-listen_port = 8080
-log_path = "logs/watchman.log" # 日志文件位置
-log_level = "INFO" # 日志级别
-secret_key_path = "keys/jwt_secret.key" # 用于生成 JWT 的密钥。
-clear_log = "True" # 启动时清除日志
-authenticate_bypass = ["/api/auth/signup", "/api/auth/login", "/webhook"];
-permit_bypass = ["/api/auth/signup", "/api/auth/login", "/webhook"]
+listen_port = 8000
+allowed_origin_list = ["http://localhost:3000", "http://127.0.0.1:3000"]
+# pub_key_path = "keys/jwt_pub.der"
+# pri_key_path = "keys/jwt_pri.der"
+secret_key_path = "keys/jwt_secret.key"
+clear_log = "True"
+authenticate_bypass = ["/api/auth/signup","/api/auth/login","/webhook","/api/hey","/api/reload","/api/subsystem_control/all_subsystem","/api/subsystem_control/update_subsystem"]
+permit_bypass = ["/api/auth/signup","/api/auth/login","/webhook","/api/hey","/api/reload","/api/subsystem_control/all_subsystem","/api/subsystem_control/update_subsystem"]
 
-[db_config] # 数据库字符串配置
-db_str = "mysql://root:778631@127.0.0.1:3306/watch_man" # 本地
-
-[subsys_config]
-key1 = "v1"
+[db_config]
+db_str = "mysql://root:778631@127.0.0.1:3306/watch_man" # local
 ```
 
 ### 在 Windows 上构建 diesel

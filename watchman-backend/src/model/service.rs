@@ -3,8 +3,9 @@ use diesel::{
     prelude::*, result::Error::NotFound, Insertable, MysqlConnection, Queryable, Selectable,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 
-use crate::models::schema::service_table::{self, dsl::*};
+use crate::model::schema::service_table::{self, dsl::*};
 
 static NOT_FOUND_CODE: u8 = 1;
 static TMI_ERROR_CODE: u8 = 2;
@@ -27,7 +28,7 @@ static UNKNOW_ERROR_CODE: u8 = 0;
 ///
 ///     create time (datetime %Y-%m-%d %H:%M:%S)
 ///
-#[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable)]
+#[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
 #[diesel(table_name = service_table)]
 pub struct ServiceModel {
     pub id: u32,
@@ -45,7 +46,7 @@ pub struct ServiceModel {
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
 #[diesel(table_name = service_table)]
-pub struct ServiceInputStream {
+pub struct ServiceInfo {
     pub id: Option<u32>,
     pub service_name: Option<String>,
     pub nick_name: Option<String>,
@@ -54,45 +55,37 @@ pub struct ServiceInputStream {
     pub create_time: Option<chrono::NaiveDateTime>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ServiceOutputStream {
-    pub id: Option<u32>,
-    pub service_name: Option<String>,
-    pub nick_name: Option<String>,
-    pub service_point: Option<String>,
-    pub is_enable: Option<u8>,
-    pub create_time: Option<chrono::NaiveDateTime>,
-}
-
-fn map_model_to_output_stream(service_info: ServiceModel) -> ServiceOutputStream {
-    ServiceOutputStream {
-        id: Some(service_info.id),
-        service_name: Some(service_info.service_name),
-        nick_name: Some(service_info.nick_name),
-        service_point: Some(service_info.service_point),
-        is_enable: Some(service_info.is_enable),
-        create_time: service_info.create_time,
+impl ServiceInfo {
+    fn from_map(map: Map<String, Value>) -> Result<Self, String> {
+        Ok(ServiceInfo {
+            id: map.get("id").and_then(|v| v.as_u64().map(|v| v as u32)),
+            service_name: map
+                .get("service_name")
+                .and_then(|v| v.as_str().map(|v| v.to_string())),
+            nick_name: map
+                .get("nick_name")
+                .and_then(|v| v.as_str().map(|v| v.to_string())),
+            service_point: map
+                .get("service_point")
+                .and_then(|v| v.as_str().map(|v| v.to_string())),
+            is_enable: map
+                .get("is_enable")
+                .and_then(|v| v.as_u64().map(|v| v as u8)),
+            create_time: Some(Local::now().naive_local()),
+        })
     }
 }
 
 // query implement
 impl ServiceModel {
     /// get all enable services
-    pub fn get_all_enable(
-        conn: &mut MysqlConnection,
-    ) -> Result<Vec<ServiceOutputStream>, (u8, String)> {
+    pub fn get_all_enable(conn: &mut MysqlConnection) -> Result<Vec<Self>, (u8, String)> {
         match service_table
             .filter(is_enable.eq(1))
             .select(ServiceModel::as_select())
             .get_results::<ServiceModel>(conn)
         {
-            Ok(service_table_data) => {
-                let service_output_stream_data: Vec<ServiceOutputStream> = service_table_data
-                    .into_iter()
-                    .map(map_model_to_output_stream)
-                    .collect();
-                Ok(service_output_stream_data)
-            }
+            Ok(service_table_data) => Ok(service_table_data),
             Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
@@ -101,20 +94,14 @@ impl ServiceModel {
     pub fn get_services_by_id(
         sid_list: Vec<u32>,
         conn: &mut MysqlConnection,
-    ) -> Result<Vec<ServiceOutputStream>, (u8, String)> {
+    ) -> Result<Vec<Self>, (u8, String)> {
         match service_table
             .filter(is_enable.eq(1))
             .filter(id.eq_any(sid_list))
             .select(ServiceModel::as_select())
             .get_results::<ServiceModel>(conn)
         {
-            Ok(service_table_data) => {
-                let service_output_stream_data: Vec<ServiceOutputStream> = service_table_data
-                    .into_iter()
-                    .map(map_model_to_output_stream)
-                    .collect();
-                Ok(service_output_stream_data)
-            }
+            Ok(service_table_data) => Ok(service_table_data),
             Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
@@ -157,9 +144,9 @@ impl ServiceModel {
 
     /// get all services
     pub fn get_all_with_filter(
-        filter: serde_json::Map<String, serde_json::Value>,
+        filter: Map<String, Value>,
         conn: &mut MysqlConnection,
-    ) -> Result<Vec<ServiceOutputStream>, (u8, String)> {
+    ) -> Result<Vec<Self>, (u8, String)> {
         let mut query = service_table.into_boxed().select(ServiceModel::as_select());
 
         for (q_k, q_v) in filter.iter() {
@@ -185,13 +172,7 @@ impl ServiceModel {
         }
 
         match query.get_results::<ServiceModel>(conn) {
-            Ok(service_table_data) => {
-                let service_output_stream_data: Vec<ServiceOutputStream> = service_table_data
-                    .into_iter()
-                    .map(map_model_to_output_stream)
-                    .collect();
-                Ok(service_output_stream_data)
-            }
+            Ok(service_table_data) => Ok(service_table_data),
             Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         }
     }
@@ -200,49 +181,47 @@ impl ServiceModel {
 // update implement
 impl ServiceModel {
     pub fn new_service(
-        service_info: &ServiceInputStream,
+        service_info: Map<String, Value>,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
+        let new_service = match ServiceInfo::from_map(service_info) {
+            Ok(service) => service,
+            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+        };
+
+        let this_service_name = new_service.service_name.clone().unwrap();
+
         match diesel::insert_into(service_table)
-            .values((
-                service_name.eq(service_info.service_name.clone().unwrap()),
-                service_point.eq(service_info.service_point.clone().unwrap()),
-                is_enable.eq(service_info.is_enable.unwrap_or(0)),
-                create_time.eq(Local::now().naive_local()),
-            ))
+            .values(new_service)
             .execute(conn)
         {
             Ok(num_of_change) => Ok(format!(
                 "Service {} created. line: {}",
-                &service_info.service_name.clone().unwrap(),
-                num_of_change
+                this_service_name, num_of_change
             )),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
     }
 
     pub fn update_service_by_id(
-        service_info: &ServiceInputStream,
+        service_info: Map<String, Value>,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match diesel::update(service_table.find(service_info.id.unwrap()))
-            .set(service_info)
+        let update_service = match ServiceInfo::from_map(service_info) {
+            Ok(service) => service,
+            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+        };
+
+        let this_id = update_service.id.clone().unwrap();
+
+        match diesel::update(service_table.find(this_id))
+            .set(update_service)
             .execute(conn)
         {
             Ok(num_of_eff) => match num_of_eff {
-                0 => Err((
-                    NOT_FOUND_CODE,
-                    format!("id: {} not found", service_info.id.unwrap()),
-                )),
-                1 => Ok(format!(
-                    "{}'s data updated. lines: {}",
-                    service_info.id.unwrap(),
-                    num_of_eff
-                )),
-                _ => Err((
-                    TMI_ERROR_CODE,
-                    format!("id: {} Too much info", service_info.id.unwrap()),
-                )),
+                0 => Err((NOT_FOUND_CODE, format!("id: {} not found", this_id))),
+                1 => Ok(format!("{}'s data updated. lines: {}", this_id, num_of_eff)),
+                _ => Err((TMI_ERROR_CODE, format!("id: {} Too much info", this_id))),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }

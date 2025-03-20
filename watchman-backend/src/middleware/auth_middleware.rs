@@ -20,7 +20,7 @@ use share_lib::data_structure::MailManErr;
 // use share_lib::{log_debug, log_error};
 
 use crate::{
-    models::{
+    model::{
         access::AccessModel,
         group::GroupModel,
         service::ServiceModel,
@@ -159,7 +159,7 @@ where
                                                 match AccessModel::get_max_permission(
                                                     gid_list
                                                         .into_iter()
-                                                        .filter_map(|group_info| group_info.id)
+                                                        .map(|group_info| group_info.id)
                                                         .collect(),
                                                     sid_list,
                                                     &mut pool.get().unwrap(),

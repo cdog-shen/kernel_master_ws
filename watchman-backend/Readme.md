@@ -1,39 +1,38 @@
 # Watchman-backend
 
-watchman is the IAM and dispatch service for whole Kernel master project.
+watchman is the IAM and dispatch service for the whole Kernel master project.
 
-it should be the FIRST launched service in Kernel master compoment.
+It should be the FIRST launched service in Kernel master component.
 
 ## Code rules
 
 - All ORM model corresponding operation methods should be placed in the corresponding mod under the ***models*** directory.
 
-    Each data table corresponds to a model file, which contains three structures inside (Model/InputStream/OutputStream).
+    Each data table corresponds to a model file, which contains three structures inside (Model/Info).
 
-    Only the Model structure is implemented, with input through the InputStream structure and output results using the OutputStream structure. For convenience in outputting, a map_model_to_output_stream function should be defined for each Model.
+    Only the Model structure is implemented, with input through the JSON mapping to the Info structure and output results using the Info structure.
 
     The Model structure has two impl blocks, one implementing all query methods and the other implementing all modification methods.
 
 - All interface processing logic should be placed in the ***services*** directory.
 
-    When inputting data structures, you should use `Models::table::InputStream`, or use other data types(i recommand `serde_json::Map<String, serde_json::Value>`) as needed.
+    When inputting data structures, you should use `Models::table::InputStream`, or use other data types (I recommend `serde_json::Map<String, serde_json::Value>`) as needed.
 
 - The logic related to API responses should be placed under the corresponding API mod in the ***apis*** directory.
 
     All query interface methods should be `GET`, update interfaces should be `POST`, and delete interfaces should be `DELETE`.
 
-    And if POST data include any JSON object, deserialize it to String in this file.
+    And if POST data includes any JSON object, deserialize it to String in this file.
 
 ## APIs
 
-all api started with `/api` scope.
+All APIs start with the `/api` scope.
 
 ### /hey
 
 | resource | method support | function                      | comment              |
 | :------: | :------------: | :---------------------------- | :------------------- |
 |    /     |  `POST`/`GET`  | return `hi hello!` raw string | test API for service |
-
 
 ### /reload
 
@@ -68,16 +67,16 @@ all api started with `/api` scope.
 |  /all_service   |     `GET`      | get all service with query |                                    |
 |  /new_service   |     `POST`     | create a service           |                                    |
 | /update_service |     `POST`     | update a service           |                                    |
-| /delete_service |    `DELETE`    | delete a service           | it also disable any related access |
+| /delete_service |    `DELETE`    | delete a service           | it also disables any related access |
 
 ### /access_control
 
 |    resource    | method support | function                  | comment |
 | :------------: | :------------: | :------------------------ | :------ |
 |  /all_access   |     `GET`      | get all access with query |         |
-|  /new_access   |     `POST`     | create a access           |         |
-| /update_access |     `POST`     | update a access           |         |
-| /delete_access |    `DELETE`    | delete a access           |         |
+|  /new_access   |     `POST`     | create an access          |         |
+| /update_access |     `POST`     | update an access          |         |
+| /delete_access |    `DELETE`    | delete an access          |         |
 
 ### /subsystem_control
 
@@ -86,7 +85,7 @@ all api started with `/api` scope.
 |  /all_subsystem   |     `GET`      | get all subsystem with query |                                                                    |
 |  /new_subsystem   |     `POST`     | create a subsystem           | and also create bind services                                      |
 | /update_subsystem |     `POST`     | update a subsystem           |                                                                    |
-| /delete_subsystem |    `DELETE`    | delete a subsystem           | it also disable any related access and delete any related services |
+| /delete_subsystem |    `DELETE`    | delete a subsystem           | it also disables any related access and deletes any related services |
 
 ### /subsystem_call
 
@@ -112,7 +111,7 @@ all api started with `/api` scope.
     - diesel_migrations = "2.2.0"
     - diesel = { version = "2.2.6", features = ["mysql", "r2d2", "chrono"] }
 
-- serializtion dependencies
+- serialization dependencies
     - serde = "1.0.216"
     - serde_derive = "1.0.216"
     - serde_json = "1.0.133"
@@ -170,6 +169,14 @@ all api started with `/api` scope.
 
 ## Deployment
 
+- key gen
+
+    Before start up service, generate a secret for JWT token
+
+    ```sh
+    openssl rand -hex 32 > key/jwt_secret.key
+    ```
+
 - dependence service
 
     - MySQL >= 8.0
@@ -180,20 +187,20 @@ The name of the configuration file is `watchman_server.cfg`.
 
 ```toml
 [server_config]
+log_path = "logs/watchman.log"
+log_level = "DEBUG"
 listen_addr = "127.0.0.1"
-listen_port = 8080
-log_path = "logs/watchman.log" # log file location
-log_level = "INFO" # log level
-secret_key_path = "keys/jwt_secret.key" # The key used for generating JWT.
-clear_log = "True" # logs be cleared upon startup
-authenticate_bypass = ["/api/auth/signup", "/api/auth/login", "/webhook"];
-permit_bypass = ["/api/auth/signup", "/api/auth/login", "/webhook"]
+listen_port = 8000
+allowed_origin_list = ["http://localhost:3000", "http://127.0.0.1:3000"]
+# pub_key_path = "keys/jwt_pub.der"
+# pri_key_path = "keys/jwt_pri.der"
+secret_key_path = "keys/jwt_secret.key"
+clear_log = "True"
+authenticate_bypass = ["/api/auth/signup","/api/auth/login","/webhook","/api/hey","/api/reload","/api/subsystem_control/all_subsystem","/api/subsystem_control/update_subsystem"]
+permit_bypass = ["/api/auth/signup","/api/auth/login","/webhook","/api/hey","/api/reload","/api/subsystem_control/all_subsystem","/api/subsystem_control/update_subsystem"]
 
-[db_config] # DB string config
+[db_config]
 db_str = "mysql://root:778631@127.0.0.1:3306/watch_man" # local
-
-[subsys_config]
-key1 = "v1"
 ```
 
 ### Build diesel on Windows

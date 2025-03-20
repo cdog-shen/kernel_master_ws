@@ -6,7 +6,7 @@ use diesel::{
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use crate::{models::user::*, services::account_service, utils::err_mapping::MailManErrResponser};
+use crate::{model::user::*, service::account_service, util::err_mapping::MailManErrResponser};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct InputJsonStruct {

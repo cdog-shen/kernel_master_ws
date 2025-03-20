@@ -4,18 +4,19 @@ use diesel::{
     MysqlConnection,
 };
 use serde_json::{Map, Value};
+// use serde::{Deserialize, Serialize};
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::models::group::*;
+use crate::model::access::*;
 
-/// all_group api logic
-pub fn all_group<'a>(
-    filter: &'a Map<String, Value>,
+/// all_access api logic
+pub fn all_access<'a>(
+    filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, Vec<GroupOutputStream>>, MailManErr<'a>> {
-    match GroupModel::get_all_with_filter(filter.clone(), &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "All group info", Some(msg))),
+) -> Result<MailManOk<'a, Vec<AccessModel>>, MailManErr<'a>> {
+    match AccessModel::get_all_with_filter(filter, &mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "All access info", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
             _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
@@ -23,13 +24,13 @@ pub fn all_group<'a>(
     }
 }
 
-/// new_group api logic
-pub fn new_group<'a>(
-    group_info: &GroupInputStream,
+/// new_access api logic
+pub fn new_access<'a>(
+    service_info: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
-    match GroupModel::new_group(group_info, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "Group created", Some(msg))),
+    match AccessModel::new_access(service_info, &mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "Access created", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
             _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
@@ -37,13 +38,13 @@ pub fn new_group<'a>(
     }
 }
 
-/// update_group api logic
-pub fn update_group<'a>(
-    user_info: &GroupInputStream,
+/// update_access api logic
+pub fn update_access<'a>(
+    service_info: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
-    match GroupModel::update_group_by_id(user_info, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "Group info updated", Some(msg))),
+    match AccessModel::update_access_by_id(service_info, &mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "Access info updated", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
             _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
@@ -51,13 +52,15 @@ pub fn update_group<'a>(
     }
 }
 
-/// delete_group api logic
-pub fn delete_group<'a>(
-    group_id: u32,
+/// delete_access api logic
+pub fn delete_access<'a>(
+    service_id: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
-    match GroupModel::delete_group_by_id(group_id, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "Group deleted", Some(msg))),
+    let id = service_id.get("id").unwrap().as_u64().unwrap() as u32;
+
+    match AccessModel::delete_access_by_id(id, &mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "Access deleted", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
             _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),

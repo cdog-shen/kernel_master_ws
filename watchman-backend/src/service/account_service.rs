@@ -10,7 +10,7 @@ use serde_json::{Map, Value};
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::models::{access::*, group::*, service::*, user::*, user_token::*};
+use crate::model::{access::*, group::*, service::*, user::*, user_token::*};
 
 /// token Response json data
 #[derive(Serialize, Deserialize)]
@@ -192,7 +192,7 @@ pub fn get_me(
     let user_access_info = match AccessModel::get_access_by_gids(
         user_group_info
             .iter()
-            .filter_map(|group| group.id)
+            .filter_map(|group| Some(group.id))
             .collect(),
         &mut pool.get().unwrap(),
     ) {
@@ -206,7 +206,7 @@ pub fn get_me(
     let user_service_info = match ServiceModel::get_services_by_id(
         user_access_info
             .iter()
-            .filter_map(|access| access.service_id)
+            .map(|access| access.service_id)
             .collect(),
         &mut pool.get().unwrap(),
     ) {
