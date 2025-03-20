@@ -176,8 +176,8 @@ pub fn call<'a>(
         format!(
             "{}/{}/{}",
             &target.url,
-            &subsys_params["operation"].as_str().unwrap(),
             &subsys_params["target"].as_str().unwrap(),
+            &subsys_params["operation"].as_str().unwrap(),
         )
         .as_str(),
     )
