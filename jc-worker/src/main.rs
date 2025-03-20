@@ -37,8 +37,9 @@ async fn main() {
     );
 
     // connect to MQ
+    let mq_str = worker::GLOBAL_CONFIG.read().unwrap().mq_str.clone();
     let conn = match Connection::connect(
-        &worker::GLOBAL_CONFIG.read().unwrap().mq_str,
+        &mq_str,
         ConnectionProperties::default(),
     )
     .await
@@ -56,7 +57,7 @@ async fn main() {
     // create channel
     let channel: Channel = match conn.create_channel().await {
         Ok(channel) => {
-            MailManOk::new(200, "MQ channel created", Some(channel.id().clone()));
+            MailManOk::new(200, "MQ channel created", Some(channel.id()));
             channel
         }
         Err(e) => {
@@ -181,7 +182,7 @@ async fn main() {
             while let Some(delivery) = consumer.next().await {
                 if let Ok(delivery) = delivery {
                     MailManOk::new(200, "Recv new SYNC task", None::<&str>);
-                    sync_task::execute(&delivery.data).await;
+                    let _ = sync_task::execute(&delivery.data).await;
                     delivery.ack(BasicAckOptions::default()).await.expect("Failed to ack");
                 }
             }
@@ -191,7 +192,7 @@ async fn main() {
             while let Some(delivery) = consumer.next().await {
                 if let Ok(delivery) = delivery {
                     MailManOk::new(200, "Recv new ASYNC task", None::<&str>);
-                    async_task::execute(&delivery.data).await;
+                    let _ = async_task::execute(&delivery.data).await;
                     delivery.ack(BasicAckOptions::default()).await.expect("Failed to ack");
                 }
             }

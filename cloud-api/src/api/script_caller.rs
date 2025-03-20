@@ -16,7 +16,7 @@ pub async fn run(
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> HttpResponse {
     let api_name_str = req["api_name"].as_str().unwrap().to_string();
-    let name_list = api_name_str.split("_").into_iter().collect::<Vec<&str>>();
+    let name_list = api_name_str.split("_").collect::<Vec<&str>>();
     let script_path = GLOBAL_CONFIG.read().unwrap().script_dir.clone()
         + "/"
         + &name_list[0..name_list.len() - 1].join("/")
@@ -32,7 +32,7 @@ pub async fn run(
     let cloud_user = match account_service::get_all(&filter, &pool) {
         Ok(data) => {
             let data_unwrapped = data.data.unwrap();
-            if data_unwrapped.len() == 0 {
+            if data_unwrapped.is_empty() {
                 return HttpResponse::BadRequest().json("No account found");
             }
             data_unwrapped.clone()

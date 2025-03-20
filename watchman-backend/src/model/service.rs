@@ -212,7 +212,7 @@ impl ServiceModel {
             Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         };
 
-        let this_id = update_service.id.clone().unwrap();
+        let this_id = update_service.id.unwrap();
 
         match diesel::update(service_table.find(this_id))
             .set(update_service)

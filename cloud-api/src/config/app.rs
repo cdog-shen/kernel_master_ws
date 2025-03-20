@@ -21,9 +21,7 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                     .service(web::resource("/get").route(web::post().to(account_manage::get_all)))
                     .service(web::resource("/new").route(web::post().to(account_manage::new)))
                     .service(web::resource("/update").route(web::post().to(account_manage::update)))
-                    .service(
-                        web::resource("/delete").route(web::post().to(account_manage::delete)),
-                    ),
+                    .service(web::resource("/delete").route(web::post().to(account_manage::delete)))
             )
             .service(
                 web::scope("/script")

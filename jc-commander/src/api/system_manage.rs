@@ -7,16 +7,19 @@ use crate::server;
 
 // send a request to master to refresh the uuid
 pub async fn refresh_master() -> HttpResponse {
+    let config = server::GLOBAL_CONFIG.read().unwrap();
     let base_url = format!(
         "http://{}:{}/api",
-        server::GLOBAL_CONFIG.read().unwrap().master_addr,
-        server::GLOBAL_CONFIG.read().unwrap().master_port
+        config.master_addr,
+        config.master_port
     );
+    let register_name = config.register_name.clone();
+    drop(config); // Drop the MutexGuard here
 
     let id_res = ureq::get(&format!("{}/subsystem_control/all_subsystem", base_url))
         .query(
             "subsys_name",
-            &*server::GLOBAL_CONFIG.read().unwrap().register_name,
+            &register_name,
         )
         // .timeout(std::time::Duration::from_millis(1000))
         .call();
@@ -36,11 +39,13 @@ pub async fn refresh_master() -> HttpResponse {
         }
     };
 
+    let config = server::GLOBAL_CONFIG.read().unwrap();
     let req_json = serde_json::json!({
         "id": this_id,
-        "subsys_name": server::GLOBAL_CONFIG.read().unwrap().register_name,
-        "token" : server::GLOBAL_CONFIG.read().unwrap().subsys_uuid,
+        "subsys_name": config.register_name.clone(),
+        "token" : config.subsys_uuid.clone(),
     });
+    drop(config); // Drop the MutexGuard here
 
     let res: Result<serde_json::Value, std::io::Error> =
         ureq::post(&format!("{}/subsystem_control/update_subsystem", base_url))

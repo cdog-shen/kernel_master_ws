@@ -7,8 +7,7 @@ use crate::service::json_rpc::update_log;
 
 // async task exe
 pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
-    let payload =
-        serde_json::from_str::<Value>(&String::from_utf8(payload.to_vec()).unwrap()).unwrap();
+    let payload = serde_json::from_str::<Value>(core::str::from_utf8(payload).unwrap()).unwrap();
 
     let uuid = payload
         .get("id")

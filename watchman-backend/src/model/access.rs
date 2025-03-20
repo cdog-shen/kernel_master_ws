@@ -236,7 +236,7 @@ impl AccessModel {
             Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         };
 
-        let this_access_id = update_access.id.clone().unwrap();
+        let this_access_id = update_access.id.unwrap();
 
         match diesel::update(access_table.find(&this_access_id))
             .set(update_access)

@@ -16,7 +16,7 @@ pub async fn refresh_master() -> HttpResponse {
     let id_res = ureq::get(&format!("{}/subsystem_control/all_subsystem", base_url))
         .query(
             "subsys_name",
-            &*server::GLOBAL_CONFIG.read().unwrap().register_name,
+            &server::GLOBAL_CONFIG.read().unwrap().register_name,
         )
         // .timeout(std::time::Duration::from_millis(1000))
         .call();

@@ -192,7 +192,7 @@ pub fn get_me(
     let user_access_info = match AccessModel::get_access_by_gids(
         user_group_info
             .iter()
-            .filter_map(|group| Some(group.id))
+            .map(|group| group.id)
             .collect(),
         &mut pool.get().unwrap(),
     ) {

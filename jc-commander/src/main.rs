@@ -57,8 +57,9 @@ async fn main() -> io::Result<()> {
         .expect("Failed to create pool.");
 
     // init MQ connection pool
+    let mq_str = server::GLOBAL_CONFIG.read().unwrap().mq_str.clone();
     let mq_manager = Connection::connect(
-        &*server::GLOBAL_CONFIG.read().unwrap().mq_str.clone(),
+        &mq_str,
         ConnectionProperties::default(),
     )
     .await
@@ -89,7 +90,7 @@ async fn main() -> io::Result<()> {
             // wrap default logger
             .wrap(actix_web::middleware::Logger::default())
             // Comment this line if you want to integrate with yew-address-book-frontend
-            // .wrap(crate::middleware::auth_middleware::Authentication)
+            .wrap(crate::middleware::auth_middleware::Authentication)
             .wrap_fn(|req, srv| srv.call(req).map(|res| res))
             .configure(config::app::config_services)
     })

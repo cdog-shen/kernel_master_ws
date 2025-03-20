@@ -213,7 +213,7 @@ impl SubsysModel {
             Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
         };
 
-        let this_subsys_id = update_subsys.id.clone().unwrap();
+        let this_subsys_id = update_subsys.id.unwrap();
 
         match diesel::update(subsystem_table.find(this_subsys_id))
             .set(update_subsys)

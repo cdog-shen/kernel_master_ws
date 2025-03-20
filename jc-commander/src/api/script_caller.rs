@@ -21,12 +21,10 @@ pub async fn call_sync(
     mq_pool: web::Data<Arc<lapin::Connection>>,
 ) -> HttpResponse {
     let channel = mq_pool.create_channel().await.unwrap();
-    let queue = format!(
-        "{}_sync",
-        &server::GLOBAL_CONFIG.read().unwrap().mq_queue_prefix
-    );
+    let queue_prefix = server::GLOBAL_CONFIG.read().unwrap().mq_queue_prefix.clone();
+    let self_id = server::GLOBAL_CONFIG.read().unwrap().subsys_uuid.clone();
+    let queue = format!("{}_sync", queue_prefix);
 
-    let self_id = &server::GLOBAL_CONFIG.read().unwrap().subsys_uuid;
     let uuid = Uuid::new_v4().to_string();
     let mut req = req.into_inner();
     req["id"] = serde_json::Value::String(uuid.clone());
@@ -123,12 +121,10 @@ pub async fn call_async(
     mq_pool: web::Data<Arc<lapin::Connection>>,
 ) -> HttpResponse {
     let channel = mq_pool.create_channel().await.unwrap();
-    let queue = format!(
-        "{}_async",
-        &server::GLOBAL_CONFIG.read().unwrap().mq_queue_prefix
-    );
+    let queue_prefix = server::GLOBAL_CONFIG.read().unwrap().mq_queue_prefix.clone();
+    let self_id = server::GLOBAL_CONFIG.read().unwrap().subsys_uuid.clone();
+    let queue = format!("{}_async", queue_prefix);
 
-    let self_id = &server::GLOBAL_CONFIG.read().unwrap().subsys_uuid;
     let uuid = Uuid::new_v4().to_string();
     let mut req = req.into_inner();
     req["id"] = serde_json::Value::String(uuid.clone());
