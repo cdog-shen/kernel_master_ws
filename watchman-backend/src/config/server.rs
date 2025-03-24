@@ -16,11 +16,11 @@ pub struct AllConfigs {
     pub listen_addr: String,
     pub listen_port: u16,
     pub allowed_origin_list: Vec<String>,
-    
+
     pub pub_key_path: String,
     pub pri_key_path: String,
     pub secret_key_path: String,
-    
+
     pub authenticate_bypass: Vec<String>,
     pub permit_bypass: Vec<String>,
 
@@ -58,6 +58,8 @@ impl AllConfigs {
         };
 
         self.log_path = get_string_from_config(&config, &["server_config", "log_path"]);
+        self.log_level = get_string_from_config(&config, &["server_config", "log_level"]);
+
         self.listen_addr = get_string_from_config(&config, &["server_config", "listen_addr"]);
         self.listen_port = config["server_config"]["listen_port"].as_u64().unwrap() as u16;
         self.allowed_origin_list = match &config["server_config"]["allowed_origin_list"] {
@@ -68,10 +70,11 @@ impl AllConfigs {
                 .collect(),
             _ => vec![],
         };
+
         self.pub_key_path = get_string_from_config(&config, &["server_config", "pub_key_path"]);
         self.pri_key_path = get_string_from_config(&config, &["server_config", "pri_key_path"]);
-        self.secret_key_path =
-            get_string_from_config(&config, &["server_config", "secret_key_path"]);
+        self.secret_key_path = get_string_from_config(&config, &["server_config", "secret_key_path"]);
+
         self.authenticate_bypass = match &config["server_config"]["authenticate_bypass"] {
             Value::Array(vec) => vec
                 .iter()
@@ -88,6 +91,7 @@ impl AllConfigs {
                 .collect(),
             _ => vec![],
         };
+
         self.db_str = get_string_from_config(&config, &["db_config", "db_str"]);
 
         Ok(0)

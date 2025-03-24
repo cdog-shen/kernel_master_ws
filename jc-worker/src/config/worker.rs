@@ -11,17 +11,19 @@ use share_lib::{cfg_reader::read_config, data_structure::MailManErr};
 
 #[derive(Debug, Deserialize)]
 pub struct AllConfigs {
-    pub subsys_uuid: String,
-    pub commander_addr: String,
-
     pub log_path: String,
     pub log_level: String,
 
-    pub mq_str: String,
-    pub mq_queue_prefix: String,
+    pub subsys_uuid: String,
+
+    pub commander_addr: String,
+    pub commander_port: u16,
 
     pub python_path: String,
     pub script_dir: String,
+
+    pub mq_str: String,
+    pub mq_queue_prefix: String,
 }
 
 fn get_string_from_config(config: &Map<String, Value>, path: &[&str]) -> String {
@@ -34,14 +36,19 @@ fn get_string_from_config(config: &Map<String, Value>, path: &[&str]) -> String 
 impl AllConfigs {
     pub fn new() -> Self {
         Self {
-            subsys_uuid: String::new(),
-            commander_addr: String::new(),
             log_path: String::new(),
             log_level: String::new(),
-            mq_str: String::new(),
-            mq_queue_prefix: String::new(),
+
+            subsys_uuid: String::new(),
+
+            commander_addr: String::new(),
+            commander_port: 9003,
+
             python_path: String::new(),
             script_dir: String::new(),
+
+            mq_str: String::new(),
+            mq_queue_prefix: String::new(),
         }
     }
 
@@ -51,13 +58,22 @@ impl AllConfigs {
             Err(e) => return Err(e),
         };
 
-        self.subsys_uuid = Uuid::new_v4().to_string();
-        self.commander_addr = get_string_from_config(&config, &["server_config", "commander_addr"]);
         self.log_path = get_string_from_config(&config, &["server_config", "log_path"]);
-        self.mq_str = get_string_from_config(&config, &["mq_config", "mq_str"]);
-        self.mq_queue_prefix = get_string_from_config(&config, &["mq_config", "queue_prefix"]);
+        self.log_level = get_string_from_config(&config, &["server_config", "log_level"]);
+
+        self.subsys_uuid = Uuid::new_v4().to_string();
+
+        self.commander_addr = get_string_from_config(&config, &["server_config", "commander_addr"]);
+        self.commander_port = match config["server_config"]["commander_port"].as_u64() {
+            Some(data) => data as u16,
+            None => 9003,
+        };
+
         self.python_path = get_string_from_config(&config, &["server_config", "python_path"]);
         self.script_dir = get_string_from_config(&config, &["server_config", "script_dir"]);
+
+        self.mq_str = get_string_from_config(&config, &["mq_config", "mq_str"]);
+        self.mq_queue_prefix = get_string_from_config(&config, &["mq_config", "queue_prefix"]);
 
         Ok(0)
     }
