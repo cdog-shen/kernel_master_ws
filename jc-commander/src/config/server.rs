@@ -14,22 +14,21 @@ pub struct AllConfigs {
     pub log_path: String,
     pub log_level: String,
 
-    pub db_str: String,
-    pub mq_str: String,
-    pub mq_queue_prefix: String,
-
     pub listen_addr: String,
     pub listen_port: u16,
 
-    pub authenticate_bypass: Vec<String>,
     pub subsys_uuid: String,
+    pub register_name: String,
 
     pub master_addr: String,
     pub master_port: u16,
-    pub register_name: String,
 
-    pub python_path: String,
-    pub script_dir: String,
+    pub authenticate_bypass: Vec<String>,
+
+    pub db_str: String,
+
+    pub mq_str: String,
+    pub mq_queue_prefix: String,
 }
 
 fn get_string_from_config(config: &Map<String, Value>, path: &[&str]) -> String {
@@ -44,18 +43,22 @@ impl AllConfigs {
         Self {
             log_path: String::new(),
             log_level: String::new(),
-            db_str: String::new(),
-            mq_str: String::new(),
-            mq_queue_prefix: String::new(),
+
             listen_addr: String::new(),
             listen_port: 9001,
-            authenticate_bypass: vec![],
+
             subsys_uuid: String::new(),
+            register_name: String::new(),
+
             master_addr: String::new(),
             master_port: 8000,
-            register_name: String::new(),
-            python_path: String::new(),
-            script_dir: String::new(),
+
+            authenticate_bypass: vec![],
+
+            db_str: String::new(),
+
+            mq_str: String::new(),
+            mq_queue_prefix: String::new(),
         }
     }
 
@@ -65,14 +68,18 @@ impl AllConfigs {
             Err(e) => return Err(e),
         };
 
-        println!("{:?}", config["server_config"]["log_path"]);
-
         self.log_path = get_string_from_config(&config, &["server_config", "log_path"]);
-        self.db_str = get_string_from_config(&config, &["db_config", "db_str"]);
-        self.mq_str = get_string_from_config(&config, &["mq_config", "mq_str"]);
-        self.mq_queue_prefix = get_string_from_config(&config, &["mq_config", "queue_prefix"]);
+        self.log_level = get_string_from_config(&config, &["server_config", "log_level"]);
+
         self.listen_addr = get_string_from_config(&config, &["server_config", "listen_addr"]);
         self.listen_port = config["server_config"]["listen_port"].as_u64().unwrap() as u16;
+
+        self.subsys_uuid = Uuid::new_v4().to_string();
+        self.register_name = get_string_from_config(&config, &["server_config", "register_name"]);
+
+        self.master_addr = get_string_from_config(&config, &["server_config", "master_addr"]);
+        self.master_port = config["server_config"]["master_port"].as_u64().unwrap() as u16;
+
         self.authenticate_bypass = match &config["server_config"]["authenticate_bypass"] {
             Value::Array(vec) => vec
                 .iter()
@@ -81,12 +88,11 @@ impl AllConfigs {
                 .collect(),
             _ => vec![],
         };
-        self.subsys_uuid = Uuid::new_v4().to_string();
-        self.master_addr = get_string_from_config(&config, &["server_config", "master_addr"]);
-        self.master_port = config["server_config"]["master_port"].as_u64().unwrap() as u16;
-        self.register_name = get_string_from_config(&config, &["server_config", "register_name"]);
-        self.python_path = get_string_from_config(&config, &["server_config", "python_path"]);
-        self.script_dir = get_string_from_config(&config, &["server_config", "script_dir"]);
+
+        self.db_str = get_string_from_config(&config, &["db_config", "db_str"]);
+
+        self.mq_str = get_string_from_config(&config, &["mq_config", "mq_str"]);
+        self.mq_queue_prefix = get_string_from_config(&config, &["mq_config", "queue_prefix"]);
 
         Ok(0)
     }

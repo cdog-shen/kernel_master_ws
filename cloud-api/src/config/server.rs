@@ -42,16 +42,22 @@ impl AllConfigs {
         Self {
             log_path: String::new(),
             log_level: String::new(),
-            db_str: String::new(),
+
             listen_addr: String::new(),
             listen_port: 9001,
-            authenticate_bypass: vec![],
+
             subsys_uuid: String::new(),
+            register_name: String::new(),
+
             master_addr: String::new(),
             master_port: 8000,
-            register_name: String::new(),
+
+            authenticate_bypass: vec![],
+
             python_path: String::new(),
             script_dir: String::new(),
+
+            db_str: String::new(),
         }
     }
 
@@ -61,12 +67,18 @@ impl AllConfigs {
             Err(e) => return Err(e),
         };
 
-        println!("{:?}", config["server_config"]["log_path"]);
-
         self.log_path = get_string_from_config(&config, &["server_config", "log_path"]);
-        self.db_str = get_string_from_config(&config, &["db_config", "db_str"]);
+        self.log_level = get_string_from_config(&config, &["server_config", "log_level"]);
+
         self.listen_addr = get_string_from_config(&config, &["server_config", "listen_addr"]);
         self.listen_port = config["server_config"]["listen_port"].as_u64().unwrap() as u16;
+
+        self.subsys_uuid = Uuid::new_v4().to_string();
+        self.register_name = get_string_from_config(&config, &["server_config", "register_name"]);
+
+        self.master_addr = get_string_from_config(&config, &["server_config", "master_addr"]);
+        self.master_port = config["server_config"]["master_port"].as_u64().unwrap() as u16;
+
         self.authenticate_bypass = match &config["server_config"]["authenticate_bypass"] {
             Value::Array(vec) => vec
                 .iter()
@@ -75,12 +87,11 @@ impl AllConfigs {
                 .collect(),
             _ => vec![],
         };
-        self.subsys_uuid = Uuid::new_v4().to_string();
-        self.master_addr = get_string_from_config(&config, &["server_config", "master_addr"]);
-        self.master_port = config["server_config"]["master_port"].as_u64().unwrap() as u16;
-        self.register_name = get_string_from_config(&config, &["server_config", "register_name"]);
+
         self.python_path = get_string_from_config(&config, &["server_config", "python_path"]);
         self.script_dir = get_string_from_config(&config, &["server_config", "script_dir"]);
+
+        self.db_str = get_string_from_config(&config, &["db_config", "db_str"]);
 
         Ok(0)
     }
@@ -89,7 +100,7 @@ impl AllConfigs {
 pub static CONFIG_FILE_HANDLE: Lazy<Mutex<File>> = Lazy::new(|| {
     let path = std::env::current_dir()
         .expect("Unable to get workspace path")
-        .join("cloud_api_server.cfg");
+        .join("cloud_api.cfg");
     let file = File::open(&path).expect("Unable to open config file");
     Mutex::new(file)
 });
