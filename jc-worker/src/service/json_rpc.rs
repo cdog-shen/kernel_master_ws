@@ -11,8 +11,9 @@ pub fn update_log<'a>(
     result: String,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
     let commander_url = format!(
-        "http://{}/api/log/update",
-        worker::GLOBAL_CONFIG.read().unwrap().commander_addr
+        "http://{}:{}/api/log/update",
+        worker::GLOBAL_CONFIG.read().unwrap().commander_addr,
+        worker::GLOBAL_CONFIG.read().unwrap().commander_port
     );
     let worker_id = &worker::GLOBAL_CONFIG.read().unwrap().subsys_uuid;
     let response = ureq::post(commander_url)
