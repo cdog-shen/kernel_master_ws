@@ -29,7 +29,7 @@ pub fn new_subsys<'a>(
     subsys_info: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
-    let subsys_name = subsys_info.get("subsys_name").unwrap().to_string();
+    let subsys_name = subsys_info.get("subsys_name").expect("missing subsys_name").as_str().unwrap();
 
     let bind_service_info: Map<String, Value> = serde_json::from_value(serde_json::json!({
         "service_name": Some(format!(
