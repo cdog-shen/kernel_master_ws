@@ -8,7 +8,13 @@ from tencentcloud.lighthouse.v20200324 import lighthouse_client, models
 
 
 class ApiClient_Lighthouse:
-    def __init__(self, AK, SK, endpoint, region):
+    def __init__(
+        self,
+        AK,
+        SK,
+        region,
+        endpoint = "lighthouse.tencentcloudapi.com",
+    ):
         try:
             # 实例化一个认证对象，入参需要传入腾讯云账户 SecretId 和 SecretKey，此处还需注意密钥对的保密
             # 代码泄露可能会导致 SecretId 和 SecretKey 泄露，并威胁账号下所有资源的安全性。以下代码示例仅供参考，建议采用更安全的方式来使用密钥，请参见：https://cloud.tencent.com/document/product/1278/85305
@@ -22,18 +28,19 @@ class ApiClient_Lighthouse:
             clientProfile = ClientProfile()
             clientProfile.httpProfile = httpProfile
             # 实例化要请求产品的client对象,clientProfile是可选的
-            self.client = lighthouse_client.LighthouseClient(cred, region, clientProfile)
-            
+            self.client = lighthouse_client.LighthouseClient(
+                cred, region, clientProfile
+            )
+
         except TencentCloudSDKException as err:
             print(err)
             return err
 
     def ClientHandler(self):
         return self.client
-        # # 返回的resp是一个DescribeInstancesResponse的实例，与请求对象对应
         # resp = client.DescribeInstances(req)
         # # 输出json格式的字符串回包
         # print(resp.to_json_string())
-        
+
     def ModelsHandler(self):
         return models
