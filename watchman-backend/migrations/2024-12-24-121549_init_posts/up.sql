@@ -83,7 +83,14 @@ VALUES (
         'admin',
         1,
         '2024-12-01 00:00:00',
-        '[1]'
+        '[1,2]'
+    ),
+    (
+        2,
+        'script_caller',
+        1,
+        '2024-12-01 00:00:00',
+        '[2]'
     );
 
 -- 创建 service_table 表
@@ -200,6 +207,16 @@ VALUES (
         'root',
         1,
         'root as admin',
+        NULL,
+        '2024-12-01 00:00:00',
+        NULL
+    ),
+    (
+        2,
+        'script_caller',
+        'script_caller',
+        1,
+        'subsystem user for calling script',
         NULL,
         '2024-12-01 00:00:00',
         NULL
