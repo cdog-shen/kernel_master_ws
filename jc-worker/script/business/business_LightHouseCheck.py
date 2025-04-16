@@ -97,7 +97,7 @@ def main(runner: run) -> Tuple[int, str, dict | list[dict]]:
                 "update",
                 "light_ecs",
                 {
-                    "id": current_data.get("data").get("data")[0],
+                    "id": int(current_data.get("data").get("data")[0]),
                     "instance_id": instance.get("InstanceId"),
                     "instance_name": instance.get("InstanceName"),
                     "instance_type": None,
@@ -128,7 +128,7 @@ def main(runner: run) -> Tuple[int, str, dict | list[dict]]:
                     500,
                     "CMDB",
                     {
-                        "api": "table_get",
+                        "api": "table_update",
                         "info": update_resp.get("data"),
                     },
                 )
