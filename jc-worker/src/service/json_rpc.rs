@@ -1,3 +1,5 @@
+use std::fmt::format;
+
 use chrono::Local;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
@@ -17,7 +19,7 @@ pub fn update_log<'a>(
     );
     let worker_id = &worker::GLOBAL_CONFIG.read().unwrap().subsys_uuid;
     let response = ureq::post(commander_url)
-        .header("Authorization", auth)
+        .header("Authorization", &format!("uuid {}", auth))
         .header("content-type", "application/json")
         .send(
             serde_json::to_string(&serde_json::json!(		{
