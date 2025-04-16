@@ -1,5 +1,3 @@
-use std::fmt::format;
-
 use chrono::Local;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
