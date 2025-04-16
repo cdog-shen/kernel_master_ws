@@ -17,10 +17,10 @@ pub fn update_log<'a>(
     );
     let worker_id = &worker::GLOBAL_CONFIG.read().unwrap().subsys_uuid;
     let response = ureq::post(commander_url)
+        .header("Content-Type", "application/json")
         .header("Authorization", &format!("uuid {}", auth))
-        .header("content-type", "application/json")
         .send(
-            serde_json::to_string(&serde_json::json!(		{
+            serde_json::to_string(&serde_json::json!({
                 "id": uuid,
                 "worker": worker_id,
                 "status": status,
