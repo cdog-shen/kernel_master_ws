@@ -145,11 +145,10 @@ if __name__ == "__main__":
         (code, msg, data) = runner.dispatch(fn_handle=main)
 
         if code != 200:
-            print(gen_error_msg(SCRIPT_NAME, data, code))
+            print(gen_error_msg(SCRIPT_NAME, data, code),end="")
         else:
-            print(gen_ok_msg(msg, data))
+            print(gen_ok_msg(msg, data),end="")
 
     except Exception as error:
         import traceback
-
-        print(gen_trace_msg(SCRIPT_NAME, traceback.format_exc()))
+        print(gen_trace_msg(SCRIPT_NAME, traceback.format_exc()),end="")
