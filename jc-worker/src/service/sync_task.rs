@@ -9,6 +9,13 @@ use crate::service::json_rpc::update_log;
 pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
     let payload = serde_json::from_str::<Value>(core::str::from_utf8(payload).unwrap()).unwrap();
 
+    let auth = payload
+        .get("commander")
+        .unwrap()
+        .as_str()
+        .unwrap()
+        .trim_matches('"')
+        .to_string();
     let uuid = payload
         .get("id")
         .unwrap()
@@ -60,8 +67,6 @@ pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailMa
             (e, 0)
         }
     };
-
-    let auth = payload.get("commander").unwrap();
 
     match update_log(auth.to_string(), uuid.to_string(), status, result) {
         Ok(MailManOk {
