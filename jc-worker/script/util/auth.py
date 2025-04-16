@@ -1,7 +1,7 @@
 import requests
 import os
 
-WATCHMAN_HOST = os.getenv("WATCHMAN_HOST", "10.16.18.128")
+WATCHMAN_HOST = os.getenv("WATCHMAN_HOST", "127.0.0.1")
 WATCHMAN_PORT = os.getenv("WATCHMAN_PORT", 8000)
 CHECK_URL = f"http://{WATCHMAN_HOST}:{WATCHMAN_PORT}/api/auth/me/2"
 LOGIN_URL = f"http://{WATCHMAN_HOST}:{WATCHMAN_PORT}/api/auth/login"
