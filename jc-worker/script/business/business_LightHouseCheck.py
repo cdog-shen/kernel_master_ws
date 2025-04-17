@@ -97,7 +97,7 @@ def main(runner: run) -> Tuple[int, str, dict | list[dict]]:
                 "update",
                 "light_ecs",
                 {
-                    "id": int(current_data.get("data").get("data")[0]),
+                    "id": current_data.get("data").get("data")[0].get("id"),
                     "instance_id": instance.get("InstanceId"),
                     "instance_name": instance.get("InstanceName"),
                     "instance_type": None,
