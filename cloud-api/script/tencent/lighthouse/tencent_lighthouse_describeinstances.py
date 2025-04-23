@@ -1,8 +1,10 @@
 # 获取实例列表
 # 参数列表:
-# ak: SecretID
-# sk: SecretKEY
-# region: 地区
+# 1. ak: SecretID
+# 2. sk: SecretKEY
+# 3. region: 地区
+# 4. params: 请求参数
+# 5. endpoint: 接口地址
 
 import json
 import sys
