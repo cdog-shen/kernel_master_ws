@@ -1,4 +1,4 @@
-# 查询地区
+# 查询可用区
 # 参数列表
 # 1. ak: SecretID
 # 2. sk: SecretKEY
