@@ -1,24 +1,10 @@
-# 查询实例列表
+# 查询可用区
 # 参数列表:
 # 1. ak: SecretID
 # 2. sk: SecretKEY
 # 3. region: 地区
 # 4. params: 请求参数
 # 5. endpoint: 接口地址
-# param示例:
-# {
-#     "InstanceIds": [
-#         "1111111"
-#     ],
-#     "Filters": [
-#         {
-#             "Name": "1111111",
-#             "Values": [
-#                 "11111111"
-#             ]
-#         }
-#     ]
-# }
 
 import json
 import sys
@@ -41,10 +27,10 @@ try:
 
     client = ApiClient_Lighthouse(AK, SK, region, endpoint)
 
-    req = client.ModelsHandler().DescribeInstancesRequest()
+    req = client.ModelsHandler().DescribeZonesRequest()
     req.from_json_string(jsonStr=json.dumps(params))
 
-    resp = client.ClientHandler().DescribeInstances(req)
+    resp = client.ClientHandler().DescribeZones(req)
 
     print(resp.to_json_string(), end="")
 

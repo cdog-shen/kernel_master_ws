@@ -15,7 +15,7 @@
 
 # config files
 watchman-backend/watchman_backend.cfg
-cmdb-backend/cmdb_server.cfg
+cmdb-backend/cmdb_backend.cfg
 cloud-api/cloud_api.cfg
 jc-commander/job_center_commander.cfg
 jc-worker/job_center_worker.cfg

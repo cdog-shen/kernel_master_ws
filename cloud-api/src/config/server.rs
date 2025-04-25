@@ -18,6 +18,7 @@ pub struct AllConfigs {
 
     pub listen_addr: String,
     pub listen_port: u16,
+    pub allowed_origin_list: Vec<String>,
 
     pub authenticate_bypass: Vec<String>,
     pub subsys_uuid: String,
@@ -45,6 +46,7 @@ impl AllConfigs {
 
             listen_addr: String::new(),
             listen_port: 9001,
+            allowed_origin_list: vec![],
 
             subsys_uuid: String::new(),
             register_name: String::new(),

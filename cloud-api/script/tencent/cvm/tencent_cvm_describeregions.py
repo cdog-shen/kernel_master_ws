@@ -1,29 +1,15 @@
-# 查询实例列表
-# 参数列表:
+# 查询地区
+# 参数列表
 # 1. ak: SecretID
 # 2. sk: SecretKEY
 # 3. region: 地区
 # 4. params: 请求参数
-# 5. endpoint: 接口地址
-# param示例:
-# {
-#     "InstanceIds": [
-#         "1111111"
-#     ],
-#     "Filters": [
-#         {
-#             "Name": "1111111",
-#             "Values": [
-#                 "11111111"
-#             ]
-#         }
-#     ]
-# }
+# 5. endpoint: 接口地址 (暂时固定, 不影响返回结果)
 
 import json
 import sys
 import os
-from package_import import ApiClient_Lighthouse
+from package_import import ApiClient_CVM
 
 FILE_NAME = os.path.basename(__file__)
 
@@ -37,16 +23,17 @@ try:
     SK = sys.argv[2]
     region = sys.argv[3]
     params = json.loads(sys.argv[4])
-    endpoint = "lighthouse.tencentcloudapi.com"
+    endpoint = "cvm.tencentcloudapi.com"
 
-    client = ApiClient_Lighthouse(AK, SK, region, endpoint)
+    client = ApiClient_CVM(AK, SK, region, endpoint)
 
-    req = client.ModelsHandler().DescribeInstancesRequest()
+    req = client.ModelsHandler().DescribeRegionsRequest()
     req.from_json_string(jsonStr=json.dumps(params))
 
-    resp = client.ClientHandler().DescribeInstances(req)
+    resp = client.ClientHandler().DescribeRegions(req)
 
     print(resp.to_json_string(), end="")
+
 
 except Exception as err:
     import traceback

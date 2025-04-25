@@ -18,6 +18,7 @@ pub struct AllConfigs {
 
     pub listen_addr: String,
     pub listen_port: u16,
+    pub allowed_origin_list: Vec<String>,
 
     pub authenticate_bypass: Vec<String>,
     pub subsys_uuid: String,
@@ -42,6 +43,7 @@ impl AllConfigs {
 
             listen_addr: String::new(),
             listen_port: 9001,
+            allowed_origin_list: vec![],
 
             subsys_uuid: String::new(),
             register_name: String::new(),
@@ -66,6 +68,14 @@ impl AllConfigs {
 
         self.listen_addr = get_string_from_config(&config, &["server_config", "listen_addr"]);
         self.listen_port = config["server_config"]["listen_port"].as_u64().unwrap() as u16;
+        self.allowed_origin_list = match &config["server_config"]["allowed_origin_list"] {
+            Value::Array(vec) => vec
+                .iter()
+                .filter_map(|item| item.as_str())
+                .map(|item| item.to_string())
+                .collect(),
+            _ => vec![],
+        };
 
         self.subsys_uuid = Uuid::new_v4().to_string();
         self.register_name = get_string_from_config(&config, &["server_config", "register_name"]);
