@@ -58,12 +58,9 @@ async fn main() -> io::Result<()> {
 
     // init MQ connection pool
     let mq_str = server::GLOBAL_CONFIG.read().unwrap().mq_str.clone();
-    let mq_manager = Connection::connect(
-        &mq_str,
-        ConnectionProperties::default(),
-    )
-    .await
-    .expect("Failed to connect to MQ");
+    let mq_manager = Connection::connect(&mq_str, ConnectionProperties::default())
+        .await
+        .expect("Failed to connect to MQ");
     let mq_pool: Arc<Connection> = Arc::new(mq_manager);
 
     // setting listen addr
@@ -72,13 +69,22 @@ async fn main() -> io::Result<()> {
         &*server::GLOBAL_CONFIG.read().unwrap().listen_addr,
         &server::GLOBAL_CONFIG.read().unwrap().listen_port
     );
+    let allowed_origin_list = server::GLOBAL_CONFIG
+    .read()
+    .unwrap()
+    .allowed_origin_list
+    .clone();
 
     HttpServer::new(move || {
         App::new()
             .wrap(
                 Cors::default() // allowed_origin return access-control-allow-origin: * by default
-                    .allowed_origin("http://127.0.0.1:3000")
-                    .allowed_origin("http://localhost:3000")
+                    .allowed_origin_fn({
+                        let value = allowed_origin_list.clone();
+                        move |origin, _req_head| {
+                            value.iter().any(|allowed_origin| origin == allowed_origin)
+                        }
+                    })
                     .send_wildcard()
                     .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
                     .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
