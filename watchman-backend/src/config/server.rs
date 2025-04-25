@@ -39,14 +39,18 @@ impl AllConfigs {
         Self {
             log_path: String::new(),
             log_level: String::new(),
+
             listen_addr: String::new(),
             listen_port: 8000,
             allowed_origin_list: vec![],
+
             pub_key_path: String::new(),
             pri_key_path: String::new(),
             secret_key_path: String::new(),
+
             authenticate_bypass: vec![],
             permit_bypass: vec![],
+
             db_str: String::new(),
         }
     }
