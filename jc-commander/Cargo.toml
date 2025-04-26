@@ -8,6 +8,7 @@ edition = "2021"
 once_cell = "1.21.1"
 log = "0.4.26"
 chrono = { version = "0.4.40", features = ["serde"] }
+tokio = { version = "1.44.2", features = ["full"] }
 # toml = "0.8.19"
 # basic web dependencies
 actix-web = "4.10.2"
@@ -30,3 +31,7 @@ lapin = "2.5.1"
 # share-lib utils
 share-lib = { path = "../share-lib" }
 
+[profile.release]
+lto = true # 链接时优化
+panic = "abort" # 禁用堆栈展开
+codegen-units = 1
