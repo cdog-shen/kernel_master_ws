@@ -75,7 +75,6 @@ async fn main() -> io::Result<()> {
         log::info!("TimeWheel thread launched. Ticking...");
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
         loop {
-            log::info!("ffc: {}", ffc.lock().unwrap());
             if *ffc.lock().unwrap() {
                 *ffc.lock().unwrap() = false;
                 let _ = time_wheel.reload_from_db();
