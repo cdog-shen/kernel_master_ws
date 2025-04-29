@@ -1,6 +1,6 @@
 name: Build all
 run-name: 🔨 ${{ gitea.actor }} is building all kernel master work space
-on: [merge]
+on: [push]
 
 jobs:
   Explore-Gitea-Actions:
