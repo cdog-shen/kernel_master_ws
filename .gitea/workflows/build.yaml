@@ -1,0 +1,19 @@
+name: Build all
+run-name: 🔨 ${{ gitea.actor }} is building all kernel master work space
+on: [merge]
+
+jobs:
+  Explore-Gitea-Actions:
+    runs-on: 128server
+    steps:
+      - name: Info
+        run: echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
+
+      - name: build
+        run: |
+          cd ~/kmws/kernel_master_ws
+          for ws in $(ls -l | awk '/^d/ {print $9}'); do cd "$ws" && cargo clean && cargo build --release && cd ..; done
+
+
+      # - name: Check out repository code
+      #   uses: actions/checkout@v4
