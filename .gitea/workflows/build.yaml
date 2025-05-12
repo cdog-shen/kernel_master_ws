@@ -9,6 +9,11 @@ jobs:
       - name: Info
         run: echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
 
+      - name: Pull
+        run: |
+          cd ~/kmws/kernel_master_ws
+          git pull --prune
+
       - name: build
         run: |
           cd ~/kmws/kernel_master_ws
@@ -16,7 +21,7 @@ jobs:
 
       - name: alert
         run: |
-          curl "https://api.day.app/$BARK_TOKEN/Gitea+workflow/${{ gitea.repository }}+building+process+now+is+${{ gitea.action_status }}"
+          curl "https://api.day.app/$BARK_TOKEN/Gitea+workflow/${{ gitea.repository }}+building+process+now+is+${{ job.status }}"
 
 
       # - name: Check out repository code
