@@ -77,8 +77,6 @@ async fn main() -> io::Result<()> {
                             value.iter().any(|allowed_origin| origin == allowed_origin)
                         }
                     })
-                    .allowed_origin("http://127.0.0.1:3000")
-                    .allowed_origin("http://localhost:3000")
                     .send_wildcard()
                     .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
                     .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
@@ -93,6 +91,7 @@ async fn main() -> io::Result<()> {
             .wrap_fn(|req, srv| srv.call(req).map(|res| res))
             .configure(config::app::config_services)
     })
+    .workers(server::GLOBAL_CONFIG.read().unwrap().workers as usize)
     .bind(&app_url)?
     .run()
     .await
