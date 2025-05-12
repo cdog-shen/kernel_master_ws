@@ -12,7 +12,7 @@ jobs:
       - name: build
         run: |
           cd ~/kmws/kernel_master_ws
-          for ws in $(ls -l | awk '/^d/ {print $9}'); do cd "$ws" && cargo clean && cargo build --release && cd ..; done
+          for ws in $(ls -l | awk '/^d/ {print $9}' | grep -v log); do cd "$ws" && cargo clean && cargo build --release && cd ..; done
 
 
       # - name: Check out repository code
