@@ -93,6 +93,7 @@ async fn main() -> io::Result<()> {
             .wrap_fn(|req, srv| srv.call(req).map(|res| res))
             .configure(config::app::config_services)
     })
+    .workers(server::GLOBAL_CONFIG.read().unwrap().workers as usize)
     .bind(&app_url)?
     .run()
     .await

@@ -15,6 +15,7 @@ pub struct AllConfigs {
 
     pub listen_addr: String,
     pub listen_port: u16,
+    pub workers: u16,
     pub allowed_origin_list: Vec<String>,
 
     pub pub_key_path: String,
@@ -42,6 +43,7 @@ impl AllConfigs {
 
             listen_addr: String::new(),
             listen_port: 8000,
+            workers: 2,
             allowed_origin_list: vec![],
 
             pub_key_path: String::new(),
@@ -66,6 +68,7 @@ impl AllConfigs {
 
         self.listen_addr = get_string_from_config(&config, &["server_config", "listen_addr"]);
         self.listen_port = config["server_config"]["listen_port"].as_u64().unwrap() as u16;
+        self.workers = config["server_config"]["workers"].as_u64().unwrap() as u16;
         self.allowed_origin_list = match &config["server_config"]["allowed_origin_list"] {
             Value::Array(vec) => vec
                 .iter()
@@ -77,7 +80,8 @@ impl AllConfigs {
 
         self.pub_key_path = get_string_from_config(&config, &["server_config", "pub_key_path"]);
         self.pri_key_path = get_string_from_config(&config, &["server_config", "pri_key_path"]);
-        self.secret_key_path = get_string_from_config(&config, &["server_config", "secret_key_path"]);
+        self.secret_key_path =
+            get_string_from_config(&config, &["server_config", "secret_key_path"]);
 
         self.authenticate_bypass = match &config["server_config"]["authenticate_bypass"] {
             Value::Array(vec) => vec

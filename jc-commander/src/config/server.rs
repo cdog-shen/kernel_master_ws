@@ -16,6 +16,7 @@ pub struct AllConfigs {
 
     pub listen_addr: String,
     pub listen_port: u16,
+    pub workers: u16,
     pub allowed_origin_list: Vec<String>,
 
     pub subsys_uuid: String,
@@ -47,6 +48,7 @@ impl AllConfigs {
 
             listen_addr: String::new(),
             listen_port: 9001,
+            workers: 2,
             allowed_origin_list: vec![],
 
             subsys_uuid: String::new(),
@@ -75,6 +77,7 @@ impl AllConfigs {
 
         self.listen_addr = get_string_from_config(&config, &["server_config", "listen_addr"]);
         self.listen_port = config["server_config"]["listen_port"].as_u64().unwrap() as u16;
+        self.workers = config["server_config"]["workers"].as_u64().unwrap() as u16;
         self.allowed_origin_list = match &config["server_config"]["allowed_origin_list"] {
             Value::Array(vec) => vec
                 .iter()
