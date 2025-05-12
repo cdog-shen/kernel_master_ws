@@ -77,8 +77,6 @@ async fn main() -> io::Result<()> {
                             value.iter().any(|allowed_origin| origin == allowed_origin)
                         }
                     })
-                    .allowed_origin("http://127.0.0.1:3000")
-                    .allowed_origin("http://localhost:3000")
                     .send_wildcard()
                     .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
                     .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
