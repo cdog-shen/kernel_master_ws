@@ -80,7 +80,12 @@ impl AllConfigs {
             _ => vec![],
         };
 
-        self.subsys_uuid = Uuid::new_v4().to_string();
+        self.subsys_uuid = if get_string_from_config(&config, &["server_config", "uuid"]) == "" {
+            Uuid::new_v4().to_string()
+        } else {
+            get_string_from_config(&config, &["server_config", "uuid"])
+        };
+
         self.register_name = get_string_from_config(&config, &["server_config", "register_name"]);
 
         self.master_addr = get_string_from_config(&config, &["server_config", "master_addr"]);
