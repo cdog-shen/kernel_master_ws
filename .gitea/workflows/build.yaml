@@ -7,7 +7,10 @@ jobs:
     runs-on: 128server
     steps:
       - name: Info
-        run: echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
+        run: |
+          echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
+          curl "https://api.day.app/$BARK_TOKEN/Gitea+workflow/${{ gitea.repository }}+building+process+now+triggered+by+${{ gitea.event_name }}+event"
+        
 
       - name: Pull
         run: |
