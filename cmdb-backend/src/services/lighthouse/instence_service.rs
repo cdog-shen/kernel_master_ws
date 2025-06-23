@@ -7,7 +7,7 @@ use serde_json::{Map, Value};
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::models::lighthouse::instence::*;
+use crate::models::lighthouse::instance::*;
 
 // get all light ecs info
 pub fn get_all<'a>(
