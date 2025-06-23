@@ -3,14 +3,14 @@ use diesel::{prelude::*, result::Error::NotFound};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use crate::models::schema::lighthouse_instence_table::{self, dsl::*};
+use crate::models::schema::lighthouse_instence::{self, dsl::*};
 
 static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
 // static TMI_ERROR_CODE: u8 = 2;
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
-#[diesel(table_name = lighthouse_instence_table)]
+#[diesel(table_name = lighthouse_instence)]
 pub struct LightEcsModel {
     pub id: u64,
     pub project: String,
@@ -37,7 +37,7 @@ pub struct LightEcsModel {
 }
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
-#[diesel(table_name = lighthouse_instence_table)]
+#[diesel(table_name = lighthouse_instence)]
 pub struct LightEcsInfo {
     pub id: Option<u64>,
     pub project: Option<String>,
@@ -155,7 +155,7 @@ impl LightEcsInfo {
 impl LightEcsModel {
     /// get user by id
     pub fn get_user_by_id(ecs_id: u64, conn: &mut MysqlConnection) -> Result<Value, (u8, String)> {
-        match lighthouse_instence_table
+        match lighthouse_instence
             .filter(id.eq(ecs_id))
             .first::<LightEcsModel>(conn)
         {
@@ -185,7 +185,7 @@ impl LightEcsModel {
         filter: Map<String, Value>,
         conn: &mut MysqlConnection,
     ) -> Result<Vec<Value>, (u8, String)> {
-        let mut query = lighthouse_instence_table
+        let mut query = lighthouse_instence
             .into_boxed()
             .select(LightEcsModel::as_select());
 
@@ -256,7 +256,7 @@ impl LightEcsModel {
             Ok(info) => info,
             Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
         };
-        match diesel::insert_into(lighthouse_instence_table)
+        match diesel::insert_into(lighthouse_instence)
             .values(&ecs_info)
             .execute(conn)
         {
@@ -274,7 +274,7 @@ impl LightEcsModel {
             Ok(info) => info,
             Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
         };
-        match diesel::update(lighthouse_instence_table.filter(id.eq(ecs_info.id.unwrap())))
+        match diesel::update(lighthouse_instence.filter(id.eq(ecs_info.id.unwrap())))
             .set(&ecs_info)
             .execute(conn)
         {
@@ -288,7 +288,7 @@ impl LightEcsModel {
         ecs_info: Map<String, Value>,
         conn: &mut MysqlConnection,
     ) -> Result<usize, (u8, String)> {
-        match diesel::delete(lighthouse_instence_table.filter(id.eq(ecs_info["id"].as_u64().unwrap())))
+        match diesel::delete(lighthouse_instence.filter(id.eq(ecs_info["id"].as_u64().unwrap())))
             .execute(conn)
         {
             Ok(num_of_eff) => Ok(num_of_eff),

@@ -1,7 +1,7 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    lighthouse_instence_table (id) {
+    lighthouse_instence (id) {
         id -> Unsigned<Bigint>,
         #[max_length = 255]
         project -> Varchar,

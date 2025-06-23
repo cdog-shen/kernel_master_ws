@@ -1,8 +1,8 @@
 -- Your SQL goes here
 -- 创建 light_ecs_table 表
-DROP TABLE IF EXISTS `light_house_instance`;
+DROP TABLE IF EXISTS `lighthouse_instance`;
 
-CREATE TABLE `light_house_instance` (
+CREATE TABLE `lighthouse_instance` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT "Primary key",
     `cloud_name` VARCHAR(255) NOT NULL COMMENT "Cloud provider name",
     `region` VARCHAR(255) NOT NULL COMMENT "Region",
