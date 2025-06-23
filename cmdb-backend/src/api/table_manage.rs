@@ -5,7 +5,7 @@ use diesel::{
 };
 use serde_json::{Map, Value};
 
-use crate::services::instance::light_ecs_service;
+use crate::services::lighthouse::instence_service;
 
 // GET api/cmdb/get_all_table
 // pub async fn get_all_table() -> Result<HttpResponse, actix_web::Error> {
@@ -24,7 +24,7 @@ pub async fn get_table(
 
     match table_name {
         "light_ecs" => {
-            let result = light_ecs_service::get_all(&query, &pool);
+            let result = instence_service::get_all(&query, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Ok(HttpResponse::BadRequest().json(err)),
@@ -45,7 +45,7 @@ pub async fn new_table(
 
     match table_name {
         "light_ecs" => {
-            let result = light_ecs_service::new_table(&new, &pool);
+            let result = instence_service::new_table(&new, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Ok(HttpResponse::InternalServerError().json(err)),
@@ -66,7 +66,7 @@ pub async fn update_table(
 
     match table_name {
         "light_ecs" => {
-            let result = light_ecs_service::update_table(&update, &pool);
+            let result = instence_service::update_table(&update, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Ok(HttpResponse::InternalServerError().json(err)),
@@ -87,7 +87,7 @@ pub async fn delete_table(
 
     match table_name {
         "light_ecs" => {
-            let result = light_ecs_service::delete_table(&delete, &pool);
+            let result = instence_service::delete_table(&delete, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Ok(HttpResponse::InternalServerError().json(err)),
