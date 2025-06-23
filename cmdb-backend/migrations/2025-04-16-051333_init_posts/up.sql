@@ -1,5 +1,5 @@
 -- Your SQL goes here
--- 创建 light_ecs_table 表
+-- 创建 lighthouse_instance 表
 DROP TABLE IF EXISTS `lighthouse_instance`;
 
 CREATE TABLE `lighthouse_instance` (
@@ -18,6 +18,26 @@ CREATE TABLE `lighthouse_instance` (
     `update_at` TIMESTAMP NULL DEFAULT NULL COMMENT "Update timestamp",
     `full_info` TEXT NULL DEFAULT NULL COMMENT "Full information",
     `attach_info` TEXT NULL DEFAULT NULL COMMENT "Attachment information",
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `id` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- 创建 cloudserver_instance 表
+DROP TABLE IF EXISTS `cloudserver_instance`;
+
+CREATE TABLE `cloudserver_instance` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT "Primary key",
+    `provider` VARCHAR(255) NOT NULL COMMENT "Cloud provider name",
+    `zone` VARCHAR(255) NOT NULL COMMENT "Zone",
+    `instance_id` VARCHAR(255) NOT NULL COMMENT "Instance ID",
+    `instance_name` VARCHAR(255) NOT NULL COMMENT "Instance name",
+    `plantform` VARCHAR(255) NOT NULL COMMENT "Zone",
+    `status` VARCHAR(255) NOT NULL COMMENT "Instance status",
+    `tag` VARCHAR(255) NOT NULL COMMENT "Instance Tag",
+    `private_ip` VARCHAR(255) NOT NULL COMMENT "Instance Tag",
+    `full_info` TEXT NULL DEFAULT NULL COMMENT "Full information",
+    `attach_info` TEXT NULL DEFAULT NULL COMMENT "Attachment information",
+    `update_at` TIMESTAMP NULL DEFAULT NULL COMMENT "Update timestamp",
     PRIMARY KEY (`id`),
     UNIQUE KEY `id` (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
