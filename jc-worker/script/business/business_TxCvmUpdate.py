@@ -52,7 +52,7 @@ def main(runner: run) -> Tuple[int, str, dict | list[dict]]:
                 "CMDB",
                 {
                     "api": "table_get",
-                    "info": cloud_data.get("data"),
+                    "info": cloud_data,
                 },
             )
         elif len(current_data.get("data", {}).get("data", [])) == 0:
@@ -82,7 +82,7 @@ def main(runner: run) -> Tuple[int, str, dict | list[dict]]:
                     "CMDB",
                     {
                         "api": "table_new",
-                        "info": new_resp.get("data"),
+                        "info": new_resp,
                     },
                 )
         else:
@@ -117,7 +117,7 @@ def main(runner: run) -> Tuple[int, str, dict | list[dict]]:
                     "CMDB",
                     {
                         "api": "table_update",
-                        "info": update_resp.get("data"),
+                        "info": update_resp,
                     },
                 )
 
