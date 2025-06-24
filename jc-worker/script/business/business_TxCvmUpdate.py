@@ -44,7 +44,7 @@ def main(runner: run) -> Tuple[int, str, dict | list[dict]]:
     # compare and update
     for instance in cloud_data.get("InstanceSet", []):
         current_data = cmdb.call(
-            "get", "cloudserver", {"instance_name": instance.get("InstanceName")}
+            "get", "cloudserver", {"instance_id": instance.get("InstanceId")}
         )
         if current_data.get("code", 500) != 200:
             return (
@@ -88,7 +88,7 @@ def main(runner: run) -> Tuple[int, str, dict | list[dict]]:
         else:
             update_resp = cmdb.call(
                 "update",
-                "light_ecs",
+                "cloudserver",
                 {
                     "id": current_data.get("data").get("data")[0].get("id"),
                     "provider": "Tencent",
