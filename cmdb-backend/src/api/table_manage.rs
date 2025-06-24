@@ -5,11 +5,11 @@ use diesel::{
 };
 use serde_json::{Map, Value};
 
-use crate::services::lighthouse::instence_service;
+use crate::services::*;
 
 // GET api/cmdb/get_all_table
 // pub async fn get_all_table() -> Result<HttpResponse, actix_web::Error> {
-//     let data = serde_json::json!(["light_ecs",]);
+//     let data = serde_json::json!(["lighthouse",]);
 //     Ok(HttpResponse::Ok().json(data))
 // }
 
@@ -23,8 +23,15 @@ pub async fn get_table(
     let query = serde_json::from_value(data.get("query").unwrap().clone()).unwrap();
 
     match table_name {
-        "light_ecs" => {
-            let result = instence_service::get_all(&query, &pool);
+        "lighthouse" => {
+            let result = lighthouse::instance_service::get_all(&query, &pool);
+            match result {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Ok(HttpResponse::BadRequest().json(err)),
+            }
+        }
+        "cloudserver" => {
+            let result = cloudserver::instance_service::get_all(&query, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Ok(HttpResponse::BadRequest().json(err)),
@@ -44,11 +51,18 @@ pub async fn new_table(
     let new = serde_json::from_value(data.get("new").unwrap().clone()).unwrap();
 
     match table_name {
-        "light_ecs" => {
-            let result = instence_service::new_table(&new, &pool);
+        "lighthouse" => {
+            let result = lighthouse::instance_service::new_table(&new, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Ok(HttpResponse::InternalServerError().json(err)),
+            }
+        }
+        "cloudserver" => {
+            let result = cloudserver::instance_service::new_table(&new, &pool);
+            match result {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Ok(HttpResponse::BadRequest().json(err)),
             }
         }
         _ => Ok(HttpResponse::BadRequest().json("Table not found")),
@@ -65,11 +79,18 @@ pub async fn update_table(
     let update = serde_json::from_value(data.get("update").unwrap().clone()).unwrap();
 
     match table_name {
-        "light_ecs" => {
-            let result = instence_service::update_table(&update, &pool);
+        "lighthouse" => {
+            let result = lighthouse::instance_service::update_table(&update, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Ok(HttpResponse::InternalServerError().json(err)),
+            }
+        }
+        "cloudserver" => {
+            let result = cloudserver::instance_service::update_table(&update, &pool);
+            match result {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Ok(HttpResponse::BadRequest().json(err)),
             }
         }
         _ => Ok(HttpResponse::BadRequest().json("Table not found")),
@@ -86,11 +107,18 @@ pub async fn delete_table(
     let delete = serde_json::from_value(data.get("delete").unwrap().clone()).unwrap();
 
     match table_name {
-        "light_ecs" => {
-            let result = instence_service::delete_table(&delete, &pool);
+        "lighthouse" => {
+            let result = lighthouse::instance_service::delete_table(&delete, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Ok(HttpResponse::InternalServerError().json(err)),
+            }
+        }
+        "cloudserver" => {
+            let result = cloudserver::instance_service::delete_table(&delete, &pool);
+            match result {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Ok(HttpResponse::BadRequest().json(err)),
             }
         }
         _ => Ok(HttpResponse::BadRequest().json("Table not found")),
