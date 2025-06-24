@@ -38,7 +38,7 @@ def main(runner: run) -> Tuple[int, str, dict | list[dict]]:
             },
         )
 
-    cloud_data = cloud_data.get("data").get("data")
+    cloud_data = cloud_data.get("data", {}).get("data")
 
     for instance in cloud_data.get("InstanceSet", []):
         current_data = cmdb.call(
@@ -145,7 +145,7 @@ if __name__ == "__main__":
         (code, msg, data) = runner.dispatch(fn_handle=main)
 
         if code != 200:
-            print(gen_error_msg(SCRIPT_NAME, data, code),end="")
+            print(gen_error_msg(SCRIPT_NAME, str(data), code),end="")
         else:
             print(gen_ok_msg(msg, data),end="")
 
