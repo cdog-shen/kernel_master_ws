@@ -1,4 +1,5 @@
 // table struct
-pub mod instance;
+pub mod cloudserver;
+pub mod lighthouse;
 // table schema
 pub mod schema;

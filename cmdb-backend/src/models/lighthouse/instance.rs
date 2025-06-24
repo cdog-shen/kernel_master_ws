@@ -3,62 +3,48 @@ use diesel::{prelude::*, result::Error::NotFound};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use crate::models::schema::light_ecs_table::{self, dsl::*};
+use crate::models::schema::lighthouse_instance::{self, dsl::*};
 
 static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
 // static TMI_ERROR_CODE: u8 = 2;
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
-#[diesel(table_name = light_ecs_table)]
+#[diesel(table_name = lighthouse_instance)]
 pub struct LightEcsModel {
     pub id: u64,
-    pub project: String,
     pub cloud_name: String,
     pub region: String,
     pub zone: String,
     pub instance_id: String,
     pub instance_name: String,
     pub wip: Option<String>,
-    pub nip: String,
     pub vpc_id: Option<String>,
-    pub subnet_id: Option<String>,
-    pub instance_type: Option<String>,
-    pub internet_charge_type: String,
     pub status: String,
     pub os_name: String,
     pub os_type: String,
-    pub image_id: String,
-    pub bandwidth: String,
-    pub cloud_account: String,
-    pub is_link_server: bool,
+    pub full_info: Option<String>,
+    pub attach_info: Option<String>,
     pub create_at: Option<chrono::NaiveDateTime>,
     pub update_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
-#[diesel(table_name = light_ecs_table)]
+#[diesel(table_name = lighthouse_instance)]
 pub struct LightEcsInfo {
     pub id: Option<u64>,
-    pub project: Option<String>,
     pub cloud_name: Option<String>,
     pub region: Option<String>,
     pub zone: Option<String>,
     pub instance_id: Option<String>,
     pub instance_name: Option<String>,
     pub wip: Option<String>,
-    pub nip: Option<String>,
     pub vpc_id: Option<String>,
-    pub subnet_id: Option<String>,
-    pub instance_type: Option<String>,
-    pub internet_charge_type: Option<String>,
     pub status: Option<String>,
     pub os_name: Option<String>,
     pub os_type: Option<String>,
-    pub image_id: Option<String>,
-    pub bandwidth: Option<String>,
-    pub cloud_account: Option<String>,
-    pub is_link_server: Option<bool>,
+    pub full_info: Option<String>,
+    pub attach_info: Option<String>,
     pub create_at: Option<chrono::NaiveDateTime>,
     pub update_at: Option<chrono::NaiveDateTime>,
 }
@@ -70,10 +56,7 @@ impl LightEcsInfo {
                 Some(value) => value.as_u64(),
                 None => None,
             },
-            project: match map.get("project") {
-                Some(value) => value.as_str().map(|s| s.to_string()),
-                None => None,
-            },
+
             cloud_name: match map.get("cloud_name") {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
@@ -98,26 +81,12 @@ impl LightEcsInfo {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
-            nip: match map.get("nip") {
-                Some(value) => value.as_str().map(|s| s.to_string()),
-                None => None,
-            },
+
             vpc_id: match map.get("vpc_id") {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
-            subnet_id: match map.get("subnet_id") {
-                Some(value) => value.as_str().map(|s| s.to_string()),
-                None => None,
-            },
-            instance_type: match map.get("instance_type") {
-                Some(value) => value.as_str().map(|s| s.to_string()),
-                None => None,
-            },
-            internet_charge_type: match map.get("internet_charge_type") {
-                Some(value) => value.as_str().map(|s| s.to_string()),
-                None => None,
-            },
+
             status: match map.get("status") {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
@@ -130,20 +99,13 @@ impl LightEcsInfo {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
-            image_id: match map.get("image_id") {
+
+            full_info: match map.get("full_info") {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
-            bandwidth: match map.get("bandwidth") {
+            attach_info: match map.get("attach_info") {
                 Some(value) => value.as_str().map(|s| s.to_string()),
-                None => None,
-            },
-            cloud_account: match map.get("cloud_account") {
-                Some(value) => value.as_str().map(|s| s.to_string()),
-                None => None,
-            },
-            is_link_server: match map.get("is_link_server") {
-                Some(value) => value.as_bool(),
                 None => None,
             },
             create_at: None,
@@ -155,8 +117,9 @@ impl LightEcsInfo {
 impl LightEcsModel {
     /// get user by id
     pub fn get_user_by_id(ecs_id: u64, conn: &mut MysqlConnection) -> Result<Value, (u8, String)> {
-        match light_ecs_table
+        match lighthouse_instance
             .filter(id.eq(ecs_id))
+            .select(LightEcsModel::as_select())
             .first::<LightEcsModel>(conn)
         {
             Ok(item_info) => {
@@ -185,7 +148,7 @@ impl LightEcsModel {
         filter: Map<String, Value>,
         conn: &mut MysqlConnection,
     ) -> Result<Vec<Value>, (u8, String)> {
-        let mut query = light_ecs_table
+        let mut query = lighthouse_instance
             .into_boxed()
             .select(LightEcsModel::as_select());
 
@@ -256,7 +219,7 @@ impl LightEcsModel {
             Ok(info) => info,
             Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
         };
-        match diesel::insert_into(light_ecs_table)
+        match diesel::insert_into(lighthouse_instance)
             .values(&ecs_info)
             .execute(conn)
         {
@@ -274,7 +237,7 @@ impl LightEcsModel {
             Ok(info) => info,
             Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
         };
-        match diesel::update(light_ecs_table.filter(id.eq(ecs_info.id.unwrap())))
+        match diesel::update(lighthouse_instance.filter(id.eq(ecs_info.id.unwrap())))
             .set(&ecs_info)
             .execute(conn)
         {
@@ -288,7 +251,7 @@ impl LightEcsModel {
         ecs_info: Map<String, Value>,
         conn: &mut MysqlConnection,
     ) -> Result<usize, (u8, String)> {
-        match diesel::delete(light_ecs_table.filter(id.eq(ecs_info["id"].as_u64().unwrap())))
+        match diesel::delete(lighthouse_instance.filter(id.eq(ecs_info["id"].as_u64().unwrap())))
             .execute(conn)
         {
             Ok(num_of_eff) => Ok(num_of_eff),
