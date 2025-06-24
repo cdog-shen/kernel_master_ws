@@ -31,13 +31,17 @@ CREATE TABLE `cloudserver_instance` (
     `zone` VARCHAR(255) NOT NULL COMMENT "Zone",
     `instance_id` VARCHAR(255) NOT NULL COMMENT "Instance ID",
     `instance_name` VARCHAR(255) NOT NULL COMMENT "Instance name",
-    `plantform` VARCHAR(255) NOT NULL COMMENT "Zone",
+    `plantform` VARCHAR(255) NOT NULL COMMENT "plantform",
     `status` VARCHAR(255) NOT NULL COMMENT "Instance status",
     `tag` VARCHAR(255) NOT NULL COMMENT "Instance Tag",
-    `private_ip` VARCHAR(255) NOT NULL COMMENT "Instance Tag",
+    `private_ip` VARCHAR(255) NOT NULL COMMENT "Instance VPC IP",
     `full_info` TEXT NULL DEFAULT NULL COMMENT "Full information",
     `attach_info` TEXT NULL DEFAULT NULL COMMENT "Attachment information",
     `update_at` TIMESTAMP NULL DEFAULT NULL COMMENT "Update timestamp",
     PRIMARY KEY (`id`),
-    UNIQUE KEY `id` (`id`)
+    UNIQUE KEY `id` (`id`),
+    INDEX idx_cloudserver_provider (`provider`),
+    INDEX idx_cloudserver_instance_id (`instance_id`),
+    INDEX idx_cloudserver_instance_name (`instance_name`),
+    INDEX idx_cloudserver_zone (`zone`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
