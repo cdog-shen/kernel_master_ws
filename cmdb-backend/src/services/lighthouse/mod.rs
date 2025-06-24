@@ -1,1 +1,1 @@
-pub mod instence_service;
+pub mod instance_service;
