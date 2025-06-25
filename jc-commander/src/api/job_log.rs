@@ -9,10 +9,10 @@ use crate::services::job_log;
 
 // GET /api/job_log/get
 pub async fn get_all(
-    query: web::Query<Map<String, Value>>,
+    data: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> HttpResponse {
-    match job_log::get_all(&query, &pool) {
+    match job_log::get_all(&data, &pool) {
         Ok(data) => HttpResponse::Ok().json(data),
         Err(err) => HttpResponse::BadRequest().json(err),
     }

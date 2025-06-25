@@ -105,6 +105,11 @@ impl JobLogModel {
 
         for (q_k, q_v) in filter.iter() {
             match q_k.as_str() {
+                "id" => {
+                    if let Some(value) = q_v.as_str() {
+                        query = query.filter(exec_type.eq(value));
+                    }
+                }
                 "exec_type" => {
                     if let Some(value) = q_v.as_str() {
                         query = query.filter(exec_type.eq(value));
