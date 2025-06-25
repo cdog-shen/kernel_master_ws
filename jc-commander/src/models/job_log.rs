@@ -107,7 +107,7 @@ impl JobLogModel {
             match q_k.as_str() {
                 "id" => {
                     if let Some(value) = q_v.as_str() {
-                        query = query.filter(exec_type.eq(value));
+                        query = query.filter(id.eq(value));
                     }
                 }
                 "exec_type" => {
