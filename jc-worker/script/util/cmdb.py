@@ -16,10 +16,11 @@ class Operation(str, Enum):
 
 def call(operation: Operation, table: str, param: dict = {}):
     JWT = os.getenv("WATCHMAN_JWT")
+    op_map = {"query": "get", "new": "new", "update": "update", "delete": "delete"}
 
     payload = {
         "target": "table",
-        "operation": operation,
+        "operation": op_map[operation],
         "data": {"table": table, operation: param},
     }
     headers = {"Authorization": JWT, "content-type": "application/json"}
