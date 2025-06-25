@@ -158,11 +158,11 @@ pub async fn call_async(
         )
         .await
     {
-        Ok(res_data) => {
+        Ok(_) => {
             return HttpResponse::Ok().json(MailManOk::new(
                 200,
                 "Async task send success",
-                Some(format!("{:?}", res_data)),
+                Some(format!("{:?}", uuid)),
             ))
         }
         Err(e) => {
