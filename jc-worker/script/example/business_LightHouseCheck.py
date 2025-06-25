@@ -42,7 +42,9 @@ def main(runner: run) -> Tuple[int, str, dict | list[dict]]:
 
     for instance in cloud_data.get("InstanceSet", []):
         current_data = cmdb.call(
-            "get", "light_ecs", {"instance_name": instance.get("InstanceName")}
+            cmdb.Operation.query,
+            "light_ecs",
+            {"instance_name": instance.get("InstanceName")},
         )
         if current_data.get("code", 500) != 200:
             return (
@@ -55,7 +57,7 @@ def main(runner: run) -> Tuple[int, str, dict | list[dict]]:
             )
         elif len(current_data.get("data").get("data")) == 0:
             new_resp = cmdb.call(
-                "new",
+                cmdb.Operation.new,
                 "light_ecs",
                 {
                     "instance_id": instance.get("InstanceId"),
@@ -94,7 +96,7 @@ def main(runner: run) -> Tuple[int, str, dict | list[dict]]:
                 )
         else:
             update_resp = cmdb.call(
-                "update",
+                cmdb.Operation.update,
                 "light_ecs",
                 {
                     "id": current_data.get("data").get("data")[0].get("id"),
@@ -145,10 +147,11 @@ if __name__ == "__main__":
         (code, msg, data) = runner.dispatch(fn_handle=main)
 
         if code != 200:
-            print(gen_error_msg(SCRIPT_NAME, str(data), code),end="")
+            print(gen_error_msg(SCRIPT_NAME, str(data), code), end="")
         else:
-            print(gen_ok_msg(msg, data),end="")
+            print(gen_ok_msg(msg, data), end="")
 
     except Exception as error:
         import traceback
-        print(gen_trace_msg(SCRIPT_NAME, traceback.format_exc()),end="")
+
+        print(gen_trace_msg(SCRIPT_NAME, traceback.format_exc()), end="")
