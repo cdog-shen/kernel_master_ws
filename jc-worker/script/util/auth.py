@@ -52,6 +52,8 @@ def JWT_check():
             if count > 3:
                 raise Exception(f"Check error")
             else:
+                JWT = None
+                os.environ["WATCHMAN_JWT"] = ""
                 continue
 
         elif resp_status == 200:
