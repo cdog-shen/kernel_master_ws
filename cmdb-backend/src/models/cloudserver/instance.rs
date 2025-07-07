@@ -128,6 +128,11 @@ impl CloudserverInstanceModel {
                         query = query.filter(instance_id.eq(value));
                     }
                 }
+                "status" => {
+                    if let Some(value) = q_v.as_str() {
+                        query = query.filter(status.eq(value));
+                    }
+                }
                 "instance_name" => {
                     if let Some(value) = q_v.as_str() {
                         let pattern = format!("%{}%", value);
