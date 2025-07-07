@@ -65,9 +65,15 @@ def call(
     }
 
     response = requests.request("POST", URL, json=payload, headers=headers)
+    
+    if response.status_code != 200:
+        return response.json()
 
     offset = int(params.get("Offset", 0))
-    total_count = int(response.json().get("data", {}).get("data", {}).get("TotalCount"))
+    if response.json().get("data", {}).get("data", {}).get("TotalCount") :
+        total_count = int(response.json().get("data", {}).get("data", {}).get("TotalCount"))
+    else:
+        total_count = 1
 
     if LIMIT * (offset + 1) < total_count:
         next_resp_json = call(
