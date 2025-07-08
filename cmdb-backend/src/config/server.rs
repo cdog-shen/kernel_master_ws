@@ -60,7 +60,11 @@ impl AllConfigs {
     }
 
     pub fn reload(&mut self) -> Result<u8, MailManErr<'static>> {
-        let config = match read_config(&mut CONFIG_FILE_HANDLE.lock().unwrap()) {
+        let config = match read_config(
+            &mut CONFIG_FILE_HANDLE
+                .lock()
+                .expect("CAN NOT acquire CONFIG_FILE_HANDLE lock"),
+        ) {
             Ok(json) => json,
             Err(e) => return Err(e),
         };
@@ -69,8 +73,12 @@ impl AllConfigs {
         self.log_level = get_string_from_config(&config, &["server_config", "log_level"]);
 
         self.listen_addr = get_string_from_config(&config, &["server_config", "listen_addr"]);
-        self.listen_port = config["server_config"]["listen_port"].as_u64().unwrap() as u16;
-        self.workers = config["server_config"]["workers"].as_u64().unwrap() as u16;
+        self.listen_port = config["server_config"]["listen_port"]
+            .as_u64()
+            .expect("missing server_config:listen_port (u16)") as u16;
+        self.workers = config["server_config"]["workers"]
+            .as_u64()
+            .expect("missing server_config:workers (u16)") as u16;
         self.allowed_origin_list = match &config["server_config"]["allowed_origin_list"] {
             Value::Array(vec) => vec
                 .iter()
@@ -89,7 +97,9 @@ impl AllConfigs {
         self.register_name = get_string_from_config(&config, &["server_config", "register_name"]);
 
         self.master_addr = get_string_from_config(&config, &["server_config", "master_addr"]);
-        self.master_port = config["server_config"]["master_port"].as_u64().unwrap() as u16;
+        self.master_port = config["server_config"]["master_port"]
+            .as_u64()
+            .expect("missing server_config:master_port (u16)") as u16;
 
         self.authenticate_bypass = match &config["server_config"]["authenticate_bypass"] {
             Value::Array(vec) => vec
