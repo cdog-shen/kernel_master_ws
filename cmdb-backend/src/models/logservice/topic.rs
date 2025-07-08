@@ -56,19 +56,19 @@ impl LogServiceTopicInfo {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
-            set_id: match map.get("provider") {
+            set_id: match map.get("set_id") {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
-            topic_id: match map.get("provider") {
+            topic_id: match map.get("topic_id") {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
-            topic_name: match map.get("provider") {
+            topic_name: match map.get("topic_name") {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
-            status: match map.get("provider") {
+            status: match map.get("status") {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
@@ -76,11 +76,11 @@ impl LogServiceTopicInfo {
                 Some(value) => value.as_u64().and_then(|v| u32::try_from(v).ok()),
                 None => None,
             },
-            period: match map.get("hot_period") {
+            period: match map.get("period") {
                 Some(value) => value.as_u64().and_then(|v| u32::try_from(v).ok()),
                 None => None,
             },
-            index: match map.get("hot_period") {
+            index: match map.get("index") {
                 Some(value) => value.as_i64().and_then(|v| i8::try_from(v).ok()),
                 None => None,
             },
