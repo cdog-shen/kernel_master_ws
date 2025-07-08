@@ -45,3 +45,27 @@ CREATE TABLE `cloudserver_instance` (
     INDEX idx_cloudserver_instance_name (`instance_name`),
     INDEX idx_cloudserver_zone (`zone`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- 创建 logservice_topic 表
+DROP TABLE IF EXISTS `logservice_topic`;
+
+CREATE TABLE `logservice_topic` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT "Primary key",
+    `provider` VARCHAR(255) NOT NULL COMMENT "Cloud provider name",
+    `set_id` VARCHAR(255) NOT NULL COMMENT "Set ID",
+    `topic_id` VARCHAR(255) NOT NULL COMMENT "Topic ID",
+    `topic_name` VARCHAR(255) NOT NULL COMMENT "Topic name",
+    `status` VARCHAR(255) NOT NULL COMMENT "Topic status",
+    `hot_period` INT UNSIGNED NOT NULL COMMENT "Topic hot settlement period",
+    `period` INT UNSIGNED NOT NULL COMMENT "log lifecycle period",
+    `index` TINYINT NOT NULL COMMENT "index status",
+    `full_info` TEXT NULL DEFAULT NULL COMMENT "Full information",
+    `attach_info` TEXT NULL DEFAULT NULL COMMENT "Attachment information",
+    `update_at` TIMESTAMP NULL DEFAULT NULL COMMENT "Update timestamp",
+    `describes` VARCHAR(255) NOT NULL COMMENT "describes",
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `id` (`id`),
+    INDEX idx_logservice_topic_provider (`provider`),
+    INDEX idx_logservice_topic_instance_id (`topic_id`),
+    INDEX idx_logservice_topic_instance_name (`topic_name`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
