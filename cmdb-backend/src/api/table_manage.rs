@@ -73,7 +73,7 @@ pub async fn new_table(
             }
         }
         "logservice_topic" => {
-            let result = cloudserver::instance_service::new_table(&new, &pool);
+            let result = logservice::topic_service::new_table(&new, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Ok(HttpResponse::BadRequest().json(err)),
