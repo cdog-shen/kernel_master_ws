@@ -37,7 +37,7 @@ pub async fn get_table(
                 Err(err) => Ok(HttpResponse::BadRequest().json(err)),
             }
         }
-        "logserver_topic" => {
+        "logservice_topic" => {
             let result = logserver::topic_service::get_all(&query, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
@@ -72,7 +72,7 @@ pub async fn new_table(
                 Err(err) => Ok(HttpResponse::BadRequest().json(err)),
             }
         }
-        "logserver_topic" => {
+        "logservice_topic" => {
             let result = cloudserver::instance_service::new_table(&new, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
@@ -107,7 +107,7 @@ pub async fn update_table(
                 Err(err) => Ok(HttpResponse::BadRequest().json(err)),
             }
         }
-        "logserver_topic" => {
+        "logservice_topic" => {
             let result = logserver::topic_service::update_table(&update, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
@@ -142,7 +142,7 @@ pub async fn delete_table(
                 Err(err) => Ok(HttpResponse::BadRequest().json(err)),
             }
         }
-        "logserver_topic" => {
+        "logservice_topic" => {
             let result = logserver::topic_service::delete_table(&delete, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
