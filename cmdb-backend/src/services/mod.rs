@@ -1,3 +1,3 @@
 pub mod cloudserver;
 pub mod lighthouse;
-pub mod logserver;
+pub mod logservice;

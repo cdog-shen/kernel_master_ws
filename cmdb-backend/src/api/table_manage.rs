@@ -38,7 +38,7 @@ pub async fn get_table(
             }
         }
         "logservice_topic" => {
-            let result = logserver::topic_service::get_all(&query, &pool);
+            let result = logservice::topic_service::get_all(&query, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Ok(HttpResponse::BadRequest().json(err)),
@@ -108,7 +108,7 @@ pub async fn update_table(
             }
         }
         "logservice_topic" => {
-            let result = logserver::topic_service::update_table(&update, &pool);
+            let result = logservice::topic_service::update_table(&update, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Ok(HttpResponse::BadRequest().json(err)),
@@ -143,7 +143,7 @@ pub async fn delete_table(
             }
         }
         "logservice_topic" => {
-            let result = logserver::topic_service::delete_table(&delete, &pool);
+            let result = logservice::topic_service::delete_table(&delete, &pool);
             match result {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Ok(HttpResponse::BadRequest().json(err)),
