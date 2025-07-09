@@ -22,3 +22,6 @@ jc-worker/job_center_worker.cfg
 jc-worker/script/business/business_GenerateServerJson.py
 jc-worker/script/business/business_LightHouseCheck.py
 jc-worker/script/business/business_TxCvmUpdate.py
+
+# business script
+**/script/business
