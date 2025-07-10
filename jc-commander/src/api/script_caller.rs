@@ -21,7 +21,11 @@ pub async fn call_sync(
     mq_pool: web::Data<Arc<lapin::Connection>>,
 ) -> HttpResponse {
     let channel = mq_pool.create_channel().await.unwrap();
-    let queue_prefix = server::GLOBAL_CONFIG.read().unwrap().mq_queue_prefix.clone();
+    let queue_prefix = server::GLOBAL_CONFIG
+        .read()
+        .unwrap()
+        .mq_queue_prefix
+        .clone();
     let self_id = server::GLOBAL_CONFIG.read().unwrap().subsys_uuid.clone();
     let queue = format!("{}_sync", queue_prefix);
 
@@ -121,7 +125,11 @@ pub async fn call_async(
     mq_pool: web::Data<Arc<lapin::Connection>>,
 ) -> HttpResponse {
     let channel = mq_pool.create_channel().await.unwrap();
-    let queue_prefix = server::GLOBAL_CONFIG.read().unwrap().mq_queue_prefix.clone();
+    let queue_prefix = server::GLOBAL_CONFIG
+        .read()
+        .unwrap()
+        .mq_queue_prefix
+        .clone();
     let self_id = server::GLOBAL_CONFIG.read().unwrap().subsys_uuid.clone();
     let queue = format!("{}_async", queue_prefix);
 
@@ -162,7 +170,7 @@ pub async fn call_async(
             return HttpResponse::Ok().json(MailManOk::new(
                 200,
                 "Async task send success",
-                Some(format!("{:?}", uuid)),
+                Some(uuid),
             ))
         }
         Err(e) => {
