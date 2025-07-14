@@ -45,3 +45,7 @@ This subsystem is divided into two parts: the worker and the commander.
 📡 [controller readme file](./jc-commander/Readme.md)
 
 📋 [worker readme file](./jc-worker/Readme.md)
+
+## DockerFile
+
+🐳 Dockerfile is used to build an `alpine` container, with some built-in static dependencies and variables for static compilation, and can be compiled with `build/build_all_ws_static.sh` if necessary
