@@ -1,23 +1,19 @@
-# FROM alpine:3.16.3
-FROM alpine:latest
+FROM rust:alpine
 
+LABEL maintainer="shencdog@gmail.com"
 RUN apk add --no-cache \
     build-base \
-    mariadb-dev \
-    mariadb-static \
-    openssl-dev \
-    openssl-libs-static \
+    mariadb-dev mariadb-static \
+    openssl-dev openssl-libs-static \
     zlib-static \
     git \
     curl
 
+RUN sh -c 'rustup target add x86_64-unknown-linux-musl && mkdir -p /root/build'
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN git clone https://github.com/cdog-shen/kernel_master_ws.git /root/kernel_master_ws
 
-ENV PATH="/root/.cargo/bin:${PATH}"
-RUN cd /root && rustup target add x86_64-unknown-linux-musl && git clone https://github.com/cdog-shen/kernel_master_ws.git
-
-WORKDIR /root
+WORKDIR /root/kernel_master_ws
 
 ENV RUSTFLAGS="-C link-arg=-L/usr/lib \
                -C link-arg=-L/lib \
