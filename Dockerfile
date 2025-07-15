@@ -28,4 +28,4 @@ ENV RUSTFLAGS="-C link-arg=-L/usr/lib \
                -C link-arg=-lz \
                -C link-arg=-Wl,--end-group"
 
-CMD ["/bin/sh"]
+ENTRYPOINT ["/bin/sh", "-c", "while true; do sleep 1000; done"]
