@@ -1,0 +1,12 @@
+FROM alpine:latest
+
+LABEL maintainer="shencdog@gmail.com"
+RUN apk add --no-cache \
+    build-base \
+    zlib-static \
+    openssl-dev openssl-libs-static \
+    mariadb-dev mariadb-static \
+    git \
+    curl
+
+WORKDIR /root/kernel_master_ws

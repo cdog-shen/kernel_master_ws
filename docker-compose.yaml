@@ -1,0 +1,64 @@
+version: "3"
+
+# 公共模板
+x-common: &common
+  image: alpine:latest
+  volumes:
+    - ./target:/root
+  networks:
+    - km_net
+
+# 网络声明
+networks:
+  km_net:
+    driver: bridge
+
+services:
+  watchman-backend:
+    build:
+        context: .
+        dockerfile: Dockerfile.runner
+    <<: *common
+    container_name: watchman-backend
+    command: |
+      sh -c 'echo "[$(date)] watchman starting..." &&
+            cd /root &&
+            sleep 1000000000'
+
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tuln | grep ':8000 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  cloud-api:
+    <<: *common
+    container_name: cloud-api
+    depends_on:
+      watchman-backend:
+        condition: service_healthy
+    command: sh -c 'echo "cloud-api starts" && tail -f /dev/null'
+
+  cmdb-backend:
+    <<: *common
+    container_name: cmdb-backend
+    depends_on:
+      watchman-backend:
+        condition: service_healthy
+    command: sh -c 'echo "cmdb-backend starts" && tail -f /dev/null'
+
+  jc-commander:
+    <<: *common
+    container_name: jc-commander
+    depends_on:
+      watchman-backend:
+        condition: service_healthy
+    command: sh -c 'echo "jc-commander starts" && tail -f /dev/null'
+
+  jc-worker:
+    <<: *common
+    container_name: jc-worker
+    depends_on:
+      watchman-backend:
+        condition: service_healthy
+    command: sh -c 'echo "jc-worker starts" && tail -f /dev/null'
