@@ -23,7 +23,7 @@ services:
       - ./target:/root/kernel_master_ws/target:rw
     profiles: ["build"]
     command: |
-      git checkout dev && bash build/build_all_ws.sh
+      bash build/build_all_ws.sh
 
   km:
     build:
