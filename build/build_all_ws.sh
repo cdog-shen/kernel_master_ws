@@ -14,7 +14,7 @@ mkdir -p ./target
 
 for dir in $DIRS; do
     cd $dir && cargo build --release
-    cp target/release/$dir ./target/
+    cp -f target/release/$dir ./target/
     cd -
 done
 
