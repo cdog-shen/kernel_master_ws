@@ -48,4 +48,6 @@ This subsystem is divided into two parts: the worker and the commander.
 
 ## DockerFile
 
-🐳 Dockerfile is used to build an `alpine` container, with some built-in static dependencies and variables for static compilation, and can be compiled with `build/build_all_ws_static.sh` if necessary
+🐳 Dockerfile is used to build an `Ubuntu` container, with some built-in static dependencies and variables for static compilation, and can be compiled with `build/build_all_ws.sh` if necessary.
+
+
