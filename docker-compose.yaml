@@ -20,7 +20,7 @@ services:
     container_name: builder
     working_dir: /root/kernel_master_ws
     volumes:
-      - ./target:/root/target:rw
+      - ./target:/root/kernel_master_ws/target:rw
     profiles: ["build"]
     command: |
       bash build/build_all_ws.sh && cp -f /root/kernel_master_ws/target/* /root/target/ && sleep 1000
