@@ -66,7 +66,7 @@ impl AllConfigs {
         }
     }
 
-    pub fn reload(&mut self) -> Result<u8, MailManErr<'static>> {
+    pub fn reload(&mut self) -> Result<u8, MailManErr<'static, String>> {
         let config = match read_config(&mut CONFIG_FILE_HANDLE.lock().unwrap()) {
             Ok(json) => json,
             Err(e) => return Err(e),

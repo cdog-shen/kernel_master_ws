@@ -1,7 +1,9 @@
 // std import
+use crossbeam::queue::SegQueue;
 use std::default::Default;
 use std::io;
 use std::sync::{Arc, Mutex};
+use uuid::Uuid;
 // rt import
 use actix_cors::Cors;
 use actix_web::dev::Service;
@@ -36,7 +38,7 @@ async fn main() -> io::Result<()> {
             MailManOk::new(200, "config load DONE", None::<&str>);
         }
         Err(e) => {
-            panic!("config load error! {}", e);
+            panic!("config load error! {:?}", e);
         }
     }
 
@@ -62,6 +64,9 @@ async fn main() -> io::Result<()> {
         .await
         .expect("Failed to connect to MQ");
     let mq_pool: Arc<Connection> = Arc::new(mq_manager);
+
+    // init DoneTaskList
+    let done_task_list: Arc<SegQueue<Uuid>> = Arc::new(SegQueue::new());
 
     // initialize the scheduled task scheduler and start Ticking
     let time_wheel = Arc::new(util::scheduler::TimeWheel::new(
@@ -117,6 +122,7 @@ async fn main() -> io::Result<()> {
             .app_data(web::Data::new(db_pool.clone()))
             .app_data(web::Data::new(mq_pool.clone()))
             .app_data(web::Data::from(flush_flag.clone()))
+            .app_data(web::Data::from(done_task_list.clone()))
             // wrap default logger
             .wrap(actix_web::middleware::Logger::default())
             // Comment this line if you want to integrate with yew-address-book-frontend

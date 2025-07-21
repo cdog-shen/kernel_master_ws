@@ -1,4 +1,6 @@
+use crossbeam::queue::SegQueue;
 use std::sync::Arc;
+use ureq::json;
 
 use actix_web::{web, HttpResponse};
 use chrono::{self, Local};
@@ -19,6 +21,7 @@ pub async fn call_sync(
     req: web::Json<Value>,
     db_pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
     mq_pool: web::Data<Arc<lapin::Connection>>,
+    done_task_list: web::Data<SegQueue<Uuid>>,
 ) -> HttpResponse {
     let channel = mq_pool.create_channel().await.unwrap();
     let queue_prefix = server::GLOBAL_CONFIG
@@ -29,13 +32,14 @@ pub async fn call_sync(
     let self_id = server::GLOBAL_CONFIG.read().unwrap().subsys_uuid.clone();
     let queue = format!("{}_sync", queue_prefix);
 
-    let uuid = Uuid::new_v4().to_string();
+    let uuid = Uuid::new_v4();
     let mut req = req.into_inner();
-    req["id"] = serde_json::Value::String(uuid.clone());
+    let timeout = req["timeout"].as_u64().unwrap_or(30);
+    req["id"] = serde_json::Value::String(uuid.to_string().clone());
     req["commander"] = serde_json::Value::String(self_id.clone());
     let payload = serde_json::to_vec(&req).unwrap();
     let new_log_value = serde_json::json!(
-            {"id": uuid.clone(),
+            {"id": uuid.to_string().clone(),
             "script": req["script"],
             "exec_type": "sync",
             "commander": self_id,
@@ -73,48 +77,68 @@ pub async fn call_sync(
             return HttpResponse::InternalServerError().json(MailManErr::new(
                 500,
                 "Task sending Failed",
-                e,
+                Some(e.to_string()),
                 1,
             ))
         }
     }
 
-    loop {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+    let start = std::time::Instant::now();
+    let mut get_flag = false;
+    while !get_flag {
+        if start.elapsed() > std::time::Duration::from_secs(timeout) {
+            return HttpResponse::GatewayTimeout().json(MailManErr::new(
+                504,
+                "Job execute Timeout",
+                Some(uuid.to_string()),
+                1,
+            ));
+        }
 
-        match job_log::get_by_id(uuid.clone(), &db_pool) {
-            Ok(MailManOk {
-                code: _,
-                key: _,
-                data: job_log_res,
-            }) => match job_log_res {
-                Some(job_log) => {
-                    if job_log.status == 0 {
-                        return HttpResponse::InternalServerError().json(MailManErr::new(
-                            500,
-                            "Job execute Error",
-                            format!("{:?}", job_log),
-                            1,
-                        ));
-                    } else if job_log.status == 2 {
-                        return HttpResponse::Ok().json(MailManOk::new(
-                            200,
-                            "Sync task called success",
-                            Some(job_log),
-                        ));
-                    }
-                }
-                None => {
+        while let Some(id) = done_task_list.pop() {
+            if id == uuid {
+                get_flag = true;
+                break;
+            } else {
+                done_task_list.push(id);
+            }
+        }
+
+        tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+    }
+
+    match job_log::get_by_id(uuid.to_string().clone(), &db_pool) {
+        Ok(MailManOk {
+            code: _,
+            key: _,
+            data: job_log_res,
+        }) => match job_log_res {
+            Some(job_log) => {
+                if job_log.status == 2 {
+                    return HttpResponse::Ok().json(MailManOk::new(
+                        200,
+                        "Sync task called success",
+                        Some(json!(job_log)),
+                    ));
+                } else {
                     return HttpResponse::InternalServerError().json(MailManErr::new(
                         500,
-                        "no job found",
-                        uuid,
+                        "Job execute Error",
+                        Some(json!(job_log)),
                         1,
-                    ))
+                    ));
                 }
-            },
-            Err(e) => return HttpResponse::InternalServerError().json(e),
-        }
+            }
+            None => {
+                return HttpResponse::InternalServerError().json(MailManErr::new(
+                    500,
+                    "no job found",
+                    Some(uuid.to_string()),
+                    1,
+                ))
+            }
+        },
+        Err(e) => return HttpResponse::InternalServerError().json(e),
     }
 }
 
@@ -177,7 +201,7 @@ pub async fn call_async(
             return HttpResponse::InternalServerError().json(MailManErr::new(
                 500,
                 "Task sending Failed",
-                e,
+                Some(e.to_string()),
                 1,
             ))
         }

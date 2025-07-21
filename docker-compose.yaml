@@ -1,32 +1,61 @@
 version: "3"
 
-# 公共模板
 x-common: &common
-  image: alpine:latest
+  image: kernel_master_ws-runner
   volumes:
     - ./target:/root
   networks:
     - km_net
+  profiles: ["run"]
 
-# 网络声明
 networks:
   km_net:
     driver: bridge
 
 services:
-  watchman-backend:
+  builder:
     build:
-        context: .
-        dockerfile: Dockerfile.runner
+      context: .
+      dockerfile: Dockerfile.builder
+    container_name: builder
+    working_dir: /root/kernel_master_ws
+    volumes:
+      - ./target:/root/kernel_master_ws/target:rw
+    profiles: ["build"]
+    command: |
+      bash build/build_all_ws.sh && cp -f /root/kernel_master_ws/target/* /root/target/ && sleep 1000
+
+  runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.runner
+    container_name: runner
+    profiles: ["build"]
+    command: |
+      echo "runner build success"
+
+
+  watchman-backend:
     <<: *common
     container_name: watchman-backend
     command: |
-      sh -c 'echo "[$(date)] watchman starting..." &&
-            cd /root &&
-            sleep 1000000000'
-
+      sh -c './watchman-backend'
     healthcheck:
-      test: ["CMD", "sh", "-c", "netstat -tuln | grep ':8000 '"]
+      test: ["CMD", "sh", "-c", "netstat -tupln | grep ':8000 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  cmdb-backend:
+    <<: *common
+    container_name: cmdb-backend
+    depends_on:
+      watchman-backend:
+        condition: service_healthy
+    command: |
+      sh -c './cmdb-backend'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tupln | grep ':9001 '"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -37,28 +66,40 @@ services:
     depends_on:
       watchman-backend:
         condition: service_healthy
-    command: sh -c 'echo "cloud-api starts" && tail -f /dev/null'
+    command: |
+      sh -c './cloud-api'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tupln | grep ':9002 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
-  cmdb-backend:
+  jc-commander-1:
     <<: *common
-    container_name: cmdb-backend
+    container_name: jc-commander-1
     depends_on:
       watchman-backend:
         condition: service_healthy
-    command: sh -c 'echo "cmdb-backend starts" && tail -f /dev/null'
+    command: |
+      sh -c './jc-commander'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tupln | grep ':9003 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
-  jc-commander:
+  jc-worker-1-1:
     <<: *common
-    container_name: jc-commander
+    container_name: jc-worker-1-1
     depends_on:
       watchman-backend:
         condition: service_healthy
-    command: sh -c 'echo "jc-commander starts" && tail -f /dev/null'
-
-  jc-worker:
-    <<: *common
-    container_name: jc-worker
-    depends_on:
-      watchman-backend:
+      jc-commander-1:
         condition: service_healthy
-    command: sh -c 'echo "jc-worker starts" && tail -f /dev/null'
+    command: |
+      sh -c './jc-worker'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tupn | grep ':9003 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10

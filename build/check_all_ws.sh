@@ -13,7 +13,7 @@ done
 mkdir -p ./target
 
 for dir in $DIRS; do
-    cd $dir && cargo build --release
+    cd $dir && cargo check
     cp -f target/release/$dir ../target/
     cd -
 done

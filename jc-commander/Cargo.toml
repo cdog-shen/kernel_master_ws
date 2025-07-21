@@ -5,11 +5,12 @@ edition = "2021"
 
 [dependencies]
 # std dependencies
-once_cell = "1.21.1"
-log = "0.4.26"
-chrono = { version = "0.4.40", features = ["serde"] }
-tokio = { version = "1.44.2", features = ["full"] }
+once_cell = "1.21.3"
+log = "0.4.27"
+chrono = { version = "0.4.41", features = ["serde"] }
+tokio = { version = "1.46.1", features = ["full"] }
 futures = "0.3.31"
+crossbeam = '0.8.4'
 # toml = "0.8.19"
 # basic web dependencies
 actix-web = "4.10.2"
@@ -18,12 +19,12 @@ actix-service = "2.0.3"
 actix-cors = "0.7.1"
 # DB dependencies
 diesel_migrations = "2.2.0"
-diesel = { version = "2.2.10", features = ["mysql", "r2d2", "chrono"] }
+diesel = { version = "2.2.12", features = ["mysql", "r2d2", "chrono"] }
 # serializtion dependencies
 serde = "1.0.219"
 serde_derive = "1.0.219"
-serde_json = "1.0.140"
-uuid = { version = "1.16.0", features = ["v4"] }
+serde_json = "1.0.141"
+uuid = { version = "1.17.0", features = ["v4"] }
 # RPC dependencies
 ureq = { version = "2.12.1", features = ["charset", "json"] }
 # MQ dependencies
@@ -32,6 +33,6 @@ lapin = "2.5.1"
 share-lib = { path = "../share-lib" }
 
 [profile.release]
-lto = true # 链接时优化
-panic = "abort" # 禁用堆栈展开
+lto = true        # 链接时优化
+panic = "abort"   # 禁用堆栈展开
 codegen-units = 1

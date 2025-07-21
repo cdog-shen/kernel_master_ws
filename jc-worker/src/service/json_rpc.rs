@@ -9,7 +9,7 @@ pub fn update_log<'a>(
     uuid: String,
     status: u8,
     result: String,
-) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
     let commander_url = format!(
         "http://{}:{}/api/log/update",
         worker::GLOBAL_CONFIG.read().unwrap().commander_addr,
@@ -42,11 +42,18 @@ pub fn update_log<'a>(
                 return Err(MailManErr::new(
                     500,
                     "log update Failed",
-                    resp.into_body().read_to_string().unwrap(),
+                    Some(resp.into_body().read_to_string().unwrap()),
                     1,
                 ));
             }
         }
-        Err(e) => return Err(MailManErr::new(500, "log update Failed", e, 1)),
+        Err(e) => {
+            return Err(MailManErr::new(
+                500,
+                "log update Failed",
+                Some(e.to_string()),
+                1,
+            ))
+        }
     }
 }

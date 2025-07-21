@@ -22,7 +22,7 @@ async fn main() {
             MailManOk::new(200, "config load DONE", None::<&str>);
         }
         Err(e) => {
-            MailManErr::new(500, "config load Failed", e, 2);
+            MailManErr::new(500, "config load Failed", Some(e), 2);
             panic!("config load Failed");
         }
     }
@@ -38,18 +38,13 @@ async fn main() {
 
     // connect to MQ
     let mq_str = worker::GLOBAL_CONFIG.read().unwrap().mq_str.clone();
-    let conn = match Connection::connect(
-        &mq_str,
-        ConnectionProperties::default(),
-    )
-    .await
-    {
+    let conn = match Connection::connect(&mq_str, ConnectionProperties::default()).await {
         Ok(conn) => {
             MailManOk::new(200, "MQ connect success", None::<&str>);
             conn
         }
         Err(e) => {
-            MailManErr::new(500, "MQ connection Failed", e, 2);
+            MailManErr::new(500, "MQ connection Failed", Some(e), 2);
             panic!("MQ connection Failed");
         }
     };
@@ -61,7 +56,7 @@ async fn main() {
             channel
         }
         Err(e) => {
-            MailManErr::new(500, "MQ channel - xxx create failed", e, 2);
+            MailManErr::new(500, "MQ channel - xxx create failed", Some(e), 2);
             panic!("MQ channel - xxx create failed")
         }
     };
@@ -103,7 +98,7 @@ async fn main() {
             MailManOk::new(200, "Sync queue declare success", None::<&str>);
         }
         Err(e) => {
-            MailManErr::new(200, "Sync queue declare Failed", e, 1);
+            MailManErr::new(200, "Sync queue declare Failed", Some(e), 1);
             panic!("Sync queue declare Failed");
         }
     }
@@ -130,7 +125,7 @@ async fn main() {
             MailManOk::new(200, "Async queue declare success", None::<&str>);
         }
         Err(e) => {
-            MailManErr::new(200, "Async queue declare Failed", e, 2);
+            MailManErr::new(200, "Async queue declare Failed", Some(e), 2);
             panic!("Async queue declare Failed");
         }
     }
@@ -150,7 +145,7 @@ async fn main() {
             consumer
         }
         Err(e) => {
-            MailManErr::new(200, "Sync consumer declare Failed", e, 2);
+            MailManErr::new(200, "Sync consumer declare Failed", Some(e), 2);
             panic!("Sync consumer declare Failed");
         }
     };
@@ -170,7 +165,7 @@ async fn main() {
             consumer
         }
         Err(e) => {
-            MailManErr::new(200, "Async consumer declare Failed", e, 2);
+            MailManErr::new(200, "Async consumer declare Failed", Some(e), 2);
             panic!("Async consumer declare Failed");
         }
     };

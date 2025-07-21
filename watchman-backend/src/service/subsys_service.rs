@@ -14,12 +14,17 @@ use crate::model::{access::*, service::*, subsys::*};
 pub fn all_subsys<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, Vec<SubsysModel>>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, Vec<SubsysModel>>, MailManErr<'a, String>> {
     match SubsysModel::get_all_with_filter(filter.clone(), &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "All Subsystem info", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(msg.1),
+                1,
+            )),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -28,8 +33,12 @@ pub fn all_subsys<'a>(
 pub fn new_subsys<'a>(
     subsys_info: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
-    let subsys_name = subsys_info.get("subsys_name").expect("missing subsys_name").as_str().unwrap();
+) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
+    let subsys_name = subsys_info
+        .get("subsys_name")
+        .expect("missing subsys_name")
+        .as_str()
+        .unwrap();
 
     let bind_service_info: Map<String, Value> = serde_json::from_value(serde_json::json!({
         "service_name": Some(format!(
@@ -51,8 +60,15 @@ pub fn new_subsys<'a>(
     match ServiceModel::new_service(bind_service_info, &mut pool.get().unwrap()) {
         Ok(msg) => MailManOk::new(200, "Subsystem bind service created", Some(msg)),
         Err(msg) => match msg.0 {
-            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => {
+                return Err(MailManErr::new(
+                    500,
+                    "Internal Server Error",
+                    Some(msg.1),
+                    1,
+                ))
+            }
+            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     };
 
@@ -63,8 +79,15 @@ pub fn new_subsys<'a>(
             Some(msg),
         )),
         Err(msg) => match msg.0 {
-            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => {
+                return Err(MailManErr::new(
+                    500,
+                    "Internal Server Error",
+                    Some(msg.1),
+                    1,
+                ))
+            }
+            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -73,7 +96,7 @@ pub fn new_subsys<'a>(
 pub fn update_subsys<'a>(
     subsys_info: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
     match SubsysModel::update_meta_by_id(subsys_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
@@ -81,8 +104,13 @@ pub fn update_subsys<'a>(
             Some(msg),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(msg.1),
+                1,
+            )),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -91,14 +119,21 @@ pub fn update_subsys<'a>(
 pub fn delete_subsys<'a>(
     subsys_meta_id: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
     let subsys_id = subsys_meta_id.get("id").unwrap().as_u64().unwrap() as u32;
 
     let bind_service_id = match SubsysModel::get_meta_by_id(subsys_id, &mut pool.get().unwrap()) {
         Ok(sub_meta) => sub_meta.relate_service.unwrap(),
         Err(msg) => match msg.0 {
-            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => {
+                return Err(MailManErr::new(
+                    500,
+                    "Internal Server Error",
+                    Some(msg.1),
+                    1,
+                ))
+            }
+            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     };
 
@@ -109,8 +144,15 @@ pub fn delete_subsys<'a>(
                 .map(|access_info| access_info.id)
                 .collect(),
             Err(msg) => match msg.0 {
-                0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-                _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+                0 => {
+                    return Err(MailManErr::new(
+                        500,
+                        "Internal Server Error",
+                        Some(msg.1),
+                        1,
+                    ))
+                }
+                _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
             },
         };
 
@@ -124,8 +166,15 @@ pub fn delete_subsys<'a>(
         match AccessModel::update_access_by_id(disable_json, &mut pool.get().unwrap()) {
             Ok(_) => (),
             Err(msg) => match msg.0 {
-                0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-                _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+                0 => {
+                    return Err(MailManErr::new(
+                        500,
+                        "Internal Server Error",
+                        Some(msg.1),
+                        1,
+                    ))
+                }
+                _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
             },
         }
     }
@@ -140,8 +189,13 @@ pub fn delete_subsys<'a>(
             )),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(msg.1),
+                1,
+            )),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     };
 
@@ -152,8 +206,13 @@ pub fn delete_subsys<'a>(
             Some(msg),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(msg.1),
+                1,
+            )),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -162,13 +221,20 @@ pub fn call<'a>(
     subsys_name: String,
     subsys_params: serde_json::Map<String, serde_json::Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, serde_json::Value>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, serde_json::Value>, MailManErr<'a, String>> {
     let target =
         match SubsysModel::get_enable_by_name(subsys_name.clone(), &mut pool.get().unwrap()) {
             Ok(subsys_info) => subsys_info,
             Err(msg) => match msg.0 {
-                0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-                _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+                0 => {
+                    return Err(MailManErr::new(
+                        500,
+                        "Internal Server Error",
+                        Some(msg.1),
+                        1,
+                    ))
+                }
+                _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
             },
         };
 
@@ -208,7 +274,7 @@ pub fn call<'a>(
             return Err(MailManErr::new(
                 500,
                 "Internal Server Error",
-                format!("Subsystem: {}. Error kind: {}", &subsys_name, msg),
+                Some(format!("Subsystem: {}. Error kind: {}", &subsys_name, msg)),
                 1,
             ));
         }
