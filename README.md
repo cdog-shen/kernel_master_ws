@@ -2,7 +2,7 @@
 <div align="center">
   <p>
     <a href="./README_ZH-CN.md">🇨🇳 简体中文</a> | 
-    <a href="./README.md">🇺🇸 English</a> | 
+    <a href="./README.md">🇺🇸/🇬🇧 English</a> | 
   </p>
 </div>
 
@@ -50,4 +50,16 @@ This subsystem is divided into two parts: the worker and the commander.
 
 🐳 Dockerfile is used to build an `Ubuntu` container, with some built-in static dependencies and variables for static compilation, and can be compiled with `build/build_all_ws.sh` if necessary.
 
+U can build project by using (target: `x86_64-unknown-linux-gnu`):
 
+```sh
+docker-compose --profile build up
+```
+
+And launch it by using:
+
+```sh
+# Before execute, Make your message queue and database ready
+# Don't forget to change config file 
+docker-compose --profile run up -d
+```

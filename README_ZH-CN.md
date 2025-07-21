@@ -1,7 +1,7 @@
 <div align="center">
     <p>
         <a href="./README_ZH-CN.md">🇨🇳 简体中文</a> | 
-        <a href="./README.md">🇺🇸 English</a> | 
+        <a href="./README.md">🇺🇸/🇬🇧 English</a> | 
     </p>
 </div>
 
@@ -48,3 +48,17 @@
 ## DockerFile
 
 🐳 Dockerfile用于构建一个 `alpine linux` 的容器, 内置了一些构建需要的静态依赖库和变量, 用于静态编译, 如果有需要可以使用 `build/build_all_ws_static.sh` 来进行编译
+
+使用build profile来进行编译项目(目标: `x86_64-unknown-linux-gnu`):
+
+```sh
+docker-compose --profile build up
+```
+
+使用下面的命令启动整个服务:
+
+```sh
+# 开始之前, 确保你的MQ和DB是可用的状态
+# 别忘了修改配置文件
+docker-compose --profile run up -d
+```
