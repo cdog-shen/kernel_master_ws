@@ -1,7 +1,7 @@
 version: "3"
 
 x-common: &common
-  image: kernel_master_ws-km
+  image: kernel_master_ws-runner
   volumes:
     - ./target:/root
   networks:
@@ -25,16 +25,18 @@ services:
     command: |
       bash build/build_all_ws.sh && cp -f /root/kernel_master_ws/target/* /root/target/ && sleep 1000
 
-  km:
+  runner:
     build:
       context: .
       dockerfile: Dockerfile.runner
-    container_name: watchman-backend
-    volumes:
-      - ./target:/root
-    networks:
-      - km_net
-    profiles: ["run"]
+    container_name: runner
+    profiles: ["build"]
+    command: |
+      echo "runner build success"
+
+
+  watchman-backend:
+    <<: *common
     command: |
       sh -c './watchman-backend'
     healthcheck:
@@ -50,7 +52,7 @@ services:
       watchman-backend:
         condition: service_healthy
     command: |
-      sh -c './watchman-backend'
+      sh -c './cmdb-backend'
     healthcheck:
       test: ["CMD", "sh", "-c", "netstat -tupln | grep ':9001 '"]
       interval: 5s
@@ -64,7 +66,7 @@ services:
       watchman-backend:
         condition: service_healthy
     command: |
-      sh -c './watchman-backend'
+      sh -c './cloud-api'
     healthcheck:
       test: ["CMD", "sh", "-c", "netstat -tupln | grep ':9002 '"]
       interval: 5s
@@ -73,28 +75,28 @@ services:
 
   jc-commander-1:
     <<: *common
-    container_name: jc-commander
+    container_name: jc-commander-1
     depends_on:
       watchman-backend:
         condition: service_healthy
     command: |
-      sh -c './watchman-backend'
+      sh -c './jc-commander'
     healthcheck:
       test: ["CMD", "sh", "-c", "netstat -tupln | grep ':9003 '"]
       interval: 5s
       timeout: 3s
       retries: 10
 
-  jc-worker-1:
+  jc-worker-1-1:
     <<: *common
-    container_name: jc-worker
+    container_name: jc-worker-1-1
     depends_on:
       watchman-backend:
         condition: service_healthy
       jc-commander-1:
         condition: service_healthy
     command: |
-      sh -c './watchman-backend'
+      sh -c './jc-worker'
     healthcheck:
       test: ["CMD", "sh", "-c", "netstat -tupn | grep ':9003 '"]
       interval: 5s
