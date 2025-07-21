@@ -8,7 +8,7 @@ use crate::data_structure;
 
 pub fn read_config(
     file_ptr: &mut File,
-) -> Result<Map<String, Value>, data_structure::MailManErr<'static>> {
+) -> Result<Map<String, Value>, data_structure::MailManErr<'static, String>> {
     match file_ptr.seek(SeekFrom::Start(0)) {
         Ok(_) => {
             data_structure::MailManOk::new(0, "Config file reset success", None::<&str>);
@@ -18,7 +18,7 @@ pub fn read_config(
             return Err(data_structure::MailManErr::new(
                 500,
                 "Config loading - failed to reset file",
-                e,
+                Some(e.to_string()),
                 2,
             ));
         }
@@ -38,7 +38,7 @@ pub fn read_config(
             return Err(data_structure::MailManErr::new(
                 500,
                 "Config loading - failed to open file",
-                e,
+                Some(e.to_string()),
                 2,
             ));
         }
@@ -50,7 +50,7 @@ pub fn read_config(
             return Err(data_structure::MailManErr::new(
                 500,
                 "Config loading - Unable to parse CFG",
-                e,
+                Some(e.to_string()),
                 2,
             ));
         }

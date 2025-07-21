@@ -6,7 +6,7 @@ use crate::config::worker;
 use crate::service::json_rpc::update_log;
 
 // sync task exe
-pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
+pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
     let payload = serde_json::from_str::<Value>(core::str::from_utf8(payload).unwrap()).unwrap();
 
     let auth = payload
@@ -63,7 +63,7 @@ pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailMa
     let (result, status) = match res {
         Ok(res_data) => (res_data, 2),
         Err(e) => {
-            MailManErr::new(500, "tast execute Error", e.clone(), 1);
+            MailManErr::new(500, "tast execute Error", Some(e.clone()), 1);
             (e, 0)
         }
     };

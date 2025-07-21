@@ -156,7 +156,7 @@ impl TimeWheel {
                     retry_list.push(Arc::into_inner(job).unwrap());
                 }
                 Err(e) => {
-                    log::error!("Failed to send job: {}", e);
+                    log::error!("Failed to send job: {:?}", e);
                 }
             }
         }
@@ -253,7 +253,7 @@ impl TimeWheel {
     fn send_job(
         &self,
         job: &Arc<CronJobModel>,
-    ) -> Result<MailManOk<'static, String>, MailManErr<'static>> {
+    ) -> Result<MailManOk<'static, String>, MailManErr<'static, String>> {
         log::info!("sending job...");
         futures::executor::block_on(self.send_job_async(job))
             .map(|_| {
@@ -263,6 +263,13 @@ impl TimeWheel {
                     Some("Message queued successfully".into()),
                 )
             })
-            .map_err(|e| MailManErr::new(500, "Task sending Failed", format!("MQ error: {}", e), 1))
+            .map_err(|e| {
+                MailManErr::new(
+                    500,
+                    "Task sending Failed",
+                    Some(format!("MQ error: {}", e)),
+                    1,
+                )
+            })
     }
 }

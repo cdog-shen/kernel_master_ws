@@ -36,7 +36,7 @@ async fn main() -> io::Result<()> {
             MailManOk::new(200, "config load DONE", None::<&str>);
         }
         Err(e) => {
-            panic!("config load error! {}", e);
+            panic!("config load error! {:?}", e);
         }
     }
 

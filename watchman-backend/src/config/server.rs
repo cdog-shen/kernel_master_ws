@@ -57,7 +57,7 @@ impl AllConfigs {
         }
     }
 
-    pub fn reload(&mut self) -> Result<u8, MailManErr<'static>> {
+    pub fn reload(&mut self) -> Result<u8, MailManErr<'static, String>> {
         let config = match read_config(&mut CONFIG_FILE_HANDLE.lock().unwrap()) {
             Ok(json) => json,
             Err(e) => return Err(e),
@@ -121,7 +121,7 @@ pub static SECRET_KEY: Lazy<RwLock<String>> = Lazy::new(|| {
         match read_to_string(secret_path) {
             Ok(key) => key,
             Err(e) => {
-                MailManErr::new(500, "SECRET key read error :", e, 1);
+                MailManErr::new(500, "SECRET key read error :", Some(e), 1);
                 "".to_string()
             }
         }

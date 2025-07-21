@@ -13,13 +13,13 @@ use crate::models::logservice::topic::*;
 pub fn get_all<'a>(
     filter: &'a Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, Vec<Value>>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, Vec<Value>>, MailManErr<'a, String>> {
     match LogServiceTopicModel::get_model_info_with_filter(filter.clone(), &mut pool.get().unwrap())
     {
         Ok(msg) => Ok(MailManOk::new(200, "All LogService Topic Info", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -28,7 +28,7 @@ pub fn get_all<'a>(
 pub fn new_table<'a>(
     data: &'a Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, Value>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {
     match LogServiceTopicModel::new(data.clone(), &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
@@ -36,8 +36,8 @@ pub fn new_table<'a>(
             Some(Value::String(format!("New line: {}", msg))),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -46,7 +46,7 @@ pub fn new_table<'a>(
 pub fn update_table<'a>(
     data: &'a Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, Value>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {
     match LogServiceTopicModel::update(data.clone(), &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
@@ -54,8 +54,8 @@ pub fn update_table<'a>(
             Some(Value::String(format!("Update line: {}", msg))),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -64,7 +64,7 @@ pub fn update_table<'a>(
 pub fn delete_table<'a>(
     data: &'a Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, Value>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {
     match LogServiceTopicModel::delete(data.clone(), &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
@@ -72,8 +72,8 @@ pub fn delete_table<'a>(
             Some(Value::String(format!("Delete line: {}", msg))),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }

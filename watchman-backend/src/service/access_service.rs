@@ -14,12 +14,12 @@ use crate::model::access::*;
 pub fn all_access<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, Vec<AccessModel>>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, Vec<AccessModel>>, MailManErr<'a, String>> {
     match AccessModel::get_all_with_filter(filter, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "All access info", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -28,12 +28,12 @@ pub fn all_access<'a>(
 pub fn new_access<'a>(
     service_info: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
     match AccessModel::new_access(service_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "Access created", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -42,12 +42,12 @@ pub fn new_access<'a>(
 pub fn update_access<'a>(
     service_info: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
     match AccessModel::update_access_by_id(service_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "Access info updated", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -56,14 +56,14 @@ pub fn update_access<'a>(
 pub fn delete_access<'a>(
     service_id: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
     let id = service_id.get("id").unwrap().as_u64().unwrap() as u32;
 
     match AccessModel::delete_access_by_id(id, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "Access deleted", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
