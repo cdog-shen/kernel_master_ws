@@ -37,6 +37,7 @@ services:
 
   watchman-backend:
     <<: *common
+    container_name: watchman-backend
     command: |
       sh -c './watchman-backend'
     healthcheck:
