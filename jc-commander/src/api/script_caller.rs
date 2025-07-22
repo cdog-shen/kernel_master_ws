@@ -84,8 +84,7 @@ pub async fn call_sync(
     }
 
     let start = std::time::Instant::now();
-    let mut get_flag = false;
-    while !get_flag {
+    loop {
         if start.elapsed() > std::time::Duration::from_secs(timeout) {
             return HttpResponse::GatewayTimeout().json(MailManErr::new(
                 504,
@@ -95,13 +94,23 @@ pub async fn call_sync(
             ));
         }
 
+        // Instead of popping, check if the UUID exists in the queue
+        let mut found = false;
+        let mut temp_vec = Vec::new();
         while let Some(id) = done_task_list.pop() {
             if id == uuid {
-                get_flag = true;
+                found = true;
                 break;
             } else {
-                done_task_list.push(id);
+                temp_vec.push(id);
             }
+        }
+        // Push back all non-matching UUIDs
+        for id in temp_vec {
+            done_task_list.push(id);
+        }
+        if found {
+            break;
         }
 
         tokio::time::sleep(std::time::Duration::from_millis(5)).await;
