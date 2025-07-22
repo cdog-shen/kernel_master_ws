@@ -247,34 +247,27 @@ pub fn call<'a>(
         )
         .as_str(),
     )
-    .set("Content-Type", "application/json")
-    .set("Authorization", &format!("uuid {}", &target.token))
-    .send_json(&subsys_params["data"]);
+    .header("Content-Type", "application/json")
+    .header("Authorization", &format!("uuid {}", &target.token))
+    .send(serde_json::to_string(&subsys_params["data"]).unwrap());
 
     match req {
         Ok(resp) => {
             return Ok(MailManOk::new(
                 200,
                 "Subsystem call success",
-                Some({
-                    let resp_text = resp.into_string().unwrap();
-                    match serde_json::from_str::<serde_json::Value>(&resp_text) {
-                        Ok(json_value) => json_value,
-                        Err(_) => {
-                            serde_json::json!({
-                                "data": resp_text,
-                            })
-                        }
-                    }
-                }),
+                Some(serde_json::from_str(&resp.into_body().read_to_string().unwrap()).unwrap()),
             ));
         }
         Err(msg) => {
-            msg.kind();
             return Err(MailManErr::new(
                 500,
                 "Internal Server Error",
-                Some(format!("Subsystem: {}. Error kind: {}", &subsys_name, msg)),
+                Some(format!(
+                    "Subsystem: {}. Error: {}",
+                    &subsys_name,
+                    msg.to_string()
+                )),
                 1,
             ));
         }

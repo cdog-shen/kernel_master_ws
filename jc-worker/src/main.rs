@@ -9,7 +9,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 use share_lib::logger;
 // local import
 use config::worker;
-use service::{async_task, sync_task};
+use service::task;
 // local modules
 mod config;
 mod service;
@@ -177,7 +177,7 @@ async fn main() {
             while let Some(delivery) = consumer.next().await {
                 if let Ok(delivery) = delivery {
                     MailManOk::new(200, "Recv new SYNC task", None::<&str>);
-                    let _ = sync_task::execute(&delivery.data).await;
+                    let _ = task::execute(&delivery.data).await;
                     delivery.ack(BasicAckOptions::default()).await.expect("Failed to ack");
                 }
             }
@@ -187,7 +187,7 @@ async fn main() {
             while let Some(delivery) = consumer.next().await {
                 if let Ok(delivery) = delivery {
                     MailManOk::new(200, "Recv new ASYNC task", None::<&str>);
-                    let _ = async_task::execute(&delivery.data).await;
+                    let _ = task::execute(&delivery.data).await;
                     delivery.ack(BasicAckOptions::default()).await.expect("Failed to ack");
                 }
             }

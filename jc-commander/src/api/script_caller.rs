@@ -1,6 +1,5 @@
 use crossbeam::queue::SegQueue;
 use std::sync::Arc;
-use ureq::json;
 
 use actix_web::{web, HttpResponse};
 use chrono::{self, Local};
@@ -8,7 +7,7 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
     MysqlConnection,
 };
-use serde_json::Value;
+use serde_json::{json, Value};
 use uuid::Uuid;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
