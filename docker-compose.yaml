@@ -38,6 +38,8 @@ services:
   watchman-backend:
     <<: *common
     container_name: watchman-backend
+    ports:
+      - 8000:8000
     command: |
       sh -c './watchman-backend'
     healthcheck:
