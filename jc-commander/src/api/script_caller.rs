@@ -62,7 +62,9 @@ pub async fn call_sync(
             &queue,
             lapin::options::BasicPublishOptions::default(),
             &payload,
-            lapin::BasicProperties::default(),
+            lapin::BasicProperties::default()
+                .with_content_type("application/json".into())
+                .with_delivery_mode(2),
         )
         .await
     {
