@@ -66,6 +66,7 @@ async fn main() -> io::Result<()> {
     let mq_pool: Arc<Connection> = Arc::new(mq_manager);
 
     // init DoneTaskList
+    log::info!("Creating DoneTaskList...");
     let done_task_list: Arc<SegQueue<Uuid>> = Arc::new(SegQueue::new());
 
     // initialize the scheduled task scheduler and start Ticking
