@@ -5,13 +5,13 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 use crate::config::worker;
 use crate::service::json_rpc::update_log;
 
-// sync task exe
+// async task exe
 pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
     let payload =
         serde_json::from_str::<Value>(core::str::from_utf8(payload).expect("Decode Error"))
-            .expect("json deserde Error");
+            .expect("Deserialize Error");
 
-    log::info!("Here comes payload: {:?}", payload);
+    log::info!("Here comes Payload: {}", payload);
 
     let auth = payload
         .get("commander")
@@ -72,7 +72,7 @@ pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailMa
         }
     };
 
-    match update_log(auth.to_string(), uuid.to_string(), status, result) {
+    match update_log(auth, uuid.to_string(), status, result) {
         Ok(MailManOk {
             code: _,
             key: _,
