@@ -11,6 +11,8 @@ pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailMa
         serde_json::from_str::<Value>(core::str::from_utf8(payload).expect("Decode Error"))
             .expect("json deserde Error");
 
+    log::info!("Here comes payload: {:?}", payload);
+
     let auth = payload
         .get("commander")
         .unwrap()
