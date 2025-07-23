@@ -80,14 +80,14 @@ pub fn new_subsys<'a>(
         )),
         Err(msg) => match msg.0 {
             0 => {
-                return Err(MailManErr::new(
+                Err(MailManErr::new(
                     500,
                     "Internal Server Error",
                     Some(msg.1),
                     1,
                 ))
             }
-            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -184,8 +184,7 @@ pub fn delete_subsys<'a>(
             200,
             "Service deleted",
             Some(format!(
-                "Service table: {}. And disabled those access line {:?}",
-                msg, access_target
+                "Service table: {msg}. And disabled those access line {access_target:?}"
             )),
         )),
         Err(msg) => match msg.0 {
@@ -254,23 +253,23 @@ pub fn call<'a>(
 
     match req {
         Ok(resp) => {
-            return Ok(MailManOk::new(
+            Ok(MailManOk::new(
                 200,
                 "Subsystem call success",
                 Some(serde_json::from_str(&resp.into_body().read_to_string().unwrap()).unwrap()),
-            ));
+            ))
         }
         Err(msg) => {
-            return Err(MailManErr::new(
+            Err(MailManErr::new(
                 500,
                 "Internal Server Error",
                 Some(format!(
                     "Subsystem: {}. Error: {}",
                     &subsys_name,
-                    msg.to_string()
+                    msg
                 )),
                 1,
-            ));
+            ))
         }
-    };
+    }
 }

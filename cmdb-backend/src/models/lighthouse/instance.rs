@@ -176,7 +176,7 @@ impl LightEcsModel {
                 }
                 "instance_name" => {
                     if let Some(value) = q_v.as_str() {
-                        let pattern = format!("%{}%", value);
+                        let pattern = format!("%{value}%");
                         query = query.filter(instance_name.like(pattern));
                     }
                 }

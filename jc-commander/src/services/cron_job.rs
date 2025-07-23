@@ -39,7 +39,7 @@ pub fn new<'a>(
         Ok(msg) => Ok(MailManOk::new(
             200,
             "New cron job",
-            Some(Value::String(format!("New cron: {}", msg))),
+            Some(Value::String(format!("New cron: {msg}"))),
         )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(
@@ -62,7 +62,7 @@ pub fn update<'a>(
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Update cron job",
-            Some(Value::String(format!("Update cron: {}", msg))),
+            Some(Value::String(format!("Update cron: {msg}"))),
         )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(
@@ -98,7 +98,7 @@ pub fn delete<'a>(
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Delete cron job",
-            Some(Value::String(format!("Delete cron: {}", msg))),
+            Some(Value::String(format!("Delete cron: {msg}"))),
         )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(

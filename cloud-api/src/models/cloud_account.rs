@@ -73,7 +73,7 @@ impl CloudAccountModel {
             .first::<CloudAccountModel>(conn)
             .map_err(|e| match e {
                 NotFound => (NOT_FOUND_CODE, "account not found".to_string()),
-                _ => (UNKNOW_ERROR_CODE, format!("get account error: {}", e)),
+                _ => (UNKNOW_ERROR_CODE, format!("get account error: {e}")),
             })
     }
 

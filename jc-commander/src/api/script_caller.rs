@@ -29,7 +29,7 @@ pub async fn call_sync(
         .mq_queue_prefix
         .clone();
     let self_id = server::GLOBAL_CONFIG.read().unwrap().subsys_uuid.clone();
-    let queue = format!("{}_sync", queue_prefix);
+    let queue = format!("{queue_prefix}_sync");
 
     let uuid = Uuid::new_v4();
     let mut req = req.into_inner();
@@ -71,7 +71,7 @@ pub async fn call_sync(
             MailManOk::new(
                 200,
                 "Sync task send success",
-                Some(format!("{:?}", res_data)),
+                Some(format!("{res_data:?}")),
             );
         }
         Err(e) => {
@@ -125,22 +125,22 @@ pub async fn call_sync(
         }) => match job_log_res {
             Some(job_log) => {
                 if job_log.status == 2 {
-                    return HttpResponse::Ok().json(MailManOk::new(
+                    HttpResponse::Ok().json(MailManOk::new(
                         200,
                         "Sync task called success",
                         Some(json!(job_log)),
-                    ));
+                    ))
                 } else {
-                    return HttpResponse::InternalServerError().json(MailManErr::new(
+                    HttpResponse::InternalServerError().json(MailManErr::new(
                         500,
                         "Job execute Error",
                         Some(json!(job_log)),
                         1,
-                    ));
+                    ))
                 }
             }
             None => {
-                return HttpResponse::InternalServerError().json(MailManErr::new(
+                HttpResponse::InternalServerError().json(MailManErr::new(
                     500,
                     "no job found",
                     Some(uuid.to_string()),
@@ -148,7 +148,7 @@ pub async fn call_sync(
                 ))
             }
         },
-        Err(e) => return HttpResponse::InternalServerError().json(e),
+        Err(e) => HttpResponse::InternalServerError().json(e),
     }
 }
 
@@ -165,7 +165,7 @@ pub async fn call_async(
         .mq_queue_prefix
         .clone();
     let self_id = server::GLOBAL_CONFIG.read().unwrap().subsys_uuid.clone();
-    let queue = format!("{}_async", queue_prefix);
+    let queue = format!("{queue_prefix}_async");
 
     let uuid = Uuid::new_v4().to_string();
     let mut req = req.into_inner();
@@ -201,14 +201,14 @@ pub async fn call_async(
         .await
     {
         Ok(_) => {
-            return HttpResponse::Ok().json(MailManOk::new(
+            HttpResponse::Ok().json(MailManOk::new(
                 200,
                 "Async task send success",
                 Some(uuid),
             ))
         }
         Err(e) => {
-            return HttpResponse::InternalServerError().json(MailManErr::new(
+            HttpResponse::InternalServerError().json(MailManErr::new(
                 500,
                 "Task sending Failed",
                 Some(e.to_string()),

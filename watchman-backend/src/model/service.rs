@@ -86,7 +86,7 @@ impl ServiceModel {
             .get_results::<ServiceModel>(conn)
         {
             Ok(service_table_data) => Ok(service_table_data),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -102,7 +102,7 @@ impl ServiceModel {
             .get_results::<ServiceModel>(conn)
         {
             Ok(service_table_data) => Ok(service_table_data),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -136,7 +136,7 @@ impl ServiceModel {
                     0 => continue,
                     _ => return Ok(sids),
                 },
-                Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+                Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
             }
         }
         Err((NOT_FOUND_CODE, "No matching permissions.".to_string()))
@@ -163,7 +163,7 @@ impl ServiceModel {
                 }
                 "service_point" => {
                     if let Some(value) = q_v.as_str() {
-                        let pattern = format!("%{}%", value);
+                        let pattern = format!("%{value}%");
                         query = query.filter(service_point.like(pattern));
                     }
                 }
@@ -173,7 +173,7 @@ impl ServiceModel {
 
         match query.get_results::<ServiceModel>(conn) {
             Ok(service_table_data) => Ok(service_table_data),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 }
@@ -186,7 +186,7 @@ impl ServiceModel {
     ) -> Result<String, (u8, String)> {
         let new_service = match ServiceInfo::from_map(service_info) {
             Ok(service) => service,
-            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         };
 
         let this_service_name = new_service.service_name.clone().unwrap();
@@ -196,8 +196,7 @@ impl ServiceModel {
             .execute(conn)
         {
             Ok(num_of_change) => Ok(format!(
-                "Service {} created. line: {}",
-                this_service_name, num_of_change
+                "Service {this_service_name} created. line: {num_of_change}"
             )),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
@@ -209,7 +208,7 @@ impl ServiceModel {
     ) -> Result<String, (u8, String)> {
         let update_service = match ServiceInfo::from_map(service_info) {
             Ok(service) => service,
-            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         };
 
         let this_id = update_service.id.unwrap();
@@ -219,9 +218,9 @@ impl ServiceModel {
             .execute(conn)
         {
             Ok(num_of_eff) => match num_of_eff {
-                0 => Err((NOT_FOUND_CODE, format!("id: {} not found", this_id))),
-                1 => Ok(format!("{}'s data updated. lines: {}", this_id, num_of_eff)),
-                _ => Err((TMI_ERROR_CODE, format!("id: {} Too much info", this_id))),
+                0 => Err((NOT_FOUND_CODE, format!("id: {this_id} not found"))),
+                1 => Ok(format!("{this_id}'s data updated. lines: {num_of_eff}")),
+                _ => Err((TMI_ERROR_CODE, format!("id: {this_id} Too much info"))),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
@@ -233,10 +232,9 @@ impl ServiceModel {
     ) -> Result<String, (u8, String)> {
         match diesel::delete(service_table.find(service_id)).execute(conn) {
             Ok(num_of_eff) => Ok(format!(
-                "{}'s data deleted. lines: {}",
-                service_id, num_of_eff
+                "{service_id}'s data deleted. lines: {num_of_eff}"
             )),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {} not found", service_id))),
+            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {service_id} not found"))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }

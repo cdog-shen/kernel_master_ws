@@ -78,7 +78,7 @@ pub fn login<'a>(
         Ok(msg) => {
             MailManOk::<String>::new(
                 200,
-                format!("update_last_login call success - {}", msg).as_str(),
+                format!("update_last_login call success - {msg}").as_str(),
                 Some(msg),
             );
         }
@@ -97,7 +97,7 @@ pub fn login<'a>(
         Ok(msg) => {
             MailManOk::<String>::new(
                 200,
-                format!("update_token call success - {}", msg).as_str(),
+                format!("update_token call success - {msg}").as_str(),
                 Some(msg),
             );
         }
@@ -107,7 +107,7 @@ pub fn login<'a>(
                     Ok(msg) => {
                         MailManOk::<String>::new(
                             200,
-                            format!("insert_new_token call success - {}", msg).as_str(),
+                            format!("insert_new_token call success - {msg}").as_str(),
                             Some(msg),
                         );
                     }

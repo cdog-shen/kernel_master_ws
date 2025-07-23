@@ -95,7 +95,7 @@ impl SubsysModel {
             .get_results::<SubsysModel>(conn)
         {
             Ok(subsystem_table_data) => Ok(subsystem_table_data),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -113,7 +113,7 @@ impl SubsysModel {
                 NOT_FOUND_CODE,
                 format!("can NOT find subsystem id: {}.", &subsys_id),
             )),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -132,7 +132,7 @@ impl SubsysModel {
                 NOT_FOUND_CODE,
                 format!("can NOT find subsystem: {}.", &name),
             )),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -159,7 +159,7 @@ impl SubsysModel {
                 }
                 "url" => {
                     if let Some(value) = q_v.as_str() {
-                        let pattern = format!("%{}%", value);
+                        let pattern = format!("%{value}%");
                         query = query.filter(url.like(pattern));
                     }
                 }
@@ -174,7 +174,7 @@ impl SubsysModel {
 
         match query.get_results::<SubsysModel>(conn) {
             Ok(subsystem_table_data) => Ok(subsystem_table_data),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 }
@@ -187,7 +187,7 @@ impl SubsysModel {
     ) -> Result<String, (u8, String)> {
         let new_subsys = match SubsysInfo::from_map(subsys_info) {
             Ok(subsys) => subsys,
-            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         };
 
         let this_subsys_name = new_subsys.subsys_name.clone().unwrap();
@@ -197,8 +197,7 @@ impl SubsysModel {
             .execute(conn)
         {
             Ok(num_of_change) => Ok(format!(
-                "Subsystem meta data {} created. line: {}",
-                this_subsys_name, num_of_change
+                "Subsystem meta data {this_subsys_name} created. line: {num_of_change}"
             )),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
@@ -210,7 +209,7 @@ impl SubsysModel {
     ) -> Result<String, (u8, String)> {
         let update_subsys = match SubsysInfo::from_map(subsys_info) {
             Ok(subsys) => subsys,
-            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         };
 
         let this_subsys_id = update_subsys.id.unwrap();
@@ -220,14 +219,13 @@ impl SubsysModel {
             .execute(conn)
         {
             Ok(num_of_eff) => match num_of_eff {
-                0 => Err((NOT_FOUND_CODE, format!("id: {} not found", this_subsys_id))),
+                0 => Err((NOT_FOUND_CODE, format!("id: {this_subsys_id} not found"))),
                 1 => Ok(format!(
-                    "{}'s data updated. lines: {}",
-                    this_subsys_id, num_of_eff
+                    "{this_subsys_id}'s data updated. lines: {num_of_eff}"
                 )),
                 _ => Err((
                     TMI_ERROR_CODE,
-                    format!("id: {} Too much info", this_subsys_id),
+                    format!("id: {this_subsys_id} Too much info"),
                 )),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
@@ -240,10 +238,9 @@ impl SubsysModel {
     ) -> Result<String, (u8, String)> {
         match diesel::delete(subsystem_table.find(subsys_id)).execute(conn) {
             Ok(num_of_eff) => Ok(format!(
-                "{}'s data deleted. lines: {}",
-                subsys_id, num_of_eff
+                "{subsys_id}'s data deleted. lines: {num_of_eff}"
             )),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {} not found", subsys_id))),
+            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {subsys_id} not found"))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }

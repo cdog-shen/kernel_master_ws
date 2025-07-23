@@ -53,14 +53,11 @@ impl AllConfigs {
     }
 
     pub fn reload(&mut self) -> Result<u8, MailManErr<'static, String>> {
-        let config = match read_config(
+        let config = read_config(
             &mut CONFIG_FILE_HANDLE
                 .lock()
                 .expect("CAN NOT acquire CONFIG_FILE_HANDLE lock"),
-        ) {
-            Ok(json) => json,
-            Err(e) => return Err(e),
-        };
+        )?;
 
         self.log_path = config["server_config"]["log_path"]
             .as_str()

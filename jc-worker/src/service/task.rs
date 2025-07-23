@@ -11,7 +11,7 @@ pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailMa
         serde_json::from_str::<Value>(core::str::from_utf8(payload).expect("Decode Error"))
             .expect("Deserialize Error");
 
-    log::info!("Here comes Payload: {}", payload);
+    log::info!("Here comes Payload: {payload}");
 
     let auth = payload
         .get("commander")
@@ -42,7 +42,7 @@ pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailMa
             script_path.push('/');
         }
     }
-    script_path.push_str(&format!("{}.py", script_name));
+    script_path.push_str(&format!("{script_name}.py"));
 
     let output =
         std::process::Command::new(worker::GLOBAL_CONFIG.read().unwrap().python_path.clone())
@@ -76,14 +76,12 @@ pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailMa
                 Ok(err_msg)
             } else {
                 log::error!(
-                    "Task {} with params {} Nothing in stdout",
-                    script_name,
-                    auth,
+                    "Task {script_name} with params {auth} Nothing in stdout",
                 );
                 Err("Nothing in stdout".to_string())
             }
         }
-        Err(ref e) => Err(format!("Error: {}", e)),
+        Err(ref e) => Err(format!("Error: {e}")),
     };
 
     let (result, status) = match output.unwrap().status {

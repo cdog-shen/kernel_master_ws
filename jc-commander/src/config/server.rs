@@ -60,10 +60,7 @@ impl AllConfigs {
     }
 
     pub fn reload(&mut self) -> Result<u8, MailManErr<'static, String>> {
-        let config = match read_config(&mut CONFIG_FILE_HANDLE.lock().unwrap()) {
-            Ok(json) => json,
-            Err(e) => return Err(e),
-        };
+        let config = read_config(&mut CONFIG_FILE_HANDLE.lock().unwrap())?;
 
         self.log_path = config["server_config"]["log_path"]
             .as_str()

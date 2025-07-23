@@ -120,19 +120,19 @@ impl LogServiceTopicModel {
                 }
                 "set_id" => {
                     if let Some(value) = q_v.as_str() {
-                        let pattern = format!("%{}%", value);
+                        let pattern = format!("%{value}%");
                         query = query.filter(set_id.like(pattern));
                     }
                 }
                 "topic_id" => {
                     if let Some(value) = q_v.as_str() {
-                        let pattern = format!("%{}%", value);
+                        let pattern = format!("%{value}%");
                         query = query.filter(topic_id.like(pattern));
                     }
                 }
                 "topic_name" => {
                     if let Some(value) = q_v.as_str() {
-                        let pattern = format!("%{}%", value);
+                        let pattern = format!("%{value}%");
                         query = query.filter(topic_name.like(pattern));
                     }
                 }

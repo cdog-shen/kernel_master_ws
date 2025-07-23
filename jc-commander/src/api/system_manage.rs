@@ -12,7 +12,7 @@ pub async fn refresh_master() -> HttpResponse {
     let register_name = config.register_name.clone();
     drop(config); // Drop the MutexGuard here
 
-    let id_res = ureq::get(&format!("{}/subsystem_control/all_subsystem", base_url))
+    let id_res = ureq::get(&format!("{base_url}/subsystem_control/all_subsystem"))
         .query("subsys_name", &register_name)
         // .timeout(std::time::Duration::from_millis(1000))
         .call();
@@ -41,7 +41,7 @@ pub async fn refresh_master() -> HttpResponse {
     });
     drop(config); // Drop the MutexGuard here
 
-    let res = ureq::post(&format!("{}/subsystem_control/update_subsystem", base_url))
+    let res = ureq::post(&format!("{base_url}/subsystem_control/update_subsystem"))
         .header("Connection", "close")
         .header("Content-Type", "application/json")
         .send(serde_json::to_string(&req_json).unwrap());

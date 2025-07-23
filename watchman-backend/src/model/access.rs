@@ -100,7 +100,7 @@ impl AccessModel {
             .get_results::<AccessModel>(conn)
         {
             Ok(access_table_data) => Ok(access_table_data),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -115,7 +115,7 @@ impl AccessModel {
             .get_results::<AccessModel>(conn)
         {
             Ok(access_table_data) => Ok(access_table_data),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -130,7 +130,7 @@ impl AccessModel {
             .get_results::<AccessModel>(conn)
         {
             Ok(access_table_data) => Ok(access_table_data),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -157,7 +157,7 @@ impl AccessModel {
                 }
                 Ok(max_access)
             }
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -192,7 +192,7 @@ impl AccessModel {
                 }
                 "comment" => {
                     if let Some(value) = q_v.as_str() {
-                        let pattern = format!("%{}%", value);
+                        let pattern = format!("%{value}%");
                         query = query.filter(comment.like(pattern));
                     }
                 }
@@ -202,7 +202,7 @@ impl AccessModel {
 
         match query.get_results::<AccessModel>(conn) {
             Ok(access_table_data) => Ok(access_table_data),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 }
@@ -215,14 +215,14 @@ impl AccessModel {
     ) -> Result<String, (u8, String)> {
         let new_access = match AccessInfo::from_map(access_info) {
             Ok(access) => access,
-            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         };
 
         match diesel::insert_into(access_table)
             .values(new_access)
             .execute(conn)
         {
-            Ok(num_of_change) => Ok(format!("Access created. line: {}", num_of_change,)),
+            Ok(num_of_change) => Ok(format!("Access created. line: {num_of_change}")),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
     }
@@ -233,7 +233,7 @@ impl AccessModel {
     ) -> Result<String, (u8, String)> {
         let update_access = match AccessInfo::from_map(access_info) {
             Ok(access) => access,
-            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         };
 
         let this_access_id = update_access.id.unwrap();
@@ -243,14 +243,13 @@ impl AccessModel {
             .execute(conn)
         {
             Ok(num_of_eff) => match num_of_eff {
-                0 => Err((NOT_FOUND_CODE, format!("id: {} not found", this_access_id))),
+                0 => Err((NOT_FOUND_CODE, format!("id: {this_access_id} not found"))),
                 1 => Ok(format!(
-                    "{}'s data updated. lines: {}",
-                    this_access_id, num_of_eff
+                    "{this_access_id}'s data updated. lines: {num_of_eff}"
                 )),
                 _ => Err((
                     TMI_ERROR_CODE,
-                    format!("id: {} Too much info", this_access_id),
+                    format!("id: {this_access_id} Too much info"),
                 )),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
@@ -262,11 +261,8 @@ impl AccessModel {
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
         match diesel::delete(access_table.find(access_id)).execute(conn) {
-            Ok(num_of_eff) => Ok(format!(
-                "{}'s data deleted. lines: {}",
-                access_id, num_of_eff
-            )),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {} not found", access_id))),
+            Ok(num_of_eff) => Ok(format!("{access_id}'s data deleted. lines: {num_of_eff}")),
+            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {access_id} not found"))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }

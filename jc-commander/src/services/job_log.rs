@@ -58,7 +58,7 @@ pub fn new<'a>(
         Ok(msg) => Ok(MailManOk::new(
             200,
             "New job log",
-            Some(Value::String(format!("New log: {}", msg))),
+            Some(Value::String(format!("New log: {msg}"))),
         )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(
@@ -92,7 +92,7 @@ pub fn update<'a>(
             Ok(MailManOk::new(
                 200,
                 "Update job log",
-                Some(Value::String(format!("Update log: {}", msg))),
+                Some(Value::String(format!("Update log: {msg}"))),
             ))
         }
         Err(msg) => match msg.0 {
@@ -129,7 +129,7 @@ pub fn delete<'a>(
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Delete job log",
-            Some(Value::String(format!("Delete log: {}", msg))),
+            Some(Value::String(format!("Delete log: {msg}"))),
         )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(

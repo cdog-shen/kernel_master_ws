@@ -13,7 +13,7 @@ pub async fn refresh_master() -> HttpResponse {
         server::GLOBAL_CONFIG.read().unwrap().master_port
     );
 
-    let id_res = ureq::get(&format!("{}/subsystem_control/all_subsystem", base_url))
+    let id_res = ureq::get(&format!("{base_url}/subsystem_control/all_subsystem"))
         .query(
             "subsys_name",
             &server::GLOBAL_CONFIG.read().unwrap().register_name,
@@ -43,7 +43,7 @@ pub async fn refresh_master() -> HttpResponse {
         "token" : server::GLOBAL_CONFIG.read().unwrap().subsys_uuid,
     });
 
-    let res = ureq::post(&format!("{}/subsystem_control/update_subsystem", base_url))
+    let res = ureq::post(&format!("{base_url}/subsystem_control/update_subsystem"))
         .header("Connection", "close")
         .header("Content-Type", "application/json")
         .send(serde_json::to_string(&req_json).unwrap());

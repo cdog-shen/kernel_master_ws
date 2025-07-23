@@ -93,7 +93,7 @@ impl JobLogModel {
             .first::<JobLogModel>(conn)
             .map_err(|e| match e {
                 NotFound => (NOT_FOUND_CODE, "log not found".to_string()),
-                _ => (UNKNOW_ERROR_CODE, format!("get log error: {}", e)),
+                _ => (UNKNOW_ERROR_CODE, format!("get log error: {e}")),
             })
     }
 

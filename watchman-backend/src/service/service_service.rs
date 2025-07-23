@@ -92,8 +92,7 @@ pub fn delete_service<'a>(
             200,
             "Service deleted",
             Some(format!(
-                "Service table: {}. And disabled those access line {:?}",
-                msg, access_target
+                "Service table: {msg}. And disabled those access line {access_target:?}"
             )),
         )),
         Err(msg) => match msg.0 {

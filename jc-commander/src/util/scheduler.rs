@@ -77,7 +77,7 @@ impl TimeWheel {
         }
         let rel_sec = rel_sec as usize;
 
-        log::info!("new task regist in {}s", rel_sec);
+        log::info!("new task regist in {rel_sec}s");
 
         let mut inner = self.inner.lock().unwrap();
         let job_arc = Arc::new(job);
@@ -151,12 +151,12 @@ impl TimeWheel {
             match self.send_job(&job) {
                 Ok(_) => {
                     if let Err(e) = CronJobModel::next_round(&job.id, &mut conn) {
-                        log::error!("Failed to update job status: {:?}", e);
+                        log::error!("Failed to update job status: {e:?}");
                     }
                     retry_list.push(Arc::into_inner(job).unwrap());
                 }
                 Err(e) => {
-                    log::error!("Failed to send job: {:?}", e);
+                    log::error!("Failed to send job: {e:?}");
                 }
             }
         }
@@ -194,23 +194,23 @@ impl TimeWheel {
         inner.s_wheels.iter_mut().for_each(VecDeque::clear);
         inner.m_wheels.iter_mut().for_each(VecDeque::clear);
         inner.h_wheels.iter_mut().for_each(VecDeque::clear);
-        return Ok(MailManOk {
+        Ok(MailManOk {
             code: 200,
             key: "TimeWheel clear",
             data: None,
-        });
+        })
     }
 
     pub fn reload_from_db(&self) -> Result<(), String> {
         let mut conn = self
             .db_pool
             .get()
-            .map_err(|e| format!("DB connection failed: {:?}", e))?;
+            .map_err(|e| format!("DB connection failed: {e:?}"))?;
 
         let filter: serde_json::Map<String, serde_json::Value> =
             serde_json::from_value(serde_json::json!({"status": 1})).expect("filter build error");
         let jobs = CronJobModel::get_crons_obj_with_filter(filter, &mut conn)
-            .map_err(|e| format!("Query failed: {:?}", e))?;
+            .map_err(|e| format!("Query failed: {e:?}"))?;
 
         let _ = self.clear();
 
@@ -224,11 +224,17 @@ impl TimeWheel {
 
     async fn send_job_async(&self, job: &CronJobModel) -> Result<(), lapin::Error> {
         let channel = self.mq_pool.create_channel().await?;
-        let config = server::GLOBAL_CONFIG.read().unwrap();
-
-        let queue = format!("{}_async", config.mq_queue_prefix);
+        let subsys_uuid = { server::GLOBAL_CONFIG.read().unwrap().subsys_uuid.clone() };
+        let queue = {
+            let prefix = server::GLOBAL_CONFIG
+                .read()
+                .unwrap()
+                .mq_queue_prefix
+                .clone();
+            format!("{prefix}_async")
+        };
         let payload = serde_json::json!({
-            "commander": config.subsys_uuid,
+            "commander": subsys_uuid,
             "host": "any",
             "id": job.id,
             "params": serde_json::from_str::<serde_json::Value>(&job.params).expect("param pass Error"),
@@ -267,7 +273,7 @@ impl TimeWheel {
                 MailManErr::new(
                     500,
                     "Task sending Failed",
-                    Some(format!("MQ error: {}", e)),
+                    Some(format!("MQ error: {e}")),
                     1,
                 )
             })

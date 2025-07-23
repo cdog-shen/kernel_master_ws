@@ -34,7 +34,7 @@ pub fn new_table<'a>(
         Ok(msg) => Ok(MailManOk::new(
             200,
             "New Cloudserver info",
-            Some(Value::String(format!("New line: {}", msg))),
+            Some(Value::String(format!("New line: {msg}"))),
         )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
@@ -52,7 +52,7 @@ pub fn update_table<'a>(
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Update Cloudserver info",
-            Some(Value::String(format!("Update line: {}", msg))),
+            Some(Value::String(format!("Update line: {msg}"))),
         )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
@@ -70,7 +70,7 @@ pub fn delete_table<'a>(
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Delete Cloudserver info",
-            Some(Value::String(format!("Delete line: {}", msg))),
+            Some(Value::String(format!("Delete line: {msg}"))),
         )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),

@@ -77,7 +77,7 @@ impl GroupModel {
             .get_results::<GroupModel>(conn)
         {
             Ok(group_table_data) => Ok(group_table_data),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -118,7 +118,7 @@ impl GroupModel {
 
                 Ok(result_gids)
             }
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -143,8 +143,8 @@ impl GroupModel {
                 }
                 "user_ids" => {
                     if let Some(value) = q_v.as_str() {
-                        let pattern1 = format!("%{},%", value);
-                        let pattern2 = format!("%{}]%", value);
+                        let pattern1 = format!("%{value},%");
+                        let pattern2 = format!("%{value}]%");
                         query = query
                             .filter(user_ids.like(pattern1))
                             .or_filter(user_ids.like(pattern2));
@@ -156,7 +156,7 @@ impl GroupModel {
 
         match query.get_results::<GroupModel>(conn) {
             Ok(group_table_data) => Ok(group_table_data),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 }
@@ -179,8 +179,7 @@ impl GroupModel {
             .execute(conn)
         {
             Ok(num_of_change) => Ok(format!(
-                "Group {} created. line: {}",
-                this_group_name, num_of_change
+                "Group {this_group_name} created. line: {num_of_change}"
             )),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
@@ -202,14 +201,13 @@ impl GroupModel {
             .execute(conn)
         {
             Ok(num_of_eff) => match num_of_eff {
-                0 => Err((NOT_FOUND_CODE, format!("id: {} not found", this_group_id))),
+                0 => Err((NOT_FOUND_CODE, format!("id: {this_group_id} not found"))),
                 1 => Ok(format!(
-                    "{}'s data updated. lines: {}",
-                    this_group_id, num_of_eff
+                    "{this_group_id}'s data updated. lines: {num_of_eff}"
                 )),
                 _ => Err((
                     TMI_ERROR_CODE,
-                    format!("id: {} Too much info", this_group_id),
+                    format!("id: {this_group_id} Too much info"),
                 )),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
@@ -222,10 +220,9 @@ impl GroupModel {
     ) -> Result<String, (u8, String)> {
         match diesel::delete(group_table.find(group_id)).execute(conn) {
             Ok(num_of_eff) => Ok(format!(
-                "{}'s data deleted. lines: {}",
-                group_id, num_of_eff
+                "{group_id}'s data deleted. lines: {num_of_eff}"
             )),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {} not found", group_id))),
+            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {group_id} not found"))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }

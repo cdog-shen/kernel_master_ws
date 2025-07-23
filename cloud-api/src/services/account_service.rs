@@ -37,7 +37,7 @@ pub fn new<'a>(
         Ok(msg) => Ok(MailManOk::new(
             200,
             "New cloud account",
-            Some(Value::String(format!("New line: {}", msg))),
+            Some(Value::String(format!("New line: {msg}"))),
         )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(
@@ -60,7 +60,7 @@ pub fn update<'a>(
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Update cloud account",
-            Some(Value::String(format!("Update line: {}", msg))),
+            Some(Value::String(format!("Update line: {msg}"))),
         )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(
@@ -96,7 +96,7 @@ pub fn delete<'a>(
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Delete cloud account",
-            Some(Value::String(format!("Delete line: {}", msg))),
+            Some(Value::String(format!("Delete line: {msg}"))),
         )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(

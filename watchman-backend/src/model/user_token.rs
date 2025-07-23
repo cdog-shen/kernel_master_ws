@@ -57,7 +57,7 @@ impl TokenModel {
                 NOT_FOUND_CODE,
                 format!("can NOT find {}'s token.", &user_token.user),
             )),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow error {}", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow error {e}"))),
         }
     }
 
@@ -79,7 +79,7 @@ impl TokenModel {
                 }
             }
             Err(NotFound) => Err((NOT_FOUND_CODE, "token invaild.".to_string())),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow error {}", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow error {e}"))),
         }
     }
 }
@@ -150,8 +150,7 @@ impl TokenModel {
 
         match diesel::delete(target).execute(conn) {
             Ok(num_of_eff) => Ok(format!(
-                "{}'s token update. lines: {}",
-                user_name, num_of_eff
+                "{user_name}'s token update. lines: {num_of_eff}"
             )),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
@@ -193,7 +192,7 @@ impl UserToken {
 
     /// encode a token claim object as JWT string
     pub fn encode_token(&self) -> Result<String, (u8, String)> {
-        debug!("Token Max Age: {}", EXP_CONST);
+        debug!("Token Max Age: {EXP_CONST}");
 
         let payload = self;
 
