@@ -2,13 +2,11 @@ FROM ubuntu:latest
 
 LABEL maintainer="shencdog@gmail.com"
 
-RUN apt update && apt install gcc g++ pkg-config libmysqlclient-dev git curl -y
+RUN apt update && apt install gcc g++ pkg-config libmysqlclient-dev curl -y
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 # RUN sh -c 'rustup target add x86_64-unknown-linux-musl && mkdir -p /root/build'
-
-RUN cd && git clone https://github.com/cdog-shen/kernel_master_ws.git && cd kernel_master_ws && git checkout dev
 
 WORKDIR /root/kernel_master_ws
 
