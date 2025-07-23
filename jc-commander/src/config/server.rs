@@ -150,9 +150,9 @@ impl AllConfigs {
             }
         };
 
-        self.db_str = config["server_config"]["db_str"]
+        self.db_str = config["db_config"]["db_str"]
             .as_str()
-            .expect("Config path server_config:db_str (string) not found")
+            .expect("Config path db_config:db_str (string) not found")
             .to_string();
 
         self.mq_str = config["mq_config"]["mq_str"]
