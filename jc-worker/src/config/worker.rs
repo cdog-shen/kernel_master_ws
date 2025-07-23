@@ -1,6 +1,5 @@
 use once_cell::sync::Lazy;
 use serde::Deserialize;
-use serde_json::{Map, Value};
 use std::{
     fs::File,
     sync::{Mutex, RwLock},
@@ -24,13 +23,6 @@ pub struct AllConfigs {
 
     pub mq_str: String,
     pub mq_queue_prefix: String,
-}
-
-fn get_string_from_config(config: &Map<String, Value>, path: &[&str]) -> String {
-    match config[path[0]][path[1]].as_str() {
-        Some(data) => data.to_string(),
-        None => "".to_string(),
-    }
 }
 
 impl AllConfigs {
@@ -58,22 +50,57 @@ impl AllConfigs {
             Err(e) => return Err(e),
         };
 
-        self.log_path = get_string_from_config(&config, &["server_config", "log_path"]);
-        self.log_level = get_string_from_config(&config, &["server_config", "log_level"]);
+        self.log_path = config["server_config"]["log_path"]
+            .as_str()
+            .expect("Config path server_config:log_path (string) not found")
+            .to_string();
+        self.log_level = config["server_config"]["log_level"]
+            .as_str()
+            .expect("Config path server_config:log_level (string) not found")
+            .to_string();
 
-        self.subsys_uuid = Uuid::new_v4().to_string();
+        self.subsys_uuid = config["server_config"]["uuid"]
+            .as_str()
+            .unwrap_or({
+                MailManErr::new(
+                    500,
+                    "Config Missing",
+                    Some(
+                        "Config path server_config:uuid (string-uuid) not found, Using random"
+                            .to_string(),
+                    ),
+                    0,
+                );
+                &Uuid::new_v4().to_string()
+            })
+            .to_string();
 
-        self.commander_addr = get_string_from_config(&config, &["server_config", "commander_addr"]);
-        self.commander_port = match config["server_config"]["commander_port"].as_u64() {
-            Some(data) => data as u16,
-            None => 9003,
-        };
+        self.commander_addr = config["server_config"]["commander_addr"]
+            .as_str()
+            .expect("Config path server_config:commander_addr (string) not found")
+            .to_string();
+        self.commander_port = config["server_config"]["commander_port"]
+            .as_u64()
+            .expect("Config path server_config:commander_port (u16) not found")
+            as u16;
 
-        self.python_path = get_string_from_config(&config, &["server_config", "python_path"]);
-        self.script_dir = get_string_from_config(&config, &["server_config", "script_dir"]);
+        self.python_path = config["server_config"]["python_path"]
+            .as_str()
+            .expect("Config path server_config:python_path (string) not found")
+            .to_string();
+        self.script_dir = config["server_config"]["script_dir"]
+            .as_str()
+            .expect("Config path server_config:script_dir (string) not found")
+            .to_string();
 
-        self.mq_str = get_string_from_config(&config, &["mq_config", "mq_str"]);
-        self.mq_queue_prefix = get_string_from_config(&config, &["mq_config", "queue_prefix"]);
+        self.mq_str = config["mq_config"]["mq_str"]
+            .as_str()
+            .expect("Config path mq_config:mq_str (string) not found")
+            .to_string();
+        self.mq_queue_prefix = config["mq_config"]["queue_prefix"]
+            .as_str()
+            .expect("Config path mq_config:queue_prefix (string) not found")
+            .to_string();
 
         Ok(0)
     }
