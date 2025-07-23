@@ -28,7 +28,7 @@ def login():
                 continue
 
         elif resp_json.get("code", 500) == 200:
-            jwt_str = f"{resp_json.get("data").get("token_type")} {resp_json.get("data").get("token")}"
+            jwt_str = f"{resp_json.get('data').get('token_type')} {resp_json.get('data').get('token')}"
             os.environ["WATCHMAN_JWT"] = jwt_str
             JWT = jwt_str
             break
@@ -52,6 +52,8 @@ def JWT_check():
             if count > 3:
                 raise Exception(f"Check error")
             else:
+                JWT = None
+                os.environ["WATCHMAN_JWT"] = ""
                 continue
 
         elif resp_status == 200:

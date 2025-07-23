@@ -1,6 +1,6 @@
 use once_cell::sync::Lazy;
 use serde::Deserialize;
-use serde_json::{Map, Value};
+use serde_json::Value;
 use std::{
     fs::File,
     sync::{Mutex, RwLock},
@@ -16,6 +16,7 @@ pub struct AllConfigs {
 
     pub listen_addr: String,
     pub listen_port: u16,
+    pub workers: u16,
     pub allowed_origin_list: Vec<String>,
 
     pub subsys_uuid: String,
@@ -32,13 +33,6 @@ pub struct AllConfigs {
     pub mq_queue_prefix: String,
 }
 
-fn get_string_from_config(config: &Map<String, Value>, path: &[&str]) -> String {
-    match config[path[0]][path[1]].as_str() {
-        Some(data) => data.to_string(),
-        None => "".to_string(),
-    }
-}
-
 impl AllConfigs {
     pub fn new() -> Self {
         Self {
@@ -47,6 +41,7 @@ impl AllConfigs {
 
             listen_addr: String::new(),
             listen_port: 9001,
+            workers: 2,
             allowed_origin_list: vec![],
 
             subsys_uuid: String::new(),
@@ -64,31 +59,79 @@ impl AllConfigs {
         }
     }
 
-    pub fn reload(&mut self) -> Result<u8, MailManErr<'static>> {
-        let config = match read_config(&mut CONFIG_FILE_HANDLE.lock().unwrap()) {
-            Ok(json) => json,
-            Err(e) => return Err(e),
-        };
+    pub fn reload(&mut self) -> Result<u8, MailManErr<'static, String>> {
+        let config = read_config(&mut CONFIG_FILE_HANDLE.lock().unwrap())?;
 
-        self.log_path = get_string_from_config(&config, &["server_config", "log_path"]);
-        self.log_level = get_string_from_config(&config, &["server_config", "log_level"]);
+        self.log_path = config["server_config"]["log_path"]
+            .as_str()
+            .expect("Config path server_config:log_path (string) not found")
+            .to_string();
+        self.log_level = config["server_config"]["log_level"]
+            .as_str()
+            .expect("Config path server_config:log_level (string) not found")
+            .to_string();
 
-        self.listen_addr = get_string_from_config(&config, &["server_config", "listen_addr"]);
-        self.listen_port = config["server_config"]["listen_port"].as_u64().unwrap() as u16;
+        self.listen_addr = config["server_config"]["listen_addr"]
+            .as_str()
+            .expect("Config path server_config:listen_addr (string) not found")
+            .to_string();
+        self.listen_port = config["server_config"]["listen_port"]
+            .as_u64()
+            .expect("Config path server_config:listen_port (u16) not found")
+            as u16;
+        self.workers = config["server_config"]["workers"]
+            .as_u64()
+            .expect("Config path server_config:workers (u16) not found")
+            as u16;
         self.allowed_origin_list = match &config["server_config"]["allowed_origin_list"] {
             Value::Array(vec) => vec
                 .iter()
                 .filter_map(|item| item.as_str())
                 .map(|item| item.to_string())
                 .collect(),
-            _ => vec![],
+            _ => {
+                MailManErr::new(
+                    500,
+                    "Config Missing",
+                    Some("Config path server_config:allowed_origin_list (Array[string]) not found, Using default".to_string()),
+                    0,
+                );
+                vec![
+                    "http://localhost:8000".to_string(),
+                    "http://127.0.0.1:8000".to_string(),
+                ]
+            }
         };
 
-        self.subsys_uuid = Uuid::new_v4().to_string();
-        self.register_name = get_string_from_config(&config, &["server_config", "register_name"]);
+        self.subsys_uuid = config["server_config"]["uuid"]
+            .as_str()
+            .unwrap_or({
+                MailManErr::new(
+                    500,
+                    "Config Missing",
+                    Some(
+                        "Config path server_config:uuid (string-uuid) not found, Using random"
+                            .to_string(),
+                    ),
+                    0,
+                );
+                &Uuid::new_v4().to_string()
+            })
+            .to_string();
 
-        self.master_addr = get_string_from_config(&config, &["server_config", "master_addr"]);
-        self.master_port = config["server_config"]["master_port"].as_u64().unwrap() as u16;
+        self.register_name = config["server_config"]["register_name"]
+            .as_str()
+            .expect("Config path server_config:register_name (string) not found")
+            .to_string();
+
+        self.master_addr = config["server_config"]["master_addr"]
+            .as_str()
+            .expect("Config path server_config:master_addr (string) not found")
+            .to_string();
+        self.master_port = config["server_config"]["master_port"]
+            .as_u64()
+            .expect("Config path server_config:master_port (u16) not found")
+            as u16;
 
         self.authenticate_bypass = match &config["server_config"]["authenticate_bypass"] {
             Value::Array(vec) => vec
@@ -96,13 +139,30 @@ impl AllConfigs {
                 .filter_map(|item| item.as_str())
                 .map(|item| item.to_string())
                 .collect(),
-            _ => vec![],
+            _ => {
+                MailManErr::new(
+                    500,
+                    "Config Missing",
+                    Some("server_config:authenticate_bypass (Array[string]) not found, Using default".to_string()),
+                    0,
+                );
+                vec!["/api/refresh_master".to_string()]
+            }
         };
 
-        self.db_str = get_string_from_config(&config, &["db_config", "db_str"]);
+        self.db_str = config["server_config"]["db_str"]
+            .as_str()
+            .expect("Config path server_config:db_str (string) not found")
+            .to_string();
 
-        self.mq_str = get_string_from_config(&config, &["mq_config", "mq_str"]);
-        self.mq_queue_prefix = get_string_from_config(&config, &["mq_config", "queue_prefix"]);
+        self.mq_str = config["mq_config"]["mq_str"]
+            .as_str()
+            .expect("Config path mq_config:mq_str (string) not found")
+            .to_string();
+        self.mq_queue_prefix = config["mq_config"]["queue_prefix"]
+            .as_str()
+            .expect("Config path mq_config:queue_prefix (string) not found")
+            .to_string();
 
         Ok(0)
     }

@@ -9,7 +9,7 @@ pub fn update_log<'a>(
     uuid: String,
     status: u8,
     result: String,
-) -> Result<MailManOk<'a, String>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
     let commander_url = format!(
         "http://{}:{}/api/log/update",
         worker::GLOBAL_CONFIG.read().unwrap().commander_addr,
@@ -18,7 +18,8 @@ pub fn update_log<'a>(
     let worker_id = &worker::GLOBAL_CONFIG.read().unwrap().subsys_uuid;
     let response = ureq::post(commander_url)
         .header("Content-Type", "application/json")
-        .header("Authorization", &format!("uuid {}", auth))
+        .header("Authorization", &format!("uuid {auth}"))
+        .header("Connection", "close")
         .send(
             serde_json::to_string(&serde_json::json!({
                 "id": uuid,
@@ -33,20 +34,27 @@ pub fn update_log<'a>(
     match response {
         Ok(resp) => {
             if resp.status() == 200 {
-                return Ok(MailManOk::new(
+                Ok(MailManOk::new(
                     200,
                     "log update Done",
                     Some(resp.into_body().read_to_string().unwrap()),
-                ));
+                ))
             } else {
-                return Err(MailManErr::new(
+                Err(MailManErr::new(
                     500,
                     "log update Failed",
-                    resp.into_body().read_to_string().unwrap(),
+                    Some(resp.into_body().read_to_string().unwrap()),
                     1,
-                ));
+                ))
             }
         }
-        Err(e) => return Err(MailManErr::new(500, "log update Failed", e, 1)),
+        Err(e) => {
+            Err(MailManErr::new(
+                500,
+                "log update Failed",
+                Some(e.to_string()),
+                1,
+            ))
+        }
     }
 }

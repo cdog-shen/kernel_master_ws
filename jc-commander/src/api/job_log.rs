@@ -1,3 +1,5 @@
+use crossbeam::queue::SegQueue;
+use uuid::Uuid;
 use actix_web::{web, HttpResponse};
 use diesel::{
     r2d2::{ConnectionManager, Pool},
@@ -9,10 +11,10 @@ use crate::services::job_log;
 
 // GET /api/job_log/get
 pub async fn get_all(
-    query: web::Query<Map<String, Value>>,
+    data: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> HttpResponse {
-    match job_log::get_all(&query, &pool) {
+    match job_log::get_all(&data, &pool) {
         Ok(data) => HttpResponse::Ok().json(data),
         Err(err) => HttpResponse::BadRequest().json(err),
     }
@@ -33,8 +35,9 @@ pub async fn new(
 pub async fn update(
     data: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    done_task_list: web::Data<SegQueue<Uuid>>,
 ) -> HttpResponse {
-    match job_log::update(&data, &pool) {
+    match job_log::update(&data, &pool, &done_task_list) {
         Ok(data) => HttpResponse::Ok().json(data),
         Err(err) => HttpResponse::InternalServerError().json(err),
     }

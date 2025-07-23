@@ -21,6 +21,14 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                     .service(web::resource("/delete").route(web::post().to(job_log::delete))),
             )
             .service(
+                web::scope("/cron")
+                    .service(web::resource("/get").route(web::post().to(cron_job::get_all)))
+                    .service(web::resource("/new").route(web::post().to(cron_job::new)))
+                    .service(web::resource("/update").route(web::post().to(cron_job::update)))
+                    .service(web::resource("/delete").route(web::post().to(cron_job::delete)))
+                    .service(web::resource("/refresh").route(web::post().to(cron_job::refresh))),
+            )
+            .service(
                 web::scope("/script")
                     // .service(web::resource("/sync").route(web::post().to(script_caller::call_sync)))
                     .service(web::resource("/sync").route(web::post().to(script_caller::call_sync)))

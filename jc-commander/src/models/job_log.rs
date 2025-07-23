@@ -93,7 +93,7 @@ impl JobLogModel {
             .first::<JobLogModel>(conn)
             .map_err(|e| match e {
                 NotFound => (NOT_FOUND_CODE, "log not found".to_string()),
-                _ => (UNKNOW_ERROR_CODE, format!("get log error: {}", e)),
+                _ => (UNKNOW_ERROR_CODE, format!("get log error: {e}")),
             })
     }
 
@@ -105,6 +105,11 @@ impl JobLogModel {
 
         for (q_k, q_v) in filter.iter() {
             match q_k.as_str() {
+                "id" => {
+                    if let Some(value) = q_v.as_str() {
+                        query = query.filter(id.eq(value));
+                    }
+                }
                 "exec_type" => {
                     if let Some(value) = q_v.as_str() {
                         query = query.filter(exec_type.eq(value));

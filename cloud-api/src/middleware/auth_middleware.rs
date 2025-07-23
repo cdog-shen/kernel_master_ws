@@ -104,7 +104,7 @@ where
                 .json(MailManErr::new(
                     500,
                     "Internal Server Error",
-                    internal_error.1,
+                    Some(internal_error.1),
                     1,
                 ))
                 .map_into_right_body();
@@ -118,7 +118,7 @@ where
                 .json(MailManErr::new(
                     401,
                     "Invalid UUID",
-                    "please login again",
+                    Some("please login again".to_string()),
                     1,
                 ))
                 .map_into_right_body();

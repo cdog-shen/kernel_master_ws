@@ -59,15 +59,16 @@ pub async fn run(
                 Err("Nothing in stdout".to_string())
             }
         }
-        Err(e) => Err(format!("Error: {}", e)),
+        Err(e) => Err(format!("Error: {e}")),
     };
 
     match res {
-        Ok(res_data) => HttpResponse::Ok().json(MailManOk::new(
-            200,
-            "Call success",
-            Some(serde_json::from_str::<Value>(&res_data).unwrap()),
-        )),
+        Ok(res_data) => match serde_json::from_str::<Value>(&res_data) {
+            Ok(json_value) => {
+                HttpResponse::Ok().json(MailManOk::new(200, "Call success", Some(json_value)))
+            }
+            Err(e) => HttpResponse::InternalServerError().json(format!("JSON parse error: {e}")),
+        },
         Err(err_data) => HttpResponse::InternalServerError().json(err_data.to_string()),
     }
 }
@@ -92,7 +93,7 @@ pub async fn get(req: web::Json<Value>) -> HttpResponse {
                 Err("Nothing in stdout".to_string())
             }
         }
-        Err(e) => Err(format!("Error: {}", e)),
+        Err(e) => Err(format!("Error: {e}")),
     };
 
     match res {

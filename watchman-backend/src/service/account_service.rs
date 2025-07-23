@@ -29,12 +29,12 @@ pub struct TokenBodyResponse {
 pub fn login<'a>(
     user: UserInputStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, TokenBodyResponse>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, TokenBodyResponse>, MailManErr<'a, String>> {
     // 1. check user name and password
     let query_result = match UserModel::login(&user, &mut pool.get().unwrap()) {
         Ok(user_info) => user_info,
         Err(msg) => {
-            return Err(MailManErr::new(400, "Bad Request", msg.1, 1));
+            return Err(MailManErr::new(400, "Bad Request", Some(msg.1), 1));
         }
     };
 
@@ -47,7 +47,14 @@ pub fn login<'a>(
             "token": jwt,
             "token_type": "bearer",
         }),
-        Err(err) => return Err(MailManErr::new(500, "Internal Server Error", err.1, 1)),
+        Err(err) => {
+            return Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(err.1),
+                1,
+            ))
+        }
     };
 
     let output = match serde_json::from_value(response) {
@@ -60,7 +67,7 @@ pub fn login<'a>(
             return Err(MailManErr::new(
                 500,
                 "Internal Server Error",
-                err.to_string(),
+                Some(err.to_string()),
                 1,
             ))
         }
@@ -71,11 +78,18 @@ pub fn login<'a>(
         Ok(msg) => {
             MailManOk::<String>::new(
                 200,
-                format!("update_last_login call success - {}", msg).as_str(),
+                format!("update_last_login call success - {msg}").as_str(),
                 Some(msg),
             );
         }
-        Err(msg) => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
+        Err(msg) => {
+            return Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(msg.1),
+                1,
+            ))
+        }
     }
 
     // 4. save token to DB
@@ -83,7 +97,7 @@ pub fn login<'a>(
         Ok(msg) => {
             MailManOk::<String>::new(
                 200,
-                format!("update_token call success - {}", msg).as_str(),
+                format!("update_token call success - {msg}").as_str(),
                 Some(msg),
             );
         }
@@ -93,16 +107,26 @@ pub fn login<'a>(
                     Ok(msg) => {
                         MailManOk::<String>::new(
                             200,
-                            format!("insert_new_token call success - {}", msg).as_str(),
+                            format!("insert_new_token call success - {msg}").as_str(),
                             Some(msg),
                         );
                     }
                     Err(msg) => {
-                        return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1))
+                        return Err(MailManErr::new(
+                            500,
+                            "Internal Server Error",
+                            Some(msg.1),
+                            1,
+                        ))
                     }
                 }
             } else {
-                return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1));
+                return Err(MailManErr::new(
+                    500,
+                    "Internal Server Error",
+                    Some(msg.1),
+                    1,
+                ));
             }
         }
     }
@@ -114,12 +138,17 @@ pub fn login<'a>(
 pub fn new_user<'a>(
     user_to_creat: UserInputStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, String>, MailManErr> {
+) -> Result<MailManOk<'a, String>, MailManErr<String>> {
     match UserModel::new_user(&user_to_creat, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "New user creat success", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(msg.1),
+                1,
+            )),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -128,12 +157,17 @@ pub fn new_user<'a>(
 pub fn logout<'a>(
     username_to_logout: String,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, String>, MailManErr> {
+) -> Result<MailManOk<'a, String>, MailManErr<String>> {
     match TokenModel::delete(&username_to_logout, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "Logout success", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(msg.1),
+                1,
+            )),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -142,12 +176,17 @@ pub fn logout<'a>(
 pub fn user_update<'a>(
     user_info: UserInputStream,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, String>, MailManErr> {
+) -> Result<MailManOk<'a, String>, MailManErr<String>> {
     match UserModel::update_user_by_id(&user_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "User info updated", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(msg.1),
+                1,
+            )),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -156,12 +195,17 @@ pub fn user_update<'a>(
 pub fn get_all<'a>(
     filter: &'a Map<String, Value>,
     pool: &'a web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<MailManOk<'a, Vec<UserOutputStream>>, MailManErr<'a>> {
+) -> Result<MailManOk<'a, Vec<UserOutputStream>>, MailManErr<'a, String>> {
     match UserModel::get_user_info_with_filter(filter.clone(), &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "All user info", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(msg.1),
+                1,
+            )),
+            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
 }
@@ -170,36 +214,54 @@ pub fn get_all<'a>(
 pub fn get_me(
     id: u32,
     pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<HashMap<String, serde_json::Value>, MailManErr<'_>> {
+) -> Result<HashMap<String, serde_json::Value>, MailManErr<'_, String>> {
     let mut result: HashMap<String, serde_json::Value> = HashMap::new();
 
     let user_basic_info = match UserModel::get_user_by_id(id, &mut pool.get().unwrap()) {
         Ok(ubi) => ubi,
         Err(msg) => match msg.0 {
-            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => {
+                return Err(MailManErr::new(
+                    500,
+                    "Internal Server Error",
+                    Some(msg.1),
+                    1,
+                ))
+            }
+            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     };
 
     let user_group_info = match GroupModel::get_groups_by_uid(id, &mut pool.get().unwrap()) {
         Ok(ugi) => ugi,
         Err(msg) => match msg.0 {
-            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => {
+                return Err(MailManErr::new(
+                    500,
+                    "Internal Server Error",
+                    Some(msg.1),
+                    1,
+                ))
+            }
+            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     };
 
     let user_access_info = match AccessModel::get_access_by_gids(
-        user_group_info
-            .iter()
-            .map(|group| group.id)
-            .collect(),
+        user_group_info.iter().map(|group| group.id).collect(),
         &mut pool.get().unwrap(),
     ) {
         Ok(uai) => uai,
         Err(msg) => match msg.0 {
-            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => {
+                return Err(MailManErr::new(
+                    500,
+                    "Internal Server Error",
+                    Some(msg.1),
+                    1,
+                ))
+            }
+            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     };
 
@@ -212,8 +274,15 @@ pub fn get_me(
     ) {
         Ok(usi) => usi,
         Err(msg) => match msg.0 {
-            0 => return Err(MailManErr::new(500, "Internal Server Error", msg.1, 1)),
-            _ => return Err(MailManErr::new(400, "Bad requests", msg.1, 1)),
+            0 => {
+                return Err(MailManErr::new(
+                    500,
+                    "Internal Server Error",
+                    Some(msg.1),
+                    1,
+                ))
+            }
+            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     };
 

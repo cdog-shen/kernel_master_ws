@@ -1,0 +1,9 @@
+### vars
+@baseurl = http://127.0.0.1:8000/api
+@token = Bearer xxx
+
+### hey test
+GET {{baseurl}}/hey
+
+### reload config
+POST {{baseurl}}/reload

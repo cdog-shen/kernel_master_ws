@@ -1,0 +1,107 @@
+version: "3"
+
+x-common: &common
+  image: kernel_master_ws-runner
+  volumes:
+    - ./target:/root
+  networks:
+    - km_net
+  profiles: ["run"]
+
+networks:
+  km_net:
+    driver: bridge
+
+services:
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile.builder
+    container_name: builder
+    working_dir: /root/kernel_master_ws
+    volumes:
+      - .:/root/kernel_master_ws:rw
+    profiles: ["build"]
+    command: |
+      bash build/build_all_ws.sh
+
+  runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.runner
+    container_name: runner
+    profiles: ["build"]
+    command: |
+      echo "runner build success"
+
+
+  watchman-backend:
+    <<: *common
+    container_name: watchman-backend
+    ports:
+      - 8000:8000
+    command: |
+      sh -c './watchman-backend'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tupln | grep ':8000 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  cmdb-backend:
+    <<: *common
+    container_name: cmdb-backend
+    depends_on:
+      watchman-backend:
+        condition: service_healthy
+    command: |
+      sh -c './cmdb-backend'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tupln | grep ':9001 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  cloud-api:
+    <<: *common
+    container_name: cloud-api
+    depends_on:
+      watchman-backend:
+        condition: service_healthy
+    command: |
+      sh -c './cloud-api'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tupln | grep ':9002 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  jc-commander-1:
+    <<: *common
+    container_name: jc-commander-1
+    depends_on:
+      watchman-backend:
+        condition: service_healthy
+    command: |
+      sh -c './jc-commander'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tupln | grep ':9003 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  jc-worker-1-1:
+    <<: *common
+    container_name: jc-worker-1-1
+    depends_on:
+      watchman-backend:
+        condition: service_healthy
+      jc-commander-1:
+        condition: service_healthy
+    command: |
+      sh -c './jc-worker'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tupn | grep ':9003 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10

@@ -79,8 +79,8 @@ impl UserModel {
             .get_result::<UserModel>(conn)
         {
             Ok(user_info) => Ok(map_model_to_output_stream(user_info)),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("NotFound {}.", user_name))),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(NotFound) => Err((NOT_FOUND_CODE, format!("NotFound {user_name}."))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -95,8 +95,8 @@ impl UserModel {
             .get_result::<UserModel>(conn)
         {
             Ok(user_info) => Ok(map_model_to_output_stream(user_info)),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("NotFound {}.", uid))),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(NotFound) => Err((NOT_FOUND_CODE, format!("NotFound {uid}."))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -117,7 +117,7 @@ impl UserModel {
                 NOT_FOUND_CODE,
                 format!("Login filed: {}.", &user_data.username.clone().unwrap()),
             )),
-            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {}.", e))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
 
@@ -142,7 +142,7 @@ impl UserModel {
                 }
                 "name" => {
                     if let Some(value) = q_v.as_str() {
-                        let pattern = format!("%{}%", value);
+                        let pattern = format!("%{value}%");
                         query = query.filter(name.like(pattern));
                     }
                 }

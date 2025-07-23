@@ -1,0 +1,15 @@
+### vars
+@baseurl = http://127.0.0.1:9002/api
+@uuidtoken = uuid xxx
+
+### call
+POST {{baseurl}}/script/call
+Authorization: {{uuidtoken}}
+Content-Type: application/json
+
+{
+    "api_name": "tencent_cvm_describeinstances",
+    "cloud_user": "Unknow-api-haoxin",
+    "region": "ap-shanghai",
+    "params": "{}"
+}

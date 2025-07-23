@@ -8,6 +8,7 @@ The commander is used to publish task messages to the message queue and record a
     once_cell = "1.21.1"
     log = "0.4.26"
     chrono = { version = "0.4.40", features = ["serde"] }
+    crossbeam = '0.8.4'
 
 - basic web dependencies
     actix-web = "4.10.2"

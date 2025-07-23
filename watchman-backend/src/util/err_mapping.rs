@@ -19,7 +19,7 @@ pub struct MailManErrResponser {
 
 impl MailManErrResponser {
     /// get a MailManErr object and map it into MailManErrResponser
-    pub fn mapping_from_mme(mme_obj: MailManErr) -> MailManErrResponser {
+    pub fn mapping_from_mme(mme_obj: MailManErr<String>) -> MailManErrResponser {
         let status_key = match mme_obj.code {
             400 => StatusCode::BAD_REQUEST.to_string(),
             401 => StatusCode::UNAUTHORIZED.to_string(),
@@ -32,7 +32,7 @@ impl MailManErrResponser {
         MailManErrResponser {
             code: mme_obj.code,
             key: status_key,
-            msg: mme_obj.msg,
+            msg: mme_obj.msg.unwrap_or("No more Msg".to_string()).to_string(),
         }
     }
 }

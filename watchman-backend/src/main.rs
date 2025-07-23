@@ -36,7 +36,7 @@ async fn main() -> io::Result<()> {
             MailManOk::new(200, "config load DONE", None::<&str>);
         }
         Err(e) => {
-            panic!("config load error! {}", e);
+            panic!("config load error! {e:?}");
         }
     }
 
@@ -56,17 +56,18 @@ async fn main() -> io::Result<()> {
         .build(manager)
         .expect("Failed to create pool.");
 
-    // setting listen addr
-    let app_url = format!(
-        "{}:{}",
-        &server::GLOBAL_CONFIG.read().unwrap().listen_addr,
-        &server::GLOBAL_CONFIG.read().unwrap().listen_port
-    );
+    // init some config
     let allowed_origin_list = server::GLOBAL_CONFIG
         .read()
         .unwrap()
         .allowed_origin_list
         .clone();
+    let app_url = format!(
+        "{}:{}",
+        &server::GLOBAL_CONFIG.read().unwrap().listen_addr,
+        &server::GLOBAL_CONFIG.read().unwrap().listen_port
+    );
+    let workers = server::GLOBAL_CONFIG.read().unwrap().workers as usize;
 
     HttpServer::new(move || {
         App::new()
@@ -92,6 +93,7 @@ async fn main() -> io::Result<()> {
             .wrap_fn(|req, srv| srv.call(req).map(|res| res))
             .configure(config::app::config_services)
     })
+    .workers(workers)
     .bind(&app_url)?
     .run()
     .await

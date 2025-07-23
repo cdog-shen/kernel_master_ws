@@ -1,0 +1,13 @@
+### vars
+@baseurl = http://127.0.0.1:8000/api
+@token = bearer 
+
+### login
+POST  {{baseurl}}/auth/login
+Content-Type: application/json
+
+{
+    "username": "root",
+    "passwd": "root"
+}
+

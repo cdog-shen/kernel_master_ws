@@ -1,1 +1,3 @@
-pub mod instance;
+pub mod cloudserver;
+pub mod lighthouse;
+pub mod logservice;

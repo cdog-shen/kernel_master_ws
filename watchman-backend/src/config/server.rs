@@ -1,6 +1,6 @@
 use once_cell::sync::Lazy;
 use serde::Deserialize;
-use serde_json::{Map, Value};
+use serde_json::Value;
 use std::{
     fs::{read_to_string, File},
     sync::{Mutex, RwLock},
@@ -15,23 +15,17 @@ pub struct AllConfigs {
 
     pub listen_addr: String,
     pub listen_port: u16,
+    pub workers: u16,
     pub allowed_origin_list: Vec<String>,
 
-    pub pub_key_path: String,
-    pub pri_key_path: String,
+    // pub pub_key_path: String,
+    // pub pri_key_path: String,
     pub secret_key_path: String,
 
     pub authenticate_bypass: Vec<String>,
     pub permit_bypass: Vec<String>,
 
     pub db_str: String,
-}
-
-fn get_string_from_config(config: &Map<String, Value>, path: &[&str]) -> String {
-    match config[path[0]][path[1]].as_str() {
-        Some(data) => data.to_string(),
-        None => "".to_string(),
-    }
 }
 
 impl AllConfigs {
@@ -42,10 +36,11 @@ impl AllConfigs {
 
             listen_addr: String::new(),
             listen_port: 8000,
+            workers: 2,
             allowed_origin_list: vec![],
 
-            pub_key_path: String::new(),
-            pri_key_path: String::new(),
+            // pub_key_path: String::new(),
+            // pri_key_path: String::new(),
             secret_key_path: String::new(),
 
             authenticate_bypass: vec![],
@@ -55,29 +50,62 @@ impl AllConfigs {
         }
     }
 
-    pub fn reload(&mut self) -> Result<u8, MailManErr<'static>> {
-        let config = match read_config(&mut CONFIG_FILE_HANDLE.lock().unwrap()) {
-            Ok(json) => json,
-            Err(e) => return Err(e),
-        };
+    pub fn reload(&mut self) -> Result<u8, MailManErr<'static, String>> {
+        let config = read_config(&mut CONFIG_FILE_HANDLE.lock().unwrap())?;
 
-        self.log_path = get_string_from_config(&config, &["server_config", "log_path"]);
-        self.log_level = get_string_from_config(&config, &["server_config", "log_level"]);
+        self.log_path = config["server_config"]["log_path"]
+            .as_str()
+            .expect("Config path server_config:log_path (string) not found")
+            .to_string();
+        self.log_level = config["server_config"]["log_level"]
+            .as_str()
+            .expect("Config path server_config:log_level (string) not found")
+            .to_string();
 
-        self.listen_addr = get_string_from_config(&config, &["server_config", "listen_addr"]);
-        self.listen_port = config["server_config"]["listen_port"].as_u64().unwrap() as u16;
+        self.listen_addr = config["server_config"]["listen_addr"]
+            .as_str()
+            .expect("Config path server_config:listen_addr (string) not found")
+            .to_string();
+        self.listen_port = config["server_config"]["listen_port"]
+            .as_u64()
+            .expect("Config path server_config:listen_port (u16) not found")
+            as u16;
+        self.workers = config["server_config"]["workers"]
+            .as_u64()
+            .expect("Config path server_config:workers (u16) not found")
+            as u16;
         self.allowed_origin_list = match &config["server_config"]["allowed_origin_list"] {
             Value::Array(vec) => vec
                 .iter()
                 .filter_map(|item| item.as_str())
                 .map(|item| item.to_string())
                 .collect(),
-            _ => vec![],
+            _ => {
+                MailManErr::new(
+                    500,
+                    "Config Missing",
+                    Some("server_config:allowed_origin_list (Array[string]) not found, Using default".to_string()),
+                    0,
+                );
+                vec![
+                    "http://localhost:3000".to_string(),
+                    "http://127.0.0.1:3000".to_string(),
+                ]
+            }
         };
 
-        self.pub_key_path = get_string_from_config(&config, &["server_config", "pub_key_path"]);
-        self.pri_key_path = get_string_from_config(&config, &["server_config", "pri_key_path"]);
-        self.secret_key_path = get_string_from_config(&config, &["server_config", "secret_key_path"]);
+        // self.pub_key_path = config["server_config"]["pub_key_path"]
+        //     .as_str()
+        //     .expect("Config path server_config:pub_key_path (string) not found")
+        //     .to_string();
+        // self.pri_key_path = config["server_config"]["pri_key_path"]
+        //     .as_str()
+        //     .expect("Config path server_config:pri_key_path (string) not found")
+        //     .to_string();
+        self.secret_key_path = config["server_config"]["secret_key_path"]
+            .as_str()
+            .expect("Config path server_config:secret_key_path (string) not found, Using Empty")
+            .to_string();
 
         self.authenticate_bypass = match &config["server_config"]["authenticate_bypass"] {
             Value::Array(vec) => vec
@@ -85,7 +113,23 @@ impl AllConfigs {
                 .filter_map(|item| item.as_str())
                 .map(|item| item.to_string())
                 .collect(),
-            _ => vec![],
+            _ => {
+                MailManErr::new(
+                    500,
+                    "Config Missing",
+                    Some("server_config:authenticate_bypass (Array[string]) not found, Using default".to_string()),
+                    0,
+                );
+                vec![
+                    "/api/hey".to_string(),
+                    "/webhook".to_string(),
+                    "/api/reload".to_string(),
+                    "/api/auth/login".to_string(),
+                    "/api/auth/signup".to_string(),
+                    "/api/subsystem_control/all_subsystem".to_string(),
+                    "/api/subsystem_control/update_subsystem".to_string(),
+                ]
+            }
         };
         self.permit_bypass = match &config["server_config"]["permit_bypass"] {
             Value::Array(vec) => vec
@@ -93,10 +137,32 @@ impl AllConfigs {
                 .filter_map(|item| item.as_str())
                 .map(|item| item.to_string())
                 .collect(),
-            _ => vec![],
+            _ => {
+                MailManErr::new(
+                    500,
+                    "Config Missing",
+                    Some(
+                        "server_config:permit_bypass (Array[string]) not found, Using default"
+                            .to_string(),
+                    ),
+                    0,
+                );
+                vec![
+                    "/webhook".to_string(),
+                    "/api/hey".to_string(),
+                    "/api/reload".to_string(),
+                    "/api/auth/login".to_string(),
+                    "/api/auth/signup".to_string(),
+                    "/api/subsystem_control/all_subsystem".to_string(),
+                    "/api/subsystem_control/update_subsystem".to_string(),
+                ]
+            }
         };
 
-        self.db_str = get_string_from_config(&config, &["db_config", "db_str"]);
+        self.db_str = config["server_config"]["db_str"]
+            .as_str()
+            .expect("Config path server_config:db_str (string) not found")
+            .to_string();
 
         Ok(0)
     }
@@ -117,7 +183,7 @@ pub static SECRET_KEY: Lazy<RwLock<String>> = Lazy::new(|| {
         match read_to_string(secret_path) {
             Ok(key) => key,
             Err(e) => {
-                MailManErr::new(500, "SECRET key read error :", e, 1);
+                MailManErr::new(500, "SECRET key read error :", Some(e), 1);
                 "".to_string()
             }
         }

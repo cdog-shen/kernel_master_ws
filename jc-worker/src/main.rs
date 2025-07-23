@@ -9,7 +9,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 use share_lib::logger;
 // local import
 use config::worker;
-use service::{async_task, sync_task};
+use service::task;
 // local modules
 mod config;
 mod service;
@@ -22,7 +22,7 @@ async fn main() {
             MailManOk::new(200, "config load DONE", None::<&str>);
         }
         Err(e) => {
-            MailManErr::new(500, "config load Failed", e, 2);
+            MailManErr::new(500, "config load Failed", Some(e), 2);
             panic!("config load Failed");
         }
     }
@@ -38,18 +38,13 @@ async fn main() {
 
     // connect to MQ
     let mq_str = worker::GLOBAL_CONFIG.read().unwrap().mq_str.clone();
-    let conn = match Connection::connect(
-        &mq_str,
-        ConnectionProperties::default(),
-    )
-    .await
-    {
+    let conn = match Connection::connect(&mq_str, ConnectionProperties::default()).await {
         Ok(conn) => {
             MailManOk::new(200, "MQ connect success", None::<&str>);
             conn
         }
         Err(e) => {
-            MailManErr::new(500, "MQ connection Failed", e, 2);
+            MailManErr::new(500, "MQ connection Failed", Some(e), 2);
             panic!("MQ connection Failed");
         }
     };
@@ -61,7 +56,7 @@ async fn main() {
             channel
         }
         Err(e) => {
-            MailManErr::new(500, "MQ channel - xxx create failed", e, 2);
+            MailManErr::new(500, "MQ channel - xxx create failed", Some(e), 2);
             panic!("MQ channel - xxx create failed")
         }
     };
@@ -103,7 +98,7 @@ async fn main() {
             MailManOk::new(200, "Sync queue declare success", None::<&str>);
         }
         Err(e) => {
-            MailManErr::new(200, "Sync queue declare Failed", e, 1);
+            MailManErr::new(200, "Sync queue declare Failed", Some(e), 1);
             panic!("Sync queue declare Failed");
         }
     }
@@ -130,7 +125,7 @@ async fn main() {
             MailManOk::new(200, "Async queue declare success", None::<&str>);
         }
         Err(e) => {
-            MailManErr::new(200, "Async queue declare Failed", e, 2);
+            MailManErr::new(200, "Async queue declare Failed", Some(e), 2);
             panic!("Async queue declare Failed");
         }
     }
@@ -150,7 +145,7 @@ async fn main() {
             consumer
         }
         Err(e) => {
-            MailManErr::new(200, "Sync consumer declare Failed", e, 2);
+            MailManErr::new(200, "Sync consumer declare Failed", Some(e), 2);
             panic!("Sync consumer declare Failed");
         }
     };
@@ -170,7 +165,7 @@ async fn main() {
             consumer
         }
         Err(e) => {
-            MailManErr::new(200, "Async consumer declare Failed", e, 2);
+            MailManErr::new(200, "Async consumer declare Failed", Some(e), 2);
             panic!("Async consumer declare Failed");
         }
     };
@@ -182,7 +177,7 @@ async fn main() {
             while let Some(delivery) = consumer.next().await {
                 if let Ok(delivery) = delivery {
                     MailManOk::new(200, "Recv new SYNC task", None::<&str>);
-                    let _ = sync_task::execute(&delivery.data).await;
+                    let _ = task::execute(&delivery.data).await;
                     delivery.ack(BasicAckOptions::default()).await.expect("Failed to ack");
                 }
             }
@@ -192,7 +187,7 @@ async fn main() {
             while let Some(delivery) = consumer.next().await {
                 if let Ok(delivery) = delivery {
                     MailManOk::new(200, "Recv new ASYNC task", None::<&str>);
-                    let _ = async_task::execute(&delivery.data).await;
+                    let _ = task::execute(&delivery.data).await;
                     delivery.ack(BasicAckOptions::default()).await.expect("Failed to ack");
                 }
             }
