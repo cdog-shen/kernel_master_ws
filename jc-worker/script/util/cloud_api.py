@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import requests
 
 WATCHMAN_HOST = os.getenv("WATCHMAN_HOST", "127.0.0.1")
@@ -64,14 +65,18 @@ def call(
         "content-type": "application/json",
     }
 
+    time.sleep(0.1)  # Avoid rate limit
+
     response = requests.request("POST", URL, json=payload, headers=headers)
-    
+
     if response.status_code != 200:
         return response.json()
 
     offset = int(params.get("Offset", 0))
-    if response.json().get("data", {}).get("data", {}).get("TotalCount") :
-        total_count = int(response.json().get("data", {}).get("data", {}).get("TotalCount"))
+    if response.json().get("data", {}).get("data", {}).get("TotalCount"):
+        total_count = int(
+            response.json().get("data", {}).get("data", {}).get("TotalCount")
+        )
     else:
         total_count = 1
 

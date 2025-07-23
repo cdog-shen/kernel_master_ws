@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 from enum import Enum
 
@@ -24,6 +25,8 @@ def call(operation: Operation, table: str, param: dict = {}):
         "data": {"table": table, operation: param},
     }
     headers = {"Authorization": JWT, "content-type": "application/json"}
+
+    time.sleep(0.1)  # Avoid rate limit
 
     response = requests.request("POST", URL, json=payload, headers=headers)
     return response.json()
