@@ -42,6 +42,7 @@ pub async fn refresh_master() -> HttpResponse {
     drop(config); // Drop the MutexGuard here
 
     let res = ureq::post(&format!("{}/subsystem_control/update_subsystem", base_url))
+        .header("Connection", "close")
         .header("Content-Type", "application/json")
         .send(serde_json::to_string(&req_json).unwrap());
 

@@ -249,6 +249,7 @@ pub fn call<'a>(
     )
     .header("Content-Type", "application/json")
     .header("Authorization", &format!("uuid {}", &target.token))
+    .header("Connection", "close")
     .send(serde_json::to_string(&subsys_params["data"]).unwrap());
 
     match req {

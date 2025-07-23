@@ -19,6 +19,7 @@ pub fn update_log<'a>(
     let response = ureq::post(commander_url)
         .header("Content-Type", "application/json")
         .header("Authorization", &format!("uuid {}", auth))
+        .header("Connection", "close")
         .send(
             serde_json::to_string(&serde_json::json!({
                 "id": uuid,
