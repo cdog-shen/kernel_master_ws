@@ -51,24 +51,49 @@ pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailMa
             .output();
 
     let res = match output {
-        Ok(output) => {
-            // 标准输出
+        Ok(ref output) => {
             if !output.stdout.is_empty() {
-                Ok(String::from_utf8(output.stdout).expect("Error: stdout is not utf8"))
+                let res_data =
+                    String::from_utf8(output.stdout.clone()).expect("Error: stdout is not utf8");
+                // log info
+                log::info!(
+                    "Task {} with params {} Info: {}",
+                    script_name,
+                    payload["params"],
+                    res_data
+                );
+                Ok(res_data)
             } else if !output.stderr.is_empty() {
-                Ok(String::from_utf8(output.stderr).expect("Error: stdout is not utf8"))
+                let err_msg =
+                    String::from_utf8(output.stderr.clone()).expect("Error: stderr is not utf8");
+                // log error
+                log::error!(
+                    "Task {} with params {} Error: {}",
+                    script_name,
+                    payload["params"],
+                    err_msg
+                );
+                Ok(err_msg)
             } else {
+                log::error!(
+                    "Task {} with params {} Nothing in stdout",
+                    script_name,
+                    auth,
+                );
                 Err("Nothing in stdout".to_string())
             }
         }
-        Err(e) => Err(format!("Error: {}", e)),
+        Err(ref e) => Err(format!("Error: {}", e)),
     };
 
-    let (result, status) = match res {
-        Ok(res_data) => (res_data, 2),
-        Err(e) => {
-            MailManErr::new(500, "tast execute Error", Some(e.clone()), 1);
-            (e, 0)
+    let (result, status) = match output.unwrap().status {
+        code if code.success() => (res.unwrap(), 2),
+        _ => {
+            MailManErr::new(500, "task execute Error", Some(res.clone()), 1);
+            (
+                res.err().unwrap_or_else(|| "Execution failed".to_string()),
+                0,
+            )
         }
     };
 
