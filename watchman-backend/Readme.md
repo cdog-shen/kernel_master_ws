@@ -224,3 +224,9 @@ db_str = "mysql://root:778631@127.0.0.1:3306/watch_man" # local
 4. done. u can install diesel_cli with mysql feature
 
     `cargo install diesel_cli --no-default-features --features "mysql"`
+
+## Q & A
+
+- Q: Sometime Watchman won't reply the Subsystem JSON RPC data (usually cause by overload working conditions)
+
+    just add more work thread, it is OK

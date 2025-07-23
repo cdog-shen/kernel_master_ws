@@ -221,3 +221,9 @@ db_str = "mysql://root:778631@127.0.0.1:3306/watch_man" # local
 4. 完成。你可以安装带有 mysql 功能的 diesel_cli
 
     `cargo install diesel_cli --no-default-features --features "mysql"`
+
+# Q & A
+
+- Q: 在高负载工况下watchman有时候对子系统RPC的请求会僵死
+
+    直接添加更多的work线程就好, 不会拉高负载的
