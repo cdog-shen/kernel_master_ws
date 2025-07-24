@@ -13,8 +13,8 @@ use crate::services::*;
 //     Ok(HttpResponse::Ok().json(data))
 // }
 
-// POST api/table/get
-pub async fn get_table(
+// POST api/table/query
+pub async fn query_table(
     data: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
 ) -> Result<HttpResponse, actix_web::Error> {
