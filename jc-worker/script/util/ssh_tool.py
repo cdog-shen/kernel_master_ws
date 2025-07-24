@@ -9,6 +9,7 @@ def ssh_execute(
     command: str,
     timeout: int = 30,
     get_pty: bool = False,
+    encoding: str = "utf-8",
 ) -> str:
     """
     Execute a command on a remote server via SSH.
@@ -28,8 +29,8 @@ def ssh_execute(
         stdin, stdout, stderr = client.exec_command(
             command, timeout=timeout, get_pty=get_pty
         )
-        output = stdout.read().decode("utf-8")
-        error = stderr.read().decode("utf-8")
+        output = stdout.read().decode(encoding)
+        error = stderr.read().decode(encoding)
 
         if error:
             raise Exception(f"Error executing command: {error}")
