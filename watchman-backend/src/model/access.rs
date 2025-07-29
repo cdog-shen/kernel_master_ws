@@ -238,7 +238,7 @@ impl AccessModel {
 
         let this_access_id = update_access.id.unwrap();
 
-        match diesel::update(access_table.find(&this_access_id))
+        match diesel::update(access_table.filter(id.eq(this_access_id)))
             .set(update_access)
             .execute(conn)
         {

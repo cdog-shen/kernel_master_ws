@@ -190,7 +190,7 @@ impl UserModel {
         user_update: &UserInputStream,
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
-        match diesel::update(user_table.find(user_update.id.unwrap()))
+        match diesel::update(user_table.filter(id.eq(user_update.id.unwrap())))
             .set(user_update)
             .execute(conn)
         {

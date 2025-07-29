@@ -214,7 +214,7 @@ impl SubsysModel {
 
         let this_subsys_id = update_subsys.id.unwrap();
 
-        match diesel::update(subsystem_table.find(this_subsys_id))
+        match diesel::update(subsystem_table.filter(id.eq(this_subsys_id)))
             .set(update_subsys)
             .execute(conn)
         {
