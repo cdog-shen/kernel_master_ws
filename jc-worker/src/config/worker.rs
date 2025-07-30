@@ -56,6 +56,7 @@ impl AllConfigs {
             .expect("Config path server_config:log_level (string) not found")
             .to_string();
 
+        let uuid = Uuid::new_v4().to_string();
         self.subsys_uuid = config["server_config"]["uuid"]
             .as_str()
             .unwrap_or({
@@ -68,7 +69,7 @@ impl AllConfigs {
                     ),
                     0,
                 );
-                &Uuid::new_v4().to_string()
+                &uuid
             })
             .to_string();
 
