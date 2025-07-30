@@ -171,7 +171,7 @@ impl AllConfigs {
 pub static CONFIG_FILE_HANDLE: Lazy<Mutex<File>> = Lazy::new(|| {
     let path = std::env::current_dir()
         .expect("Unable to get workspace path")
-        .join("cloud_api.cfg");
+        .join("cloud_api.toml");
     let file = File::open(&path).expect("Unable to open config file");
     Mutex::new(file)
 });
