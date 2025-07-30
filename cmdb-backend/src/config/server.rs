@@ -100,6 +100,7 @@ impl AllConfigs {
             }
         };
 
+        let uuid = &Uuid::new_v4().to_string();
         self.subsys_uuid = config["server_config"]["uuid"]
             .as_str()
             .unwrap_or({
@@ -112,7 +113,7 @@ impl AllConfigs {
                     ),
                     0,
                 );
-                &Uuid::new_v4().to_string()
+                &uuid
             })
             .to_string();
 
@@ -143,9 +144,7 @@ impl AllConfigs {
                     Some("server_config:authenticate_bypass (Array[string]) not found, Using default".to_string()),
                     0,
                 );
-                vec![
-                    "/api/refresh_master".to_string(),
-                ]
+                vec!["/api/refresh_master".to_string()]
             }
         };
 
