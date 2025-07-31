@@ -2,7 +2,7 @@ use once_cell::sync::Lazy;
 use serde::Deserialize;
 use serde_json::Value;
 use std::{
-    fs::{read_to_string, File},
+    fs::{File, read_to_string},
     sync::{Mutex, RwLock},
 };
 
@@ -171,7 +171,7 @@ impl AllConfigs {
 pub static CONFIG_FILE_HANDLE: Lazy<Mutex<File>> = Lazy::new(|| {
     let path = std::env::current_dir()
         .expect("Unable to get workspace path")
-        .join("watchman_backend.cfg");
+        .join("watchman.toml");
     let file = File::open(&path).expect("Unable to open config file");
     Mutex::new(file)
 });

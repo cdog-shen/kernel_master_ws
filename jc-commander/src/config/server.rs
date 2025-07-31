@@ -103,6 +103,7 @@ impl AllConfigs {
             }
         };
 
+        let uuid = Uuid::new_v4().to_string();
         self.subsys_uuid = config["server_config"]["uuid"]
             .as_str()
             .unwrap_or({
@@ -115,7 +116,7 @@ impl AllConfigs {
                     ),
                     0,
                 );
-                &Uuid::new_v4().to_string()
+                &uuid
             })
             .to_string();
 
@@ -171,7 +172,7 @@ impl AllConfigs {
 pub static CONFIG_FILE_HANDLE: Lazy<Mutex<File>> = Lazy::new(|| {
     let path = std::env::current_dir()
         .expect("Unable to get workspace path")
-        .join("job_center_commander.cfg");
+        .join("job_center_commander.toml");
     let file = File::open(&path).expect("Unable to open config file");
     Mutex::new(file)
 });

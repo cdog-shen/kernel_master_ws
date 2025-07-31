@@ -213,7 +213,7 @@ impl ServiceModel {
 
         let this_id = update_service.id.unwrap();
 
-        match diesel::update(service_table.find(this_id))
+        match diesel::update(service_table.filter(id.eq(this_id)))
             .set(update_service)
             .execute(conn)
         {
@@ -231,9 +231,7 @@ impl ServiceModel {
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
         match diesel::delete(service_table.find(service_id)).execute(conn) {
-            Ok(num_of_eff) => Ok(format!(
-                "{service_id}'s data deleted. lines: {num_of_eff}"
-            )),
+            Ok(num_of_eff) => Ok(format!("{service_id}'s data deleted. lines: {num_of_eff}")),
             Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {service_id} not found"))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }

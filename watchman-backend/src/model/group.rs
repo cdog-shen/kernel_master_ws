@@ -196,7 +196,7 @@ impl GroupModel {
 
         let this_group_id = update_group.id.unwrap();
 
-        match diesel::update(group_table.find(this_group_id))
+        match diesel::update(group_table.filter(id.eq(this_group_id)))
             .set(update_group)
             .execute(conn)
         {
@@ -205,10 +205,7 @@ impl GroupModel {
                 1 => Ok(format!(
                     "{this_group_id}'s data updated. lines: {num_of_eff}"
                 )),
-                _ => Err((
-                    TMI_ERROR_CODE,
-                    format!("id: {this_group_id} Too much info"),
-                )),
+                _ => Err((TMI_ERROR_CODE, format!("id: {this_group_id} Too much info"))),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
@@ -219,9 +216,7 @@ impl GroupModel {
         conn: &mut MysqlConnection,
     ) -> Result<String, (u8, String)> {
         match diesel::delete(group_table.find(group_id)).execute(conn) {
-            Ok(num_of_eff) => Ok(format!(
-                "{group_id}'s data deleted. lines: {num_of_eff}"
-            )),
+            Ok(num_of_eff) => Ok(format!("{group_id}'s data deleted. lines: {num_of_eff}")),
             Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {group_id} not found"))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }

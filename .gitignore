@@ -14,11 +14,11 @@
 **/log
 
 # config files
-watchman-backend/watchman_backend.cfg
-cmdb-backend/cmdb_backend.cfg
-cloud-api/cloud_api.cfg
-jc-commander/job_center_commander.cfg
-jc-worker/job_center_worker.cfg
+watchman-backend/watchman.toml
+cmdb-backend/cmdb.toml
+cloud-api/cloud_api.toml
+jc-commander/job_center_commander.toml
+jc-worker/job_center_worker.toml
 jc-worker/script/business/business_GenerateServerJson.py
 jc-worker/script/business/business_LightHouseCheck.py
 jc-worker/script/business/business_TxCvmUpdate.py
