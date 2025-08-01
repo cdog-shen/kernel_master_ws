@@ -7,9 +7,8 @@ use serde_json::{Map, Value};
 
 use crate::model::schema::service_table::{self, dsl::*};
 
-static NOT_FOUND_CODE: u8 = 1;
-static TMI_ERROR_CODE: u8 = 2;
 static UNKNOW_ERROR_CODE: u8 = 0;
+static BAD_REQUEST_CODE: u8 = 1;
 
 /// The structure of the Service stored in the database.
 /// - service_name
@@ -142,7 +141,7 @@ impl ServiceModel {
                 Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
             }
         }
-        Err((NOT_FOUND_CODE, "No matching permissions.".to_string()))
+        Err((BAD_REQUEST_CODE, "No matching permissions.".to_string()))
     }
 
     /// get all services
@@ -186,15 +185,26 @@ impl ServiceModel {
     pub fn new_service(
         service_info: &ServiceInfo,
         conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
+    ) -> Result<usize, (u8, String)> {
+        let ok_to_insert = ServiceInfo {
+            id: None,
+            service_name: Some(
+                service_info
+                    .service_name
+                    .clone()
+                    .ok_or((BAD_REQUEST_CODE, "Missing service_name".to_string()))?,
+            ),
+            nick_name: Some(service_info.nick_name.clone().unwrap_or(String::new())),
+            service_point: Some(service_info.service_name.clone().unwrap_or(String::new())),
+            is_enable: Some(service_info.is_enable.unwrap_or(false)),
+            update_time: service_info.update_time,
+        };
+
         match diesel::insert_into(service_table)
-            .values(service_info)
+            .values(ok_to_insert)
             .execute(conn)
         {
-            Ok(num_of_change) => Ok(format!(
-                "Service {} created. line: {num_of_change}",
-                service_info.service_name.clone().unwrap()
-            )),
+            Ok(num_of_change) => Ok(num_of_change),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
     }
@@ -202,33 +212,26 @@ impl ServiceModel {
     pub fn update_service_by_id(
         service_info: &ServiceInfo,
         conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
+    ) -> Result<usize, (u8, String)> {
         match diesel::update(service_table.filter(id.eq(service_info.id.unwrap())))
             .set(service_info)
             .execute(conn)
         {
             Ok(num_of_eff) => match num_of_eff {
                 0 => Err((
-                    NOT_FOUND_CODE,
+                    BAD_REQUEST_CODE,
                     format!("id: {} not found", service_info.id.unwrap()),
                 )),
-                1 => Ok(format!("{}'s data updated.", service_info.id.unwrap())),
-                _ => Err((
-                    TMI_ERROR_CODE,
-                    format!("id: {} Too much info", service_info.id.unwrap()),
-                )),
+                _ => Ok(num_of_eff),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 
-    pub fn delete_service_by_id(
-        service_id: i32,
-        conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
-        match diesel::delete(service_table.find(service_id)).execute(conn) {
-            Ok(num_of_eff) => Ok(format!("{service_id}'s data deleted. lines: {num_of_eff}")),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {service_id} not found"))),
+    pub fn delete_service_by_id(_id: i32, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
+        match diesel::delete(service_table.find(_id)).execute(conn) {
+            Ok(num_of_eff) => Ok(num_of_eff),
+            Err(NotFound) => Err((BAD_REQUEST_CODE, format!("id: {_id} not found"))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }

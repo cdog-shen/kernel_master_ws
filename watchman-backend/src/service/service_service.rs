@@ -16,15 +16,10 @@ pub fn all_service<'a>(
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<ServiceModel>>, MailManErr<'a, String>> {
     match ServiceModel::get_all_with_filter(&filter, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "All service info", Some(msg))),
+        Ok(msg) => Ok(MailManOk::new(200, "Service: All service", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Internal Server Error",
-                Some(msg.1),
-                1,
-            )),
-            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            1 => Err(MailManErr::new(400, "Service: All service", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(500, "Service: All service", Some(msg.1), 1)),
         },
     }
 }
@@ -35,15 +30,24 @@ pub fn new_service<'a>(
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
     match ServiceModel::new_service(&service_info, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "Service created", Some(msg))),
+        Ok(msg) => Ok(MailManOk::new(
+            200,
+            "Service: Create service",
+            Some(format!("Line changed: {msg}")),
+        )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Internal Server Error",
+            1 => Err(MailManErr::new(
+                400,
+                "Service: Create service",
                 Some(msg.1),
                 1,
             )),
-            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(
+                500,
+                "Service: Create service",
+                Some(msg.1),
+                1,
+            )),
         },
     }
 }
@@ -54,15 +58,24 @@ pub fn update_service<'a>(
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
     match ServiceModel::update_service_by_id(&service_info, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "Service info updated", Some(msg))),
+        Ok(msg) => Ok(MailManOk::new(
+            200,
+            "Service: Update service",
+            Some(format!("Line changed {msg}")),
+        )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Internal Server Error",
+            1 => Err(MailManErr::new(
+                400,
+                "Service: Update service",
                 Some(msg.1),
                 1,
             )),
-            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(
+                500,
+                "Service: Update service",
+                Some(msg.1),
+                1,
+            )),
         },
     }
 }
@@ -79,15 +92,22 @@ pub fn delete_service<'a>(
                 .map(|access_info| access_info.id)
                 .collect(),
             Err(msg) => match msg.0 {
-                0 => {
+                1 => {
                     return Err(MailManErr::new(
-                        500,
-                        "Internal Server Error",
+                        400,
+                        "Service: Delete group - get combine access",
                         Some(msg.1),
                         1,
                     ));
                 }
-                _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+                _ => {
+                    return Err(MailManErr::new(
+                        500,
+                        "Service: Delete group - get combine access",
+                        Some(msg.1),
+                        1,
+                    ));
+                }
             },
         };
 
@@ -105,15 +125,22 @@ pub fn delete_service<'a>(
         match AccessModel::update_access_by_id(&update_info_disable, &mut pool.get().unwrap()) {
             Ok(_) => (),
             Err(msg) => match msg.0 {
-                0 => {
+                1 => {
                     return Err(MailManErr::new(
-                        500,
-                        "Internal Server Error",
+                        400,
+                        "Service: Delete group - disable combine access",
                         Some(msg.1),
                         1,
                     ));
                 }
-                _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+                _ => {
+                    return Err(MailManErr::new(
+                        500,
+                        "Service: Delete group - disable combine access",
+                        Some(msg.1),
+                        1,
+                    ));
+                }
             },
         }
     }
@@ -121,19 +148,24 @@ pub fn delete_service<'a>(
     match ServiceModel::delete_service_by_id(id, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
-            "Service deleted",
+            "Service: Delete service",
             Some(format!(
-                "Service table: {msg}. And disabled those access line {access_target:?}"
+                "Line changed: {msg}. And disabled those access line {access_target:?}"
             )),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Internal Server Error",
+            1 => Err(MailManErr::new(
+                400,
+                "Service: Delete service",
                 Some(msg.1),
                 1,
             )),
-            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(
+                500,
+                "Service: Delete service",
+                Some(msg.1),
+                1,
+            )),
         },
     }
 }
