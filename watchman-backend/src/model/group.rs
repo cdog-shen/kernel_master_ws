@@ -5,9 +5,8 @@ use serde_json::{Map, Value};
 
 use crate::model::schema::group_table::{self, dsl::*};
 
-static NOT_FOUND_CODE: u8 = 1;
-static TMI_ERROR_CODE: u8 = 2;
 static UNKNOW_ERROR_CODE: u8 = 0;
+static BAD_REQUEST_CODE: u8 = 1;
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
 #[diesel(table_name = group_table)]
@@ -141,15 +140,25 @@ impl GroupModel {
     pub fn new_group(
         group_info: &GroupInfo,
         conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
+    ) -> Result<usize, (u8, String)> {
+        let ok_to_insert = GroupInfo {
+            id: None,
+            group_name: Some(
+                group_info
+                    .group_name
+                    .clone()
+                    .ok_or((BAD_REQUEST_CODE, "Missing group_name".to_string()))?,
+            ),
+            is_enable: Some(group_info.is_enable.unwrap_or(false)),
+            update_time: group_info.update_time,
+            user_ids: Some(group_info.user_ids.clone().unwrap_or(serde_json::json!([]))),
+        };
+
         match diesel::insert_into(group_table)
-            .values(group_info)
+            .values(ok_to_insert)
             .execute(conn)
         {
-            Ok(num_of_change) => Ok(format!(
-                "Group {} created. line: {num_of_change}",
-                group_info.group_name.clone().unwrap()
-            )),
+            Ok(num_of_change) => Ok(num_of_change),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
     }
@@ -164,26 +173,19 @@ impl GroupModel {
         {
             Ok(num_of_eff) => match num_of_eff {
                 0 => Err((
-                    NOT_FOUND_CODE,
+                    BAD_REQUEST_CODE,
                     format!("id: {} not found", group_info.id.unwrap()),
                 )),
-                1 => Ok(format!("{}'s data updated.", group_info.id.unwrap())),
-                _ => Err((
-                    TMI_ERROR_CODE,
-                    format!("id: {} Too much info", group_info.id.unwrap()),
-                )),
+                _ => Ok(format!("{}'s data updated.", group_info.id.unwrap())),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 
-    pub fn delete_group_by_id(
-        group_id: i32,
-        conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
-        match diesel::delete(group_table.find(group_id)).execute(conn) {
-            Ok(num_of_eff) => Ok(format!("{group_id}'s data deleted. lines: {num_of_eff}")),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {group_id} not found"))),
+    pub fn delete_group_by_id(_id: i32, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
+        match diesel::delete(group_table.find(_id)).execute(conn) {
+            Ok(num_of_eff) => Ok(num_of_eff),
+            Err(NotFound) => Err((BAD_REQUEST_CODE, format!("id: {_id} not found"))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
