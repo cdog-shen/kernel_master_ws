@@ -7,9 +7,8 @@ use serde_json::{Map, Value};
 
 use crate::model::schema::access_table::{self, dsl::*};
 
-static NOT_FOUND_CODE: u8 = 1;
-static TMI_ERROR_CODE: u8 = 2;
 static UNKNOW_ERROR_CODE: u8 = 0;
+static BAD_REQUEST_CODE: u8 = 1;
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
 #[diesel(table_name = access_table)]
@@ -191,15 +190,30 @@ impl AccessModel {
     pub fn new_access(
         access_info: &AccessInfo,
         conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
+    ) -> Result<usize, (u8, String)> {
+        let ok_to_insert = AccessInfo {
+            id: None,
+            service_id: Some(
+                access_info
+                    .service_id
+                    .ok_or((BAD_REQUEST_CODE, "Missing service_id".to_string()))?,
+            ),
+            group_id: Some(
+                access_info
+                    .group_id
+                    .ok_or((BAD_REQUEST_CODE, "Missing group_id".to_string()))?,
+            ),
+            group_access: Some(access_info.group_access.unwrap_or(0)),
+            is_enable: Some(access_info.is_enable.unwrap_or(false)),
+            comment: Some(access_info.comment.clone().unwrap_or(String::new())),
+            update_time: access_info.update_time,
+        };
+
         match diesel::insert_into(access_table)
-            .values(access_info)
+            .values(ok_to_insert)
             .execute(conn)
         {
-            Ok(num_of_change) => Ok(format!(
-                "id: {} Access created. line: {num_of_change}",
-                access_info.comment.clone().unwrap()
-            )),
+            Ok(num_of_change) => Ok(num_of_change),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
     }
@@ -207,36 +221,26 @@ impl AccessModel {
     pub fn update_access_by_id(
         access_info: &AccessInfo,
         conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
+    ) -> Result<usize, (u8, String)> {
         match diesel::update(access_table.filter(id.eq(access_info.id.unwrap())))
             .set(access_info)
             .execute(conn)
         {
             Ok(num_of_eff) => match num_of_eff {
                 0 => Err((
-                    NOT_FOUND_CODE,
+                    BAD_REQUEST_CODE,
                     format!("id: {} not found", access_info.id.unwrap()),
                 )),
-                1 => Ok(format!(
-                    "{}'s data updated. lines: {num_of_eff}",
-                    access_info.id.unwrap()
-                )),
-                _ => Err((
-                    TMI_ERROR_CODE,
-                    format!("id: {} Too much info", access_info.id.unwrap()),
-                )),
+                _ => Ok(num_of_eff),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 
-    pub fn delete_access_by_id(
-        access_id: i32,
-        conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
-        match diesel::delete(access_table.find(access_id)).execute(conn) {
-            Ok(num_of_eff) => Ok(format!("{access_id}'s data deleted. lines: {num_of_eff}")),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {access_id} not found"))),
+    pub fn delete_access_by_id(_id: i32, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
+        match diesel::delete(access_table.find(_id)).execute(conn) {
+            Ok(num_of_eff) => Ok(num_of_eff),
+            Err(NotFound) => Err((BAD_REQUEST_CODE, format!("id: {_id} not found"))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
