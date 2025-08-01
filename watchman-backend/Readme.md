@@ -1,232 +1,213 @@
 # Watchman-backend
 
-watchman is the IAM and dispatch service for the whole Kernel master project.
+Watchman is the IAM (Identity & Access Management) and orchestration service for the entire Kernel Master project.  
+It should be the **first** service to start among all Kernel Master components.
 
-It should be the FIRST launched service in Kernel master component.
+## Code Conventions
 
-## Code rules
+- All ORM-related operations must be placed in the corresponding module under the ***model*** directory.
 
-- All ORM model corresponding operation methods should be placed in the corresponding mod under the ***models*** directory.
+    Input is mapped via `from map`; any missing fields are treated as `None`.
 
-    Each data table corresponds to a model file, which contains three structures inside (Model/Info).
+    Prefer using the `Info/Model` pair for input and output.  
+    The `User` struct is the **only** exception because the `passwd` field must never be exposed.
 
-    Only the Model structure is implemented, with input through the JSON mapping to the Info structure and output results using the Info structure.
+    CRUD methods should only contain basic implementations.  
+    When creating new methods, add field validation and default values as necessary.  
+    These methods must accept `ref` parameters to avoid reuse difficulties in the **Service** layer.
 
-    The Model structure has two impl blocks, one implementing all query methods and the other implementing all modification methods.
+- All interface handling logic belongs in the ***service*** directory.
 
-- All interface processing logic should be placed in the ***services*** directory.
+    This layer contains the main business logic and accepts parameters **by value** (not `ref`).  
+    It is responsible for calling logic in other modules.
 
-    When inputting data structures, you should use `Models::table::InputStream`, or use other data types (I recommend `serde_json::Map<String, serde_json::Value>`) as needed.
+- API-response–related logic goes into the corresponding API module under the ***api*** directory.
 
-- The logic related to API responses should be placed under the corresponding API mod in the ***apis*** directory.
-
-    All query interface methods should be `GET`, update interfaces should be `POST`, and delete interfaces should be `DELETE`.
-
-    And if POST data includes any JSON object, deserialize it to String in this file.
+    All query endpoints must use `GET`, update endpoints `POST`, and delete endpoints `DELETE`.  
+    This layer performs **no** business logic—only basic data processing—so the **Service** layer receives clean data.
 
 ## APIs
 
-All APIs start with the `/api` scope.
+All endpoints are prefixed with `/api`.
 
 ### /hey
 
-| resource | method support | function                      | comment              |
-| :------: | :------------: | :---------------------------- | :------------------- |
-|    /     |  `POST`/`GET`  | return `hi hello!` raw string | test API for service |
+| Resource | Supported Methods | Purpose                                  | Notes              |
+| :------: | :---------------: | :--------------------------------------- | :----------------- |
+|    /     |   `POST`/`GET`    | Returns the raw string `hi hello!`       | Service health API |
 
 ### /reload
 
-| resource | method support | function           | comment                                         |
-| :------: | :------------: | :----------------- | :---------------------------------------------- |
-|    /     |     `POST`     | reload config data | Hot reload config to refresh any dynamic config |
+| Resource | Supported Methods | Purpose           | Notes                                   |
+| :------: | :---------------: | :---------------- | :-------------------------------------- |
+|    /     |      `POST`       | Reloads all config | Hot-reloads dynamic configuration files |
 
 ### /auth
 
-|   resource   | method support | function                           | comment                 |
-| :----------: | :------------: | :--------------------------------- | :---------------------- |
-|  /all_user   |     `GET`      | get all user info with get query   |                         |
-|   /me/{id}   |     `GET`      | get user's all info with user's id | contain user's all info |
-|   /signup    |     `POST`     | just a signup                      |                         |
-|    /login    |     `POST`     | login with username and password   |                         |
-|   /logout    |     `POST`     | logout                             |                         |
-| /user_update |     `POST`     | update user's info                 |                         |
+|   Resource    | Supported Methods | Purpose                      | Notes                                 |
+| :-----------: | :---------------: | :--------------------------- | :------------------------------------ |
+|  /all_user    |       `GET`       | Retrieve all users           |                                       |
+|  /me/{id}     |       `GET`       | Retrieve a single user       | Returns full user profile             |
+|  /signup      |      `POST`       | Register a new user          |                                       |
+|  /login       |      `POST`       | Login with username/password |                                       |
+|  /logout      |      `POST`       | Logout                       |                                       |
+| /user_update  |      `POST`       | Update user information      |                                       |
 
 ### /group_control
 
-|   resource    | method support | function                 | comment |
-| :-----------: | :------------: | :----------------------- | :------ |
-|  /all_group   |     `GET`      | get all group with query |         |
-|  /new_group   |     `POST`     | create a group           |         |
-| /update_group |     `POST`     | update a group           |         |
-| /delete_group |    `DELETE`    | delete a group           |         |
+|    Resource     | Supported Methods | Purpose             | Notes |
+| :-------------: | :---------------: | :------------------ | :---- |
+|  /all_group     |       `GET`       | List all groups     |       |
+|  /new_group     |      `POST`       | Create a group      |       |
+| /update_group   |      `POST`       | Update a group      |       |
+| /delete_group   |     `DELETE`      | Delete a group      |       |
 
 ### /service_control
 
-|    resource     | method support | function                   | comment                            |
-| :-------------: | :------------: | :------------------------- | :--------------------------------- |
-|  /all_service   |     `GET`      | get all service with query |                                    |
-|  /new_service   |     `POST`     | create a service           |                                    |
-| /update_service |     `POST`     | update a service           |                                    |
-| /delete_service |    `DELETE`    | delete a service           | it also disables any related access |
+|     Resource      | Supported Methods | Purpose               | Notes                                     |
+| :---------------: | :---------------: | :-------------------- | :---------------------------------------- |
+|  /all_service     |       `GET`       | List all services     |                                           |
+|  /new_service     |      `POST`       | Create a service      |                                           |
+| /update_service   |      `POST`       | Update a service      |                                           |
+| /delete_service   |     `DELETE`      | Delete a service      | Also disables any associated access rules |
 
 ### /access_control
 
-|    resource    | method support | function                  | comment |
-| :------------: | :------------: | :------------------------ | :------ |
-|  /all_access   |     `GET`      | get all access with query |         |
-|  /new_access   |     `POST`     | create an access          |         |
-| /update_access |     `POST`     | update an access          |         |
-| /delete_access |    `DELETE`    | delete an access          |         |
+|    Resource     | Supported Methods | Purpose             | Notes |
+| :-------------: | :---------------: | :------------------ | :---- |
+|  /all_access    |       `GET`       | List all access     |       |
+|  /new_access    |      `POST`       | Create an access    |       |
+| /update_access  |      `POST`       | Update an access    |       |
+| /delete_access  |     `DELETE`      | Delete an access    |       |
 
 ### /subsystem_control
 
-|     resource      | method support | function                     | comment                                                            |
-| :---------------: | :------------: | :--------------------------- | :----------------------------------------------------------------- |
-|  /all_subsystem   |     `GET`      | get all subsystem with query |                                                                    |
-|  /new_subsystem   |     `POST`     | create a subsystem           | and also create bind services                                      |
-| /update_subsystem |     `POST`     | update a subsystem           |                                                                    |
-| /delete_subsystem |    `DELETE`    | delete a subsystem           | it also disables any related access and deletes any related services |
+|      Resource       | Supported Methods | Purpose                       | Notes                                                                               |
+| :-----------------: | :---------------: | :---------------------------- | :---------------------------------------------------------------------------------- |
+| /all_subsystem      |       `GET`       | List all subsystems           |                                                                                     |
+| /new_subsystem      |      `POST`       | Create a subsystem            | Also creates the bound service                                                      |
+| /update_subsystem   |      `POST`       | Update a subsystem            |                                                                                     |
+| /delete_subsystem   |     `DELETE`      | Delete a subsystem            | Also disables related access rules and deletes any bound services                   |
 
 ### /subsystem_call
 
-|     resource      | method support | function                          | comment                                                            |
-| :---------------: | :------------: | :-------------------------------- | :----------------------------------------------------------------- |
-| /{subsystem_name} |     `POST`     | call subsystem services with JSON | if return not a JSON, it will be jsonify as `{"data":"any data" }` |
+|      Resource       | Supported Methods | Purpose                                 | Notes                                                                                         |
+| :-----------------: | :---------------: | :-------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| /{subsystem_name}   |      `POST`       | Invoke a subsystem service via JSON     | If the subsystem does not return JSON, the response is wrapped as `{"data":"any data"}` |
 
-## Dependence
+## Database Schema
 
-- basic support dependencies
-    - once_cell = "1.20.2"
-    - log = "0.4.22"
-    - chrono = { version = "0.4.39", features = ["serde"] }
+- **users**
 
-- basic web dependencies
-    - actix-web = "4.9.0"
-    - actix-rt = "2.10.0"
-    - actix-service = "2.0.2"
-    - actix-cors = "0.7.0"
-    - futures = "0.3.31"
+    | id  | username | password | enabled | display_name | contact_info | created_at | last_login |
+    |:---:|:--------:|:--------:|:-------:|:------------:|:------------:|:----------:|:----------:|
+    | uint| varchar  | varchar  | tinyint | varchar      | JSON         | datetime   | datetime   |
+    | 0   | testuser | 00000000 | 1       | test         | {"email":"test@test.com"} | 2024-10-25 00:00:00.000 | 2024-11-11 09:15:26.978 |
 
-- DB dependencies
-    - diesel_migrations = "2.2.0"
-    - diesel = { version = "2.2.6", features = ["mysql", "r2d2", "chrono"] }
+- **tokens**
 
-- serialization dependencies
-    - serde = "1.0.216"
-    - serde_derive = "1.0.216"
-    - serde_json = "1.0.133"
-    - jsonwebtoken = "9.3.0"
-    - bcrypt = "0.16.0"
-    - base64 = "0.22.1"
-    - uuid = { version = "1.11.0", features = ["v4"] }
+    | username | token                 | expires_at                  |
+    |:--------:|:---------------------:|:---------------------------:|
+    | varchar  | varchar               | datetime / UNIX_TIME_STAMP  |
+    | test     | ahsodhajkshdkanshdjka | 2024-10-25 00:00:00.000     |
 
-- share-lib utils
-    - share-lib = { path = "../share-lib" }
+- **groups**
 
-## DB structure
+    | id  | name    | enabled | user_ids | updated_at |
+    |:---:|:--------|:-------:|:--------:|:----------:|
+    | int | varchar | tinyint | JSON     | datetime   |
+    | 0   | dev     | 0       | [1,2,3,4]| 2024-10-25 00:00:00.000 |
 
-- User table
+- **services**
 
-    |  id   |     user      |    passwd     | is_enable |     name      |         contact         |        date_joined         |         last_login         |
-    | :---: | :-----------: | :-----------: | :-------: | :-----------: | :---------------------: | :------------------------: | :------------------------: |
-    | uint  | varchar - str | varchar - str |  tinyint  | varchar - str |          JSON           |          datetime          |          datetime          |
-    |   0   |   testuser    |   00000000    |     1     |     test      | {email:"test@test.com"} | 2024-10-25 00:00:00.000000 | 2024-11-11 09:15:26.978272 |
+    | id  | name    | endpoint     | enabled | updated_at |
+    |:---:|:--------|:-------------|:-------:|:----------:|
+    | int | varchar | varchar      | tinyint | datetime   |
+    | 0   | CMDB    | /an/api/route| 0       | 2024-10-25 00:00:00.000 |
 
-- Token table
+- **access_rules**
 
-    |     user      |         token         |                  exp_time                  |
-    | :-----------: | :-------------------: | :----------------------------------------: |
-    | varchar - str |     varchar - str     |                datetime/int                |
-    |     test      | ahsodhajkshdkanshdjka | 2024-10-25 00:00:00.000000/UNIX_TIME_STAMP |
+    | id  | service_id | access_id | group_access | enabled | updated_at |
+    |:---:|:----------:|:---------:|:------------:|:-------:|:----------:|
+    | int | int        | int       | tinyint      | tinyint | datetime   |
+    | 0   | 0          | 0         | accINT       | 0       | 2024-10-25 00:00:00.000 |
 
-- Group table
+- **subsystems**
 
-    |  id   |     name      | is_enable | user_id_list |        date_update         |
-    | :---: | :-----------: | :-------: | :----------: | :------------------------: |
-    |  int  | varchar - str |  tinyint  |     JSON     |          datetime          |
-    |   0   |      dev      |     0     |  [1,2,3,4]   | 2024-10-25 00:00:00.000000 |
+    | id  | uuid    | name    | url                      | enabled | updated_at | related_service |
+    |:---:|:--------|:--------|:-------------------------|:-------:|:----------:|:---------------:|
+    | int | varchar | varchar | http://127.0.0.1:8000/api/hey | tinyint | datetime   | int             |
+    | 0   | XXXXXXX | unnamed | http://127.0.0.1:8000/api/hey | 0       | 2024-10-25 00:00:00.000 | 0               |
 
-- Service table
+## Deployment & Dependencies
 
-    |  id   | service_name  | service_point | is_enable |        date_update         |
-    | :---: | :-----------: | :-----------: | :-------: | :------------------------: |
-    |  int  | varchar - str | varchar - str |  tinyint  |          datetime          |
-    |   0   |     CMDB      | /an/api/route |     0     | 2024-10-25 00:00:00.000000 |
+- **Key Generation**
 
-- Access table
-
-    |  id   | service_id | access_id | group_access | is_enable |        date_update         |
-    | :---: | :--------: | :-------: | :----------: | :-------: | :------------------------: |
-    |  int  |    int     |    int    |   tinyint    |  tinyint  |          datetime          |
-    |   0   |     0      |     0     |    accINT    |     0     | 2024-10-25 00:00:00.000000 |
-
-- subsystem_table
-
-    |  id   |  uuid   | service_name |              url              |   is_enable   |        date_update         | relate_service |
-    | :---: | :-----: | :----------: | :---------------------------: | :-----------: | :------------------------: | :------------: |
-    |  int  | varchar |   varchar    |            varchar            | varchar - str |          tinyint           |    datetime    | int |
-    |   0   | XXXXXXX |   unnamed    | http://127.0.0.1:8000/api/hey |       0       | 2024-10-25 00:00:00.000000 |       0        |
-
-## Deployment
-
-- key gen
-
-    Before start up service, generate a secret for JWT token
+    Before starting the service, generate a random key for JWT signing (optional; the system will auto-generate one if absent).
 
     ```sh
     openssl rand -hex 32 > key/jwt_secret.key
     ```
 
-- dependence service
+- **System Libraries**
 
-    - MySQL >= 8.0
+    - openssl
+    - libpq
 
-### Config file
+- **Required Services**
 
-The name of the configuration file is `watchman_server.cfg`.
+    - PostgreSQL
+
+### Configuration File
+
+Create `watchman.toml` in the project root:
 
 ```toml
+# Server configuration
 [server_config]
-log_path = "logs/watchman.log"
+# Logging
+log_path = "log/watchman.log"
 log_level = "DEBUG"
-listen_addr = "127.0.0.1"
+clear_log = true
+# Server params
+listen_addr = "0.0.0.0"
 listen_port = 8000
-allowed_origin_list = ["http://localhost:3000", "http://127.0.0.1:3000"]
-# pub_key_path = "keys/jwt_pub.der"
-# pri_key_path = "keys/jwt_pri.der"
-secret_key_path = "keys/jwt_secret.key"
-clear_log = "True"
-authenticate_bypass = ["/api/auth/signup","/api/auth/login","/webhook","/api/hey","/api/reload","/api/subsystem_control/all_subsystem","/api/subsystem_control/update_subsystem"]
-permit_bypass = ["/api/auth/signup","/api/auth/login","/webhook","/api/hey","/api/reload","/api/subsystem_control/all_subsystem","/api/subsystem_control/update_subsystem"]
+workers = 2
+# CORS
+allowed_origin_list = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+]
+# JWT secret
+secret_key_path = "key/jwt_secret.key"
+# Auth & permit bypass lists
+authenticate_bypass = [
+    "/api/hey",
+    "/webhook",
+    "/api/reload",
+    "/api/auth/login",
+    "/api/auth/signup",
+    "/api/subsystem_control/all_subsystem",
+    "/api/subsystem_control/update_subsystem",
+]
+permit_bypass = [
+    "/api/hey",
+    "/webhook",
+    "/api/reload",
+    "/api/auth/me",
+    "/api/auth/login",
+    "/api/auth/signup",
+    "/api/subsystem_control/all_subsystem",
+    "/api/subsystem_control/update_subsystem",
+]
 
+# Database
 [db_config]
-db_str = "mysql://root:778631@127.0.0.1:3306/watch_man" # local
+db_str = "postgres://postgres:password@localhost:5432/watch_man"
 ```
 
-### Build diesel on Windows
+# Q & A
 
-1. download a mysql-community-server ZIP pac
+- **Q:** Under high load, RPC calls to subsystems occasionally hang.
 
-    I choose the latest version [(9.1.0)](https://cdn.mysql.com/archives/mysql-9.0/mysql-9.0.1-winx64.zip)
-
-    Or the `C++ connector`, I think it is OKEY but I'm too tired to try it `:(`
-
-2. create a copy of **mysql-9.0.1-winx64\lib\mysqlclient.lib** and name it **mysql-9.0.1-winx64\lib\libmysqlclient.lib**
-
-    Just into lib dir do this `cp mysqlclient.lib libmysqlclient.lib`
-
-3. add 2 Environment variables
-
-    `MYSQLCLIENT_LIB_DIR` = `C:\Program Files\MySQL\mysql-9.0.1-winx64\lib` (Change it to ur mysql path)
-
-    `MYSQLCLIENT_VERSION` = `8.0.30` (I don't Know why they only support specifying a few versions !!! 8.0.30 it currently latest)
-
-4. done. u can install diesel_cli with mysql feature
-
-    `cargo install diesel_cli --no-default-features --features "mysql"`
-
-## Q & A
-
-- Q: Sometime Watchman won't reply the Subsystem JSON RPC data (usually cause by overload working conditions)
-
-    just add more work thread, it is OK
+  **A:** Simply increase the number of worker threads; this will **not** raise overall CPU load.
