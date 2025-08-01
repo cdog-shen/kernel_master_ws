@@ -1,8 +1,8 @@
 use chrono::Local;
 use diesel::{
-    prelude::*, result::Error::NotFound, Insertable, MysqlConnection, Queryable, Selectable,
+    Insertable, PgConnection, Queryable, Selectable, prelude::*, result::Error::NotFound,
 };
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use log::debug;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -16,7 +16,7 @@ use crate::{
 
 // expire time const var
 static EXP_CONST: i64 = 60 * 60 * 24 * 7; // in seconds Week
-                                          // Error status const code
+// Error status const code
 static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
 
@@ -46,7 +46,7 @@ impl TokenModel {
     /// find token by username
     pub fn find_token_by_username(
         user_token: &UserToken,
-        conn: &mut MysqlConnection,
+        conn: &mut PgConnection,
     ) -> Result<TokenModel, (u8, String)> {
         match token_table
             .filter(username.eq(&user_token.user))
@@ -64,7 +64,7 @@ impl TokenModel {
     /// check token validation
     pub fn token_ckeck(
         decode_token: &TokenModel,
-        conn: &mut MysqlConnection,
+        conn: &mut PgConnection,
     ) -> Result<String, (u8, String)> {
         match token_table
             .filter(username.eq(&decode_token.username))
@@ -90,7 +90,7 @@ impl TokenModel {
     #[allow(deprecated)]
     pub fn new_token(
         user_token: &UserToken,
-        conn: &mut MysqlConnection,
+        conn: &mut PgConnection,
     ) -> Result<String, (u8, String)> {
         match diesel::insert_into(token_table)
             .values(TokenModel {
@@ -112,7 +112,7 @@ impl TokenModel {
     #[allow(deprecated)]
     pub fn update_token(
         user_token: &UserToken,
-        conn: &mut MysqlConnection,
+        conn: &mut PgConnection,
     ) -> Result<String, (u8, String)> {
         let target = token_table.filter(username.eq(&user_token.user));
 
@@ -123,7 +123,7 @@ impl TokenModel {
                     return Err((
                         NOT_FOUND_CODE,
                         format!("can NOT find specific token for {}.", &user_token.user),
-                    ))
+                    ));
                 }
             },
             Err(e) => return Err((UNKNOW_ERROR_CODE, e.to_string())),
@@ -145,13 +145,11 @@ impl TokenModel {
     }
 
     /// remove token
-    pub fn delete(user_name: &String, conn: &mut MysqlConnection) -> Result<String, (u8, String)> {
+    pub fn delete(user_name: &String, conn: &mut PgConnection) -> Result<String, (u8, String)> {
         let target = token_table.filter(username.eq(user_name));
 
         match diesel::delete(target).execute(conn) {
-            Ok(num_of_eff) => Ok(format!(
-                "{user_name}'s token update. lines: {num_of_eff}"
-            )),
+            Ok(num_of_eff) => Ok(format!("{user_name}'s token update. lines: {num_of_eff}")),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
     }

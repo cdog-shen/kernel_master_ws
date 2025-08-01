@@ -1,16 +1,17 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 use diesel::{
+    PgConnection,
     r2d2::{ConnectionManager, Pool},
-    MysqlConnection,
 };
 use serde_json::{Map, Value};
+use share_lib::data_structure::MailManErr;
 
-use crate::{service::group_service, util::err_mapping::MailManErrResponser};
+use crate::{model::group, service::group_service, util::err_mapping::MailManErrResponser};
 
 // GET api/group_control/all_group
 pub async fn all_group(
     query: web::Query<Map<String, Value>>,
-    pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     match group_service::all_group(query.0, &pool) {
         Ok(group_data) => Ok(HttpResponse::Ok().json(group_data)),
@@ -20,10 +21,14 @@ pub async fn all_group(
 
 // POST api/group_control/new_group
 pub async fn new_group(
-    group_info: web::Json<Map<String, Value>>,
-    pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    map: web::Json<Map<String, Value>>,
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match group_service::new_group(group_info.0, &pool) {
+    let group_info = group::GroupInfo::from_map(map.0).map_err(|e| {
+        MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
+    })?;
+
+    match group_service::new_group(group_info, &pool) {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -31,10 +36,14 @@ pub async fn new_group(
 
 // POST api/group_control/update_group
 pub async fn update_group(
-    group_info: web::Json<Map<String, Value>>,
-    pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    map: web::Json<Map<String, Value>>,
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match group_service::update_group(group_info.0, &pool) {
+    let group_info = group::GroupInfo::from_map(map.0).map_err(|e| {
+        MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
+    })?;
+
+    match group_service::update_group(group_info, &pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -42,10 +51,31 @@ pub async fn update_group(
 
 // DEL api/group_control/delete_group
 pub async fn delete_group(
-    group_id: web::Json<Map<String, Value>>,
-    pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    map: web::Json<Map<String, Value>>,
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match group_service::delete_group(group_id.0, &pool) {
+    let id = map
+        .0
+        .get("id")
+        .ok_or_else(|| {
+            MailManErrResponser::mapping_from_mme(MailManErr::new(
+                400,
+                "Bad Request",
+                Some("Can Not find 'id' field".to_string()),
+                1,
+            ))
+        })?
+        .as_i64()
+        .ok_or_else(|| {
+            MailManErrResponser::mapping_from_mme(MailManErr::new(
+                400,
+                "Bad Request",
+                Some("'id' field MUST be i32".to_string()),
+                1,
+            ))
+        })? as i32;
+
+    match group_service::delete_group(id, &pool) {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

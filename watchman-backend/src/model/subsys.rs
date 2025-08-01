@@ -1,5 +1,5 @@
 use chrono::{self, Local};
-use diesel::{prelude::*, result::Error::NotFound, MysqlConnection};
+use diesel::{PgConnection, prelude::*, result::Error::NotFound};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
@@ -32,53 +32,58 @@ static UNKNOW_ERROR_CODE: u8 = 0;
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
 #[diesel(table_name = subsystem_table)]
 pub struct SubsysModel {
-    pub id: u32,
+    pub id: i32,
     #[diesel(column_name = subsys_name)]
     pub subsys_name: String,
     #[diesel(column_name = url)]
     pub url: String,
     #[diesel(column_name = is_enable)]
-    pub is_enable: u8,
-    #[diesel(column_name = relate_service)]
-    pub relate_service: Option<u32>,
+    pub is_enable: bool,
+    #[diesel(column_name = relate_service_id)]
+    pub relate_service_id: i32,
     #[diesel(column_name = update_time)]
-    pub update_time: Option<chrono::NaiveDateTime>,
+    pub update_time: chrono::NaiveDateTime,
     #[diesel(column_name = token)]
-    pub token: String,
+    pub token: uuid::Uuid,
 }
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
 #[diesel(table_name = subsystem_table)]
 pub struct SubsysInfo {
-    pub id: Option<u32>,
+    pub id: Option<i32>,
     pub subsys_name: Option<String>,
     pub url: Option<String>,
-    pub is_enable: Option<u8>,
-    pub relate_service: Option<u32>,
+    pub is_enable: Option<bool>,
+    pub relate_service_id: Option<i32>,
     pub update_time: Option<chrono::NaiveDateTime>,
-    pub token: Option<String>,
+    pub token: Option<uuid::Uuid>,
 }
 
 impl SubsysInfo {
-    fn from_map(map: Map<String, Value>) -> Result<Self, String> {
+    pub fn from_map(map: Map<String, Value>) -> Result<Self, String> {
         let subsys_info = SubsysInfo {
-            id: map.get("id").and_then(|v| v.as_u64().map(|v| v as u32)),
+            id: map.get("id").and_then(|v| v.as_i64().map(|i| i as i32)),
+
             subsys_name: map
                 .get("subsys_name")
                 .and_then(|v| v.as_str().map(|v| v.to_string())),
+
             url: map
                 .get("url")
                 .and_then(|v| v.as_str().map(|v| v.to_string())),
-            is_enable: map
-                .get("is_enable")
-                .and_then(|v| v.as_u64().map(|v| v as u8)),
-            relate_service: map
-                .get("relate_service")
-                .and_then(|v| v.as_u64().map(|v| v as u32)),
-            update_time: Some(Local::now().naive_local()),
+
+            is_enable: map.get("is_enable").and_then(|v| v.as_bool()),
+
+            relate_service_id: map
+                .get("relate_service_id")
+                .and_then(|v| v.as_i64().map(|i| i as i32)),
+
             token: map
                 .get("token")
-                .and_then(|v| v.as_str().map(|v| v.to_string())),
+                .and_then(|v| v.as_str())
+                .and_then(|s| Some(s.parse::<uuid::Uuid>().expect("token MUST BE a valid UUID"))),
+
+            update_time: Some(Local::now().naive_local()),
         };
 
         Ok(subsys_info)
@@ -88,9 +93,9 @@ impl SubsysInfo {
 // query implement
 impl SubsysModel {
     /// get all enable services
-    pub fn get_all_enable(conn: &mut MysqlConnection) -> Result<Vec<Self>, (u8, String)> {
+    pub fn get_all_enable(conn: &mut PgConnection) -> Result<Vec<Self>, (u8, String)> {
         match subsystem_table
-            .filter(is_enable.eq(1))
+            .filter(is_enable.eq(true))
             .select(SubsysModel::as_select())
             .get_results::<SubsysModel>(conn)
         {
@@ -99,10 +104,7 @@ impl SubsysModel {
         }
     }
 
-    pub fn get_meta_by_id(
-        subsys_id: u32,
-        conn: &mut MysqlConnection,
-    ) -> Result<Self, (u8, String)> {
+    pub fn get_meta_by_id(subsys_id: i32, conn: &mut PgConnection) -> Result<Self, (u8, String)> {
         match subsystem_table
             .find(subsys_id)
             .select(SubsysModel::as_select())
@@ -118,12 +120,12 @@ impl SubsysModel {
     }
 
     pub fn get_enable_by_name(
-        name: String,
-        conn: &mut MysqlConnection,
+        name: &String,
+        conn: &mut PgConnection,
     ) -> Result<Self, (u8, String)> {
         match subsystem_table
-            .filter(is_enable.eq(1))
-            .filter(subsys_name.eq(&name))
+            .filter(is_enable.eq(true))
+            .filter(subsys_name.eq(name))
             .select(SubsysModel::as_select())
             .get_result::<SubsysModel>(conn)
         {
@@ -138,8 +140,8 @@ impl SubsysModel {
 
     /// get all services
     pub fn get_all_with_filter(
-        filter: Map<String, Value>,
-        conn: &mut MysqlConnection,
+        filter: &Map<String, Value>,
+        conn: &mut PgConnection,
     ) -> Result<Vec<Self>, (u8, String)> {
         let mut query = subsystem_table
             .into_boxed()
@@ -153,7 +155,7 @@ impl SubsysModel {
                     }
                 }
                 "is_enable" => {
-                    if let Ok(value) = q_v.as_str().unwrap().parse::<u8>() {
+                    if let Some(value) = q_v.as_bool() {
                         query = query.filter(is_enable.eq(value));
                     }
                 }
@@ -163,9 +165,9 @@ impl SubsysModel {
                         query = query.filter(url.like(pattern));
                     }
                 }
-                "relate_service" => {
-                    if let Ok(value) = q_v.as_str().unwrap().parse::<u32>() {
-                        query = query.filter(relate_service.eq(value));
+                "relate_service_id" => {
+                    if let Some(value) = q_v.as_i64() {
+                        query = query.filter(relate_service_id.eq(value as i32));
                     }
                 }
                 _ => continue,
@@ -182,50 +184,38 @@ impl SubsysModel {
 // update implement
 impl SubsysModel {
     pub fn new_meta(
-        subsys_info: Map<String, Value>,
-        conn: &mut MysqlConnection,
+        subsys_info: &SubsysInfo,
+        conn: &mut PgConnection,
     ) -> Result<String, (u8, String)> {
-        let new_subsys = match SubsysInfo::from_map(subsys_info) {
-            Ok(subsys) => subsys,
-            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
-        };
-
-        let this_subsys_name = new_subsys.subsys_name.clone().unwrap();
-
         match diesel::insert_into(subsystem_table)
-            .values(new_subsys)
+            .values(subsys_info)
             .execute(conn)
         {
             Ok(num_of_change) => Ok(format!(
-                "Subsystem meta data {this_subsys_name} created. line: {num_of_change}"
+                "Subsystem meta data {} created. line: {num_of_change}",
+                subsys_info.subsys_name.clone().unwrap()
             )),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
     }
 
     pub fn update_meta_by_id(
-        subsys_info: Map<String, Value>,
-        conn: &mut MysqlConnection,
+        subsys_info: &SubsysInfo,
+        conn: &mut PgConnection,
     ) -> Result<String, (u8, String)> {
-        let update_subsys = match SubsysInfo::from_map(subsys_info) {
-            Ok(subsys) => subsys,
-            Err(e) => return Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
-        };
-
-        let this_subsys_id = update_subsys.id.unwrap();
-
-        match diesel::update(subsystem_table.filter(id.eq(this_subsys_id)))
-            .set(update_subsys)
+        match diesel::update(subsystem_table.filter(id.eq(subsys_info.id.unwrap())))
+            .set(subsys_info)
             .execute(conn)
         {
             Ok(num_of_eff) => match num_of_eff {
-                0 => Err((NOT_FOUND_CODE, format!("id: {this_subsys_id} not found"))),
-                1 => Ok(format!(
-                    "{this_subsys_id}'s data updated. lines: {num_of_eff}"
+                0 => Err((
+                    NOT_FOUND_CODE,
+                    format!("id: {} not found", subsys_info.id.unwrap()),
                 )),
+                1 => Ok(format!("{}'s data updated.", subsys_info.id.unwrap())),
                 _ => Err((
                     TMI_ERROR_CODE,
-                    format!("id: {this_subsys_id} Too much info"),
+                    format!("id: {} Too much info", subsys_info.id.unwrap()),
                 )),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
@@ -233,13 +223,11 @@ impl SubsysModel {
     }
 
     pub fn delete_meta_by_id(
-        subsys_id: u32,
-        conn: &mut MysqlConnection,
+        subsys_id: i32,
+        conn: &mut PgConnection,
     ) -> Result<String, (u8, String)> {
         match diesel::delete(subsystem_table.find(subsys_id)).execute(conn) {
-            Ok(num_of_eff) => Ok(format!(
-                "{subsys_id}'s data deleted. lines: {num_of_eff}"
-            )),
+            Ok(num_of_eff) => Ok(format!("{subsys_id}'s data deleted. lines: {num_of_eff}")),
             Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {subsys_id} not found"))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }

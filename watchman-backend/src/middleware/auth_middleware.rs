@@ -11,7 +11,7 @@ use actix_web::{
 };
 use diesel::{
     r2d2::{ConnectionManager, Pool},
-    MysqlConnection,
+    PgConnection,
 };
 use futures::future::{ok, LocalBoxFuture, Ready};
 // use log::{debug, error};
@@ -125,7 +125,7 @@ where
         }
 
         if !authenticate_pass {
-            if let Some(pool) = req.app_data::<Data<Pool<ConnectionManager<MysqlConnection>>>>() {
+            if let Some(pool) = req.app_data::<Data<Pool<ConnectionManager<PgConnection>>>>() {
                 // log_debug!("Connecting to database...");
                 if let Some(authen_header) = req.headers().get("Authorization") {
                     // log_debug!("Parsing authorization header...");
@@ -157,11 +157,11 @@ where
                                                 .unwrap_or_default();
 
                                                 match AccessModel::get_max_permission(
-                                                    gid_list
+                                                    &gid_list
                                                         .into_iter()
                                                         .map(|group_info| group_info.id)
                                                         .collect(),
-                                                    sid_list,
+                                                    &sid_list,
                                                     &mut pool.get().unwrap(),
                                                 ) {
                                                     Ok(access_int) => match access_int {

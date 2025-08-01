@@ -1,7 +1,7 @@
 use actix_web::web;
 use diesel::{
+    PgConnection,
     r2d2::{ConnectionManager, Pool},
-    MysqlConnection,
 };
 // use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -13,12 +13,17 @@ use crate::model::{access::*, service::*};
 /// all_service api logic
 pub fn all_service<'a>(
     filter: Map<String, Value>,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<ServiceModel>>, MailManErr<'a, String>> {
-    match ServiceModel::get_all_with_filter(filter.clone(), &mut pool.get().unwrap()) {
+    match ServiceModel::get_all_with_filter(&filter, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "All service info", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+            0 => Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(msg.1),
+                1,
+            )),
             _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
@@ -26,13 +31,18 @@ pub fn all_service<'a>(
 
 /// new_service api logic
 pub fn new_service<'a>(
-    service_info: Map<String, Value>,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    service_info: ServiceInfo,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
-    match ServiceModel::new_service(service_info, &mut pool.get().unwrap()) {
+    match ServiceModel::new_service(&service_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "Service created", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+            0 => Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(msg.1),
+                1,
+            )),
             _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
@@ -40,13 +50,18 @@ pub fn new_service<'a>(
 
 /// update_service api logic
 pub fn update_service<'a>(
-    service_info: Map<String, Value>,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    service_info: ServiceInfo,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
-    match ServiceModel::update_service_by_id(service_info, &mut pool.get().unwrap()) {
+    match ServiceModel::update_service_by_id(&service_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "Service info updated", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+            0 => Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(msg.1),
+                1,
+            )),
             _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }
@@ -54,34 +69,50 @@ pub fn update_service<'a>(
 
 /// delete_service api logic
 pub fn delete_service<'a>(
-    service_id: Map<String, Value>,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    id: i32,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
-    let id = service_id.get("id").and_then(Value::as_u64).unwrap_or(0) as u32;
-
-    let access_target: Vec<u32> =
-        match AccessModel::get_access_by_sids(vec![id], &mut pool.get().unwrap()) {
+    let access_target: Vec<i32> =
+        match AccessModel::get_access_by_sids(&vec![id], &mut pool.get().unwrap()) {
             Ok(access_info_list) => access_info_list
                 .into_iter()
                 .map(|access_info| access_info.id)
                 .collect(),
             Err(msg) => match msg.0 {
-                0 => return Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+                0 => {
+                    return Err(MailManErr::new(
+                        500,
+                        "Internal Server Error",
+                        Some(msg.1),
+                        1,
+                    ));
+                }
                 _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
             },
         };
 
     for access_id in &access_target {
-        let disable_json = serde_json::from_value(serde_json::json!({
-            "id": *access_id,
-            "is_enable": 0,
-        }))
-        .unwrap();
+        let update_info_disable = AccessInfo {
+            id: Some(*access_id),
+            service_id: None,
+            group_id: None,
+            group_access: None,
+            is_enable: Some(false),
+            update_time: None,
+            comment: None,
+        };
 
-        match AccessModel::update_access_by_id(disable_json, &mut pool.get().unwrap()) {
+        match AccessModel::update_access_by_id(&update_info_disable, &mut pool.get().unwrap()) {
             Ok(_) => (),
             Err(msg) => match msg.0 {
-                0 => return Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+                0 => {
+                    return Err(MailManErr::new(
+                        500,
+                        "Internal Server Error",
+                        Some(msg.1),
+                        1,
+                    ));
+                }
                 _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
             },
         }
@@ -96,7 +127,12 @@ pub fn delete_service<'a>(
             )),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(500, "Internal Server Error", Some(msg.1), 1)),
+            0 => Err(MailManErr::new(
+                500,
+                "Internal Server Error",
+                Some(msg.1),
+                1,
+            )),
             _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     }

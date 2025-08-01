@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use actix_web::web;
 use diesel::{
+    PgConnection,
     r2d2::{ConnectionManager, Pool},
-    MysqlConnection,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -28,7 +28,7 @@ pub struct TokenBodyResponse {
 /// 4. save token to DB
 pub fn login<'a>(
     user: UserInputStream,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, TokenBodyResponse>, MailManErr<'a, String>> {
     // 1. check user name and password
     let query_result = match UserModel::login(&user, &mut pool.get().unwrap()) {
@@ -53,7 +53,7 @@ pub fn login<'a>(
                 "Internal Server Error",
                 Some(err.1),
                 1,
-            ))
+            ));
         }
     };
 
@@ -69,7 +69,7 @@ pub fn login<'a>(
                 "Internal Server Error",
                 Some(err.to_string()),
                 1,
-            ))
+            ));
         }
     };
 
@@ -88,7 +88,7 @@ pub fn login<'a>(
                 "Internal Server Error",
                 Some(msg.1),
                 1,
-            ))
+            ));
         }
     }
 
@@ -117,7 +117,7 @@ pub fn login<'a>(
                             "Internal Server Error",
                             Some(msg.1),
                             1,
-                        ))
+                        ));
                     }
                 }
             } else {
@@ -137,7 +137,7 @@ pub fn login<'a>(
 /// signup api logic
 pub fn new_user<'a>(
     user_to_creat: UserInputStream,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<String>> {
     match UserModel::new_user(&user_to_creat, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "New user creat success", Some(msg))),
@@ -155,10 +155,10 @@ pub fn new_user<'a>(
 
 /// logout api logic
 pub fn logout<'a>(
-    username_to_logout: String,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    user_info: UserInputStream,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<String>> {
-    match TokenModel::delete(&username_to_logout, &mut pool.get().unwrap()) {
+    match TokenModel::delete(&user_info.username.unwrap(), &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "Logout success", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(
@@ -175,7 +175,7 @@ pub fn logout<'a>(
 /// user_update api logic
 pub fn user_update<'a>(
     user_info: UserInputStream,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<String>> {
     match UserModel::update_user_by_id(&user_info, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "User info updated", Some(msg))),
@@ -193,10 +193,10 @@ pub fn user_update<'a>(
 
 /// get all user info
 pub fn get_all<'a>(
-    filter: &'a Map<String, Value>,
-    pool: &'a web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    filter: Map<String, Value>,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<UserOutputStream>>, MailManErr<'a, String>> {
-    match UserModel::get_user_info_with_filter(filter.clone(), &mut pool.get().unwrap()) {
+    match UserModel::get_user_info_with_filter(&filter, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "All user info", Some(msg))),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(
@@ -212,8 +212,8 @@ pub fn get_all<'a>(
 
 /// get user's all info
 pub fn get_me(
-    id: u32,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    id: i32,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HashMap<String, serde_json::Value>, MailManErr<'_, String>> {
     let mut result: HashMap<String, serde_json::Value> = HashMap::new();
 
@@ -226,7 +226,7 @@ pub fn get_me(
                     "Internal Server Error",
                     Some(msg.1),
                     1,
-                ))
+                ));
             }
             _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
@@ -241,14 +241,14 @@ pub fn get_me(
                     "Internal Server Error",
                     Some(msg.1),
                     1,
-                ))
+                ));
             }
             _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     };
 
     let user_access_info = match AccessModel::get_access_by_gids(
-        user_group_info.iter().map(|group| group.id).collect(),
+        &user_group_info.iter().map(|group| group.id).collect(),
         &mut pool.get().unwrap(),
     ) {
         Ok(uai) => uai,
@@ -259,14 +259,14 @@ pub fn get_me(
                     "Internal Server Error",
                     Some(msg.1),
                     1,
-                ))
+                ));
             }
             _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
     };
 
     let user_service_info = match ServiceModel::get_services_by_id(
-        user_access_info
+        &user_access_info
             .iter()
             .map(|access| access.service_id)
             .collect(),
@@ -280,7 +280,7 @@ pub fn get_me(
                     "Internal Server Error",
                     Some(msg.1),
                     1,
-                ))
+                ));
             }
             _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
         },
