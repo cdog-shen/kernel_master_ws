@@ -5,9 +5,8 @@ use serde_json::{Map, Value};
 
 use crate::model::schema::user_table::{self, dsl::*};
 
-static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
-static TMI_ERROR_CODE: u8 = 2;
+static BAD_REQUEST_CODE: u8 = 1;
 
 /// The structure of the user stored in the database.
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable)]
@@ -104,7 +103,7 @@ impl UserModel {
                 Ok(the_struct) => Ok(the_struct),
                 Err(e) => Err((UNKNOW_ERROR_CODE, e)),
             },
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("NotFound {user_name}."))),
+            Err(NotFound) => Err((BAD_REQUEST_CODE, format!("NotFound {user_name}."))),
             Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
@@ -123,7 +122,7 @@ impl UserModel {
                 Ok(the_struct) => Ok(the_struct),
                 Err(e) => Err((UNKNOW_ERROR_CODE, e)),
             },
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("NotFound {uid}."))),
+            Err(NotFound) => Err((BAD_REQUEST_CODE, format!("NotFound {uid}."))),
             Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
@@ -144,7 +143,7 @@ impl UserModel {
                 Ok(the_struct) => Ok(the_struct),
                 Err(e) => Err((UNKNOW_ERROR_CODE, e)),
             },
-            Err(NotFound) => Err((NOT_FOUND_CODE, "Login Failed.".to_string())),
+            Err(NotFound) => Err((BAD_REQUEST_CODE, "Login Failed.".to_string())),
             Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
         }
     }
@@ -205,8 +204,28 @@ impl UserModel {
         user_info: &UserInputStream,
         conn: &mut PgConnection,
     ) -> Result<String, (u8, String)> {
+        let ok_to_insert = UserInputStream {
+            id: None,
+            username: Some(
+                user_info
+                    .username
+                    .clone()
+                    .ok_or((BAD_REQUEST_CODE, "Missing username".to_string()))?,
+            ),
+            passwd: Some(
+                user_info
+                    .username
+                    .clone()
+                    .ok_or((BAD_REQUEST_CODE, "Missing passwd".to_string()))?,
+            ),
+            full_name: Some(user_info.full_name.clone().unwrap_or(String::new())),
+            contact: Some(user_info.contact.clone().unwrap_or(serde_json::json!({}))),
+            is_enable: Some(user_info.is_enable.unwrap_or(false)),
+            update_time: user_info.update_time,
+        };
+
         match diesel::insert_into(user_table)
-            .values(user_info)
+            .values(ok_to_insert)
             .execute(conn)
         {
             Ok(num_of_change) => Ok(format!(
@@ -221,25 +240,17 @@ impl UserModel {
     pub fn update_user_by_id(
         user_info: &UserInputStream,
         conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
+    ) -> Result<usize, (u8, String)> {
         match diesel::update(user_table.filter(id.eq(user_info.id.unwrap())))
             .set(user_info)
             .execute(conn)
         {
             Ok(num_of_eff) => match num_of_eff {
                 0 => Err((
-                    NOT_FOUND_CODE,
-                    format!("id: {} not found", user_info.id.clone().unwrap()),
+                    BAD_REQUEST_CODE,
+                    format!("id: {} not found", user_info.id.unwrap()),
                 )),
-                1 => Ok(format!(
-                    "{}'s data updated. lines: {}",
-                    user_info.id.unwrap(),
-                    num_of_eff
-                )),
-                _ => Err((
-                    TMI_ERROR_CODE,
-                    format!("id: {} Too much info", user_info.id.unwrap()),
-                )),
+                _ => Ok(num_of_eff),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
@@ -249,35 +260,16 @@ impl UserModel {
     pub fn update_last_login(
         user_data: &UserInputStream,
         conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
-        let target = user_table.filter(username.eq(user_data.username.clone().unwrap()));
-
-        let _: Result<i64, (u8, String)> = match target.clone().count().get_result(conn) {
-            Ok(c) => match c {
-                1 => Ok(1),
-                _ => {
-                    return Err((
-                        NOT_FOUND_CODE,
-                        format!(
-                            "can NOT find specific user: {}.",
-                            &user_data.username.clone().unwrap()
-                        ),
-                    ));
-                }
-            },
-            Err(e) => return Err((UNKNOW_ERROR_CODE, e.to_string())),
-        };
-
-        match diesel::update(target)
+    ) -> Result<usize, (u8, String)> {
+        match diesel::update(user_table.filter(username.eq(user_data.username.clone().unwrap())))
             .set(last_login.eq(chrono::Local::now().naive_local()))
             .execute(conn)
         {
-            Ok(num_of_change) => Ok(format!(
-                "{}'s last login time update. lines: {}",
-                &user_data.username.clone().unwrap(),
-                num_of_change
-            )),
-            Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
+            Ok(num_of_eff) => match num_of_eff {
+                0 => Err((BAD_REQUEST_CODE, "User CAN NOT be found".to_string())),
+                _ => Ok(num_of_eff),
+            },
+            Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 }
