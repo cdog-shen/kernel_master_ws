@@ -38,28 +38,11 @@ pub fn new_subsys<'a>(
     let subsys_name = &subsys.subsys_name.clone().ok_or_else(|| {
         MailManErr::new(
             400,
-            "Bad request",
-            Some("CAN NOT find `subsys_name` field".to_string()),
+            "Service: Create subsystem",
+            Some("Missing subsys_name".to_string()),
             1,
         )
     })?;
-
-    // let bind_service_info: Map<String, Value> = serde_json::from_value(serde_json::json!({
-    //     "service_name": Some(format!(
-    //         "bind_{}",
-    //         &subsys_name
-    //     )),
-    //     "nick_name": Some(format!(
-    //         "subsystem_{}",
-    //         &subsys_name
-    //     )),
-    //     "service_point": Some(format!(
-    //         "/api/subsystem_call/{}",
-    //         &subsys_name
-    //     )),
-    //     "is_enable": Some(1),
-    // }))
-    // .unwrap();
 
     let bind_service_info = ServiceInfo {
         id: None,
@@ -71,34 +54,50 @@ pub fn new_subsys<'a>(
     };
 
     match ServiceModel::new_service(&bind_service_info, &mut pool.get().unwrap()) {
-        Ok(msg) => MailManOk::new(200, "Subsystem bind service created", Some(msg)),
+        Ok(msg) => MailManOk::new(
+            200,
+            "Service: Create subsystem",
+            Some(format!("Line changed: {msg}")),
+        ),
         Err(msg) => match msg.0 {
-            0 => {
+            1 => {
                 return Err(MailManErr::new(
-                    500,
-                    "Internal Server Error",
+                    400,
+                    "Service: Create subsystem - bind service",
                     Some(msg.1),
                     1,
                 ));
             }
-            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            _ => {
+                return Err(MailManErr::new(
+                    500,
+                    "Service: Create subsystem - bind service",
+                    Some(msg.1),
+                    1,
+                ));
+            }
         },
     };
 
     match SubsysModel::new_meta(&subsys, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
-            "Subsystem meta data created",
-            Some(msg),
+            "Service: Create subsystem",
+            Some(format!("Line changed: {msg}")),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Internal Server Error",
+            1 => Err(MailManErr::new(
+                400,
+                "Service: Create subsystem",
                 Some(msg.1),
                 1,
             )),
-            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(
+                500,
+                "Service: Create subsystem",
+                Some(msg.1),
+                1,
+            )),
         },
     }
 }
@@ -111,17 +110,22 @@ pub fn update_subsys<'a>(
     match SubsysModel::update_meta_by_id(&subsys, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
-            "Subsystem meta data updated",
-            Some(msg),
+            "Service: Update subsystem",
+            Some(format!("Line changed: {msg}")),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Internal Server Error",
+            1 => Err(MailManErr::new(
+                400,
+                "Service: Update subsystem",
                 Some(msg.1),
                 1,
             )),
-            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(
+                500,
+                "Service: Update subsystem",
+                Some(msg.1),
+                1,
+            )),
         },
     }
 }
@@ -134,15 +138,22 @@ pub fn delete_subsys<'a>(
     let bind_service_id = match SubsysModel::get_meta_by_id(id, &mut pool.get().unwrap()) {
         Ok(sub_meta) => sub_meta.relate_service_id,
         Err(msg) => match msg.0 {
-            0 => {
+            1 => {
                 return Err(MailManErr::new(
-                    500,
-                    "Internal Server Error",
+                    400,
+                    "Service: Delete subsystem - bind service",
                     Some(msg.1),
                     1,
                 ));
             }
-            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            _ => {
+                return Err(MailManErr::new(
+                    500,
+                    "Service: Delete subsystem - bind service",
+                    Some(msg.1),
+                    1,
+                ));
+            }
         },
     };
 
@@ -153,15 +164,22 @@ pub fn delete_subsys<'a>(
                 .map(|access_info| access_info.id)
                 .collect(),
             Err(msg) => match msg.0 {
-                0 => {
+                1 => {
                     return Err(MailManErr::new(
-                        500,
-                        "Internal Server Error",
+                        400,
+                        "Service: Delete subsystem - bind service",
                         Some(msg.1),
                         1,
                     ));
                 }
-                _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+                _ => {
+                    return Err(MailManErr::new(
+                        500,
+                        "Service: Delete subsystem - bind service",
+                        Some(msg.1),
+                        1,
+                    ));
+                }
             },
         };
 
@@ -179,52 +197,77 @@ pub fn delete_subsys<'a>(
         match AccessModel::update_access_by_id(&update_info_disable, &mut pool.get().unwrap()) {
             Ok(_) => (),
             Err(msg) => match msg.0 {
-                0 => {
+                1 => {
                     return Err(MailManErr::new(
-                        500,
-                        "Internal Server Error",
+                        400,
+                        "Service: Delete subsystem - bind service",
                         Some(msg.1),
                         1,
                     ));
                 }
-                _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+                _ => {
+                    return Err(MailManErr::new(
+                        500,
+                        "Service: Delete subsystem - bind service",
+                        Some(msg.1),
+                        1,
+                    ));
+                }
             },
         }
     }
 
-    let _ = match ServiceModel::delete_service_by_id(bind_service_id, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(
+    match ServiceModel::delete_service_by_id(bind_service_id, &mut pool.get().unwrap()) {
+        Ok(msg) => MailManOk::new(
             200,
-            "Service deleted",
+            "Service: Delete subsystem - bind service",
             Some(format!(
                 "Service table: {msg}. And disabled those access line {access_target:?}"
             )),
-        )),
+        ),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Internal Server Error",
-                Some(msg.1),
-                1,
-            )),
-            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            1 => {
+                return Err(MailManErr::new(
+                    400,
+                    "Service: Delete subsystem - bind service",
+                    Some(msg.1),
+                    1,
+                ));
+            }
+            _ => {
+                return Err(MailManErr::new(
+                    500,
+                    "Service: Delete subsystem - bind service",
+                    Some(msg.1),
+                    1,
+                ));
+            }
         },
     };
 
     match SubsysModel::delete_meta_by_id(id, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
-            "Subsystem meta data deleted",
-            Some(msg),
+            "Service: Delete subsystem",
+            Some(format!("Line changed: {msg}")),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Internal Server Error",
-                Some(msg.1),
-                1,
-            )),
-            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            1 => {
+                return Err(MailManErr::new(
+                    400,
+                    "Service: Delete subsystem",
+                    Some(msg.1),
+                    1,
+                ));
+            }
+            _ => {
+                return Err(MailManErr::new(
+                    500,
+                    "Service: Delete subsystem",
+                    Some(msg.1),
+                    1,
+                ));
+            }
         },
     }
 }
@@ -240,7 +283,7 @@ pub fn call<'a>(
             0 => {
                 return Err(MailManErr::new(
                     500,
-                    "Internal Server Error",
+                    "Service: Call Subsystem",
                     Some(msg.1),
                     1,
                 ));
@@ -266,12 +309,12 @@ pub fn call<'a>(
     match req {
         Ok(resp) => Ok(MailManOk::new(
             200,
-            "Subsystem call success",
+            "Service: Call Subsystem",
             Some(serde_json::from_str(&resp.into_body().read_to_string().unwrap()).unwrap()),
         )),
         Err(msg) => Err(MailManErr::new(
             500,
-            "Internal Server Error",
+            "Service: Call Subsystem",
             Some(format!("Subsystem: {}. Error: {}", &subsys_name, msg)),
             1,
         )),

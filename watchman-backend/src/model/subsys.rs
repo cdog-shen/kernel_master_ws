@@ -5,9 +5,8 @@ use serde_json::{Map, Value};
 
 use crate::model::schema::subsystem_table::{self, dsl::*};
 
-static NOT_FOUND_CODE: u8 = 1;
-static TMI_ERROR_CODE: u8 = 2;
 static UNKNOW_ERROR_CODE: u8 = 0;
+static BAD_REQUEST_CODE: u8 = 1;
 
 /// The structure of the Subsystem meta data in the database.
 /// - uuid
@@ -112,7 +111,7 @@ impl SubsysModel {
         {
             Ok(subsys) => Ok(subsys),
             Err(NotFound) => Err((
-                NOT_FOUND_CODE,
+                BAD_REQUEST_CODE,
                 format!("can NOT find subsystem id: {}.", &subsys_id),
             )),
             Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
@@ -131,7 +130,7 @@ impl SubsysModel {
         {
             Ok(subsys_info) => Ok(subsys_info),
             Err(NotFound) => Err((
-                NOT_FOUND_CODE,
+                BAD_REQUEST_CODE,
                 format!("can NOT find subsystem: {}.", &name),
             )),
             Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
@@ -186,15 +185,37 @@ impl SubsysModel {
     pub fn new_meta(
         subsys_info: &SubsysInfo,
         conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
+    ) -> Result<usize, (u8, String)> {
+        let ok_to_insert = SubsysInfo {
+            id: None,
+            subsys_name: Some(
+                subsys_info
+                    .subsys_name
+                    .clone()
+                    .ok_or((BAD_REQUEST_CODE, "Missing subsys_name".to_string()))?,
+            ),
+            url: Some(
+                subsys_info
+                    .url
+                    .clone()
+                    .ok_or((BAD_REQUEST_CODE, "Missing url".to_string()))?,
+            ),
+            token: Some(
+                subsys_info
+                    .token
+                    .clone()
+                    .ok_or((BAD_REQUEST_CODE, "Missing url".to_string()))?,
+            ),
+            relate_service_id: Some(subsys_info.relate_service_id.unwrap_or(0)),
+            is_enable: Some(subsys_info.is_enable.unwrap_or(false)),
+            update_time: subsys_info.update_time,
+        };
+
         match diesel::insert_into(subsystem_table)
-            .values(subsys_info)
+            .values(ok_to_insert)
             .execute(conn)
         {
-            Ok(num_of_change) => Ok(format!(
-                "Subsystem meta data {} created. line: {num_of_change}",
-                subsys_info.subsys_name.clone().unwrap()
-            )),
+            Ok(num_of_change) => Ok(num_of_change),
             Err(err) => Err((UNKNOW_ERROR_CODE, err.to_string())),
         }
     }
@@ -202,33 +223,26 @@ impl SubsysModel {
     pub fn update_meta_by_id(
         subsys_info: &SubsysInfo,
         conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
+    ) -> Result<usize, (u8, String)> {
         match diesel::update(subsystem_table.filter(id.eq(subsys_info.id.unwrap())))
             .set(subsys_info)
             .execute(conn)
         {
             Ok(num_of_eff) => match num_of_eff {
                 0 => Err((
-                    NOT_FOUND_CODE,
+                    BAD_REQUEST_CODE,
                     format!("id: {} not found", subsys_info.id.unwrap()),
                 )),
-                1 => Ok(format!("{}'s data updated.", subsys_info.id.unwrap())),
-                _ => Err((
-                    TMI_ERROR_CODE,
-                    format!("id: {} Too much info", subsys_info.id.unwrap()),
-                )),
+                _ => Ok(num_of_eff),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 
-    pub fn delete_meta_by_id(
-        subsys_id: i32,
-        conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
-        match diesel::delete(subsystem_table.find(subsys_id)).execute(conn) {
-            Ok(num_of_eff) => Ok(format!("{subsys_id}'s data deleted. lines: {num_of_eff}")),
-            Err(NotFound) => Err((NOT_FOUND_CODE, format!("id: {subsys_id} not found"))),
+    pub fn delete_meta_by_id(_id: i32, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
+        match diesel::delete(subsystem_table.find(_id)).execute(conn) {
+            Ok(num_of_eff) => Ok(num_of_eff),
+            Err(NotFound) => Err((BAD_REQUEST_CODE, format!("id: {_id} not found"))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
