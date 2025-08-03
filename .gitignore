@@ -5,6 +5,9 @@
 **/.DS_Store
 **/Cargo.lock
 
+# cargo build config
+watchman-backend/config.toml
+
 # key files
 **/keys
 **/key
