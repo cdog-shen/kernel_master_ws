@@ -42,7 +42,7 @@ VALUES (
         2,
         true,
         '2024-12-01 00:00:00',
-        'group_control:admin'
+        'group:admin'
     ),
     (
         3,
@@ -51,7 +51,7 @@ VALUES (
         2,
         true,
         '2024-12-01 00:00:00',
-        'service_control:admin'
+        'service:admin'
     ),
     (
         4,
@@ -60,7 +60,7 @@ VALUES (
         2,
         true,
         '2024-12-01 00:00:00',
-        'access_control:admin'
+        'access:admin'
     ),
     (
         5,
@@ -69,7 +69,7 @@ VALUES (
         2,
         true,
         '2024-12-01 00:00:00',
-        'subsys_control:admin'
+        'subsys:admin'
     );
 
 -- 创建 group_table 表
@@ -141,33 +141,33 @@ VALUES (
     ),
     (
         2,
-        'group_control',
+        'group',
         '用户组控制',
-        '/api/group_control',
+        '/api/group',
         true,
         '2024-12-01 00:00:00'
     ),
     (
         3,
-        'service_control',
+        'service',
         '服务控制',
-        '/api/service_control',
+        '/api/service',
         true,
         '2024-12-01 00:00:00'
     ),
     (
         4,
-        'access_control',
+        'access',
         '权限控制',
-        '/api/access_control',
+        '/api/access',
         true,
         '2024-12-01 00:00:00'
     ),
     (
         5,
-        'subsys_control',
+        'subsys',
         '子系统控制',
-        '/api/subsystem_control',
+        '/api/subsystem',
         true,
         '2024-12-01 00:00:00'
     );

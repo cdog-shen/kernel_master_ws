@@ -32,112 +32,117 @@ All endpoints are prefixed with `/api`.
 
 ### /hey
 
-| Resource | Supported Methods | Purpose                                  | Notes              |
-| :------: | :---------------: | :--------------------------------------- | :----------------- |
-|    /     |   `POST`/`GET`    | Returns the raw string `hi hello!`       | Service health API |
+| Resource | Supported Methods | Purpose                            | Notes              |
+| :------: | :---------------: | :--------------------------------- | :----------------- |
+|    /     |   `POST`/`GET`    | Returns the raw string `hi hello!` | Service health API |
 
 ### /reload
 
-| Resource | Supported Methods | Purpose           | Notes                                   |
-| :------: | :---------------: | :---------------- | :-------------------------------------- |
+| Resource | Supported Methods | Purpose            | Notes                                   |
+| :------: | :---------------: | :----------------- | :-------------------------------------- |
 |    /     |      `POST`       | Reloads all config | Hot-reloads dynamic configuration files |
 
 ### /auth
 
-|   Resource    | Supported Methods | Purpose                      | Notes                                 |
-| :-----------: | :---------------: | :--------------------------- | :------------------------------------ |
-|  /all_user    |       `GET`       | Retrieve all users           |                                       |
-|  /me/{id}     |       `GET`       | Retrieve a single user       | Returns full user profile             |
-|  /signup      |      `POST`       | Register a new user          |                                       |
-|  /login       |      `POST`       | Login with username/password |                                       |
-|  /logout      |      `POST`       | Logout                       |                                       |
-| /user_update  |      `POST`       | Update user information      |                                       |
+| Resource | Supported Methods | Purpose                      | Notes                     |
+| :------: | :---------------: | :--------------------------- | :------------------------ |
+| /me/{id} |       `GET`       | Retrieve a single user       | Returns full user profile |
+|  /login  |      `POST`       | Login with username/password |                           |
+| /logout  |      `POST`       | Logout                       |                           |
 
-### /group_control
+### /user
 
-|    Resource     | Supported Methods | Purpose             | Notes |
-| :-------------: | :---------------: | :------------------ | :---- |
-|  /all_group     |       `GET`       | List all groups     |       |
-|  /new_group     |      `POST`       | Create a group      |       |
-| /update_group   |      `POST`       | Update a group      |       |
-| /delete_group   |     `DELETE`      | Delete a group      |       |
+| Resource | Supported Methods | Purpose                 | Notes |
+| :------: | :---------------: | :---------------------- | :---- |
+|    /     |       `GET`       | Retrieve all users      |       |
+|    /     |      `POST`       | Update user information |       |
+|    /     |      `PATCH`      | Register a new user     |       |
 
-### /service_control
+### /group
 
-|     Resource      | Supported Methods | Purpose               | Notes                                     |
-| :---------------: | :---------------: | :-------------------- | :---------------------------------------- |
-|  /all_service     |       `GET`       | List all services     |                                           |
-|  /new_service     |      `POST`       | Create a service      |                                           |
-| /update_service   |      `POST`       | Update a service      |                                           |
-| /delete_service   |     `DELETE`      | Delete a service      | Also disables any associated access rules |
+| Resource | Supported Methods | Purpose         | Notes |
+| :------: | :---------------: | :-------------- | :---- |
+|    /     |       `GET`       | List all groups |       |
+|    /     |      `POST`       | Create a group  |       |
+|    /     |      `PATCH`      | Update a group  |       |
+|    /     |     `DELETE`      | Delete a group  |       |
 
-### /access_control
+### /service
 
-|    Resource     | Supported Methods | Purpose             | Notes |
-| :-------------: | :---------------: | :------------------ | :---- |
-|  /all_access    |       `GET`       | List all access     |       |
-|  /new_access    |      `POST`       | Create an access    |       |
-| /update_access  |      `POST`       | Update an access    |       |
-| /delete_access  |     `DELETE`      | Delete an access    |       |
+| Resource | Supported Methods | Purpose           | Notes                                     |
+| :------: | :---------------: | :---------------- | :---------------------------------------- |
+|    /     |       `GET`       | List all services |                                           |
+|    /     |      `POST`       | Create a service  |                                           |
+|    /     |      `PATCH`      | Update a service  |                                           |
+|    /     |     `DELETE`      | Delete a service  | Also disables any associated access rules |
 
-### /subsystem_control
+### /access
 
-|      Resource       | Supported Methods | Purpose                       | Notes                                                                               |
-| :-----------------: | :---------------: | :---------------------------- | :---------------------------------------------------------------------------------- |
-| /all_subsystem      |       `GET`       | List all subsystems           |                                                                                     |
-| /new_subsystem      |      `POST`       | Create a subsystem            | Also creates the bound service                                                      |
-| /update_subsystem   |      `POST`       | Update a subsystem            |                                                                                     |
-| /delete_subsystem   |     `DELETE`      | Delete a subsystem            | Also disables related access rules and deletes any bound services                   |
+| Resource | Supported Methods | Purpose          | Notes |
+| :------: | :---------------: | :--------------- | :---- |
+|    /     |       `GET`       | List all access  |       |
+|    /     |      `POST`       | Create an access |       |
+|    /     |      `PATCH`      | Update an access |       |
+|    /     |     `DELETE`      | Delete an access |       |
+
+### /subsystem
+
+| Resource | Supported Methods | Purpose             | Notes                                                             |
+| :------: | :---------------: | :------------------ | :---------------------------------------------------------------- |
+|    /     |       `GET`       | List all subsystems |                                                                   |
+|    /     |      `POST`       | Create a subsystem  | Also creates the bound service                                    |
+|    /     |      `PATCH`      | Update a subsystem  |                                                                   |
+|    /     |     `DELETE`      | Delete a subsystem  | Also disables related access rules and deletes any bound services |
 
 ### /subsystem_call
 
-|      Resource       | Supported Methods | Purpose                                 | Notes                                                                                         |
-| :-----------------: | :---------------: | :-------------------------------------- | :-------------------------------------------------------------------------------------------- |
-| /{subsystem_name}   |      `POST`       | Invoke a subsystem service via JSON     | If the subsystem does not return JSON, the response is wrapped as `{"data":"any data"}` |
+|     Resource      | Supported Methods | Purpose                             | Notes                                                                                   |
+| :---------------: | :---------------: | :---------------------------------- | :-------------------------------------------------------------------------------------- |
+| /{subsystem_name} |      `POST`       | Invoke a subsystem service via JSON | If the subsystem does not return JSON, the response is wrapped as `{"data":"any data"}` |
 
 ## Database Schema
 
 - **users**
 
-    | id  | username | password | enabled | display_name | contact_info | created_at | last_login |
-    |:---:|:--------:|:--------:|:-------:|:------------:|:------------:|:----------:|:----------:|
-    | uint| varchar  | varchar  | tinyint | varchar      | JSON         | datetime   | datetime   |
-    | 0   | testuser | 00000000 | 1       | test         | {"email":"test@test.com"} | 2024-10-25 00:00:00.000 | 2024-11-11 09:15:26.978 |
+    |  id   | username | password | enabled | display_name |       contact_info        |       created_at        |       last_login        |
+    | :---: | :------: | :------: | :-----: | :----------: | :-----------------------: | :---------------------: | :---------------------: |
+    | uint  | varchar  | varchar  | tinyint |   varchar    |           JSON            |        datetime         |        datetime         |
+    |   0   | testuser | 00000000 |    1    |     test     | {"email":"test@test.com"} | 2024-10-25 00:00:00.000 | 2024-11-11 09:15:26.978 |
 
 - **tokens**
 
-    | username | token                 | expires_at                  |
-    |:--------:|:---------------------:|:---------------------------:|
-    | varchar  | varchar               | datetime / UNIX_TIME_STAMP  |
-    | test     | ahsodhajkshdkanshdjka | 2024-10-25 00:00:00.000     |
+    | username |         token         |         expires_at         |
+    | :------: | :-------------------: | :------------------------: |
+    | varchar  |        varchar        | datetime / UNIX_TIME_STAMP |
+    |   test   | ahsodhajkshdkanshdjka |  2024-10-25 00:00:00.000   |
 
 - **groups**
 
-    | id  | name    | enabled | user_ids | updated_at |
-    |:---:|:--------|:-------:|:--------:|:----------:|
-    | int | varchar | tinyint | JSON     | datetime   |
-    | 0   | dev     | 0       | [1,2,3,4]| 2024-10-25 00:00:00.000 |
+    |  id   | name    | enabled | user_ids  |       updated_at        |
+    | :---: | :------ | :-----: | :-------: | :---------------------: |
+    |  int  | varchar | tinyint |   JSON    |        datetime         |
+    |   0   | dev     |    0    | [1,2,3,4] | 2024-10-25 00:00:00.000 |
 
 - **services**
 
-    | id  | name    | endpoint     | enabled | updated_at |
-    |:---:|:--------|:-------------|:-------:|:----------:|
-    | int | varchar | varchar      | tinyint | datetime   |
-    | 0   | CMDB    | /an/api/route| 0       | 2024-10-25 00:00:00.000 |
+    |  id   | name    | endpoint      | enabled |       updated_at        |
+    | :---: | :------ | :------------ | :-----: | :---------------------: |
+    |  int  | varchar | varchar       | tinyint |        datetime         |
+    |   0   | CMDB    | /an/api/route |    0    | 2024-10-25 00:00:00.000 |
 
 - **access_rules**
 
-    | id  | service_id | access_id | group_access | enabled | updated_at |
-    |:---:|:----------:|:---------:|:------------:|:-------:|:----------:|
-    | int | int        | int       | tinyint      | tinyint | datetime   |
-    | 0   | 0          | 0         | accINT       | 0       | 2024-10-25 00:00:00.000 |
+    |  id   | service_id | access_id | group_access | enabled |       updated_at        |
+    | :---: | :--------: | :-------: | :----------: | :-----: | :---------------------: |
+    |  int  |    int     |    int    |   tinyint    | tinyint |        datetime         |
+    |   0   |     0      |     0     |    accINT    |    0    | 2024-10-25 00:00:00.000 |
 
 - **subsystems**
 
-    | id  | uuid    | name    | url                      | enabled | updated_at | related_service |
-    |:---:|:--------|:--------|:-------------------------|:-------:|:----------:|:---------------:|
-    | int | varchar | varchar | http://127.0.0.1:8000/api/hey | tinyint | datetime   | int             |
-    | 0   | XXXXXXX | unnamed | http://127.0.0.1:8000/api/hey | 0       | 2024-10-25 00:00:00.000 | 0               |
+    |  id   | uuid    | name    | url                           | enabled |       updated_at        | related_service |
+    | :---: | :------ | :------ | :---------------------------- | :-----: | :---------------------: | :-------------: |
+    |  int  | varchar | varchar | http://127.0.0.1:8000/api/hey | tinyint |        datetime         |       int       |
+    |   0   | XXXXXXX | unnamed | http://127.0.0.1:8000/api/hey |    0    | 2024-10-25 00:00:00.000 |        0        |
 
 ## Deployment & Dependencies
 
@@ -187,8 +192,8 @@ authenticate_bypass = [
     "/api/reload",
     "/api/auth/login",
     "/api/auth/signup",
-    "/api/subsystem_control/all_subsystem",
-    "/api/subsystem_control/update_subsystem",
+    "/api/subsystem/all_subsystem",
+    "/api/subsystem/update_subsystem",
 ]
 permit_bypass = [
     "/api/hey",
@@ -197,8 +202,8 @@ permit_bypass = [
     "/api/auth/me",
     "/api/auth/login",
     "/api/auth/signup",
-    "/api/subsystem_control/all_subsystem",
-    "/api/subsystem_control/update_subsystem",
+    "/api/subsystem/all_subsystem",
+    "/api/subsystem/update_subsystem",
 ]
 
 # Database
