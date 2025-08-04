@@ -1,19 +1,19 @@
 use actix_service::forward_ready;
 use actix_web::{
+    Error, HttpResponse,
     body::EitherBody,
     dev::{Service, ServiceRequest, ServiceResponse, Transform},
     http::{
-        header::{HeaderName, HeaderValue},
         Method,
+        header::{HeaderName, HeaderValue},
     },
     web::Data,
-    Error, HttpResponse,
 };
 use diesel::{
-    r2d2::{ConnectionManager, Pool},
     PgConnection,
+    r2d2::{ConnectionManager, Pool},
 };
-use futures::future::{ok, LocalBoxFuture, Ready};
+use futures::future::{LocalBoxFuture, Ready, ok};
 // use log::{debug, error};
 
 use share_lib::data_structure::MailManErr;
@@ -151,7 +151,7 @@ where
                                                 .unwrap_or_default();
 
                                                 let sid_list = ServiceModel::get_sids_by_route(
-                                                    &req.uri().to_string(),
+                                                    &req.uri().path(),
                                                     &mut pool.get().unwrap(),
                                                 )
                                                 .unwrap_or_default();

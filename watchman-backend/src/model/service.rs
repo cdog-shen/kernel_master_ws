@@ -114,12 +114,15 @@ impl ServiceModel {
         route: &str,
         conn: &mut PgConnection,
     ) -> Result<Vec<i32>, (u8, String)> {
-        let stash_index: Vec<usize> = route
+        let mut stash_index: Vec<usize> = route
             .chars()
             .enumerate()
             .filter(|&(_, c)| c == '/')
             .map(|(i, _)| i)
             .collect();
+
+        stash_index.push(route.len());
+
         for index in stash_index {
             let like_pattern = format!("%{}%", &route[..index]);
             // println!("{:?}", like_pattern.len());
@@ -130,7 +133,7 @@ impl ServiceModel {
 
             match service_table
                 .filter(is_enable.eq(true))
-                .filter(service_point.like(like_pattern)) // 使用LIKE进行模糊匹配
+                .filter(service_point.like(like_pattern))
                 .select(id)
                 .get_results::<i32>(conn)
             {
