@@ -2,7 +2,7 @@
 
 diesel::table! {
     cloudserver_instance (id) {
-        id -> Unsigned<Bigint>,
+        id -> Int8,
         #[max_length = 255]
         provider -> Varchar,
         #[max_length = 255]
@@ -12,26 +12,23 @@ diesel::table! {
         #[max_length = 255]
         instance_name -> Varchar,
         #[max_length = 255]
-        plantform -> Varchar,
+        platform -> Varchar,
         #[max_length = 255]
         status -> Varchar,
         #[max_length = 255]
-        tag -> Varchar,
-        #[max_length = 255]
         private_ip -> Varchar,
-        full_info -> Nullable<Text>,
-        attach_info -> Nullable<Text>,
-        update_at -> Nullable<Timestamp>,
+        tag -> Jsonb,
+        full_info -> Jsonb,
+        attach_info -> Jsonb,
+        update_at -> Timestamp,
     }
 }
 
 diesel::table! {
     lighthouse_instance (id) {
-        id -> Unsigned<Bigint>,
+        id -> Int8,
         #[max_length = 255]
-        cloud_name -> Varchar,
-        #[max_length = 255]
-        region -> Varchar,
+        provider -> Varchar,
         #[max_length = 255]
         zone -> Varchar,
         #[max_length = 255]
@@ -39,25 +36,21 @@ diesel::table! {
         #[max_length = 255]
         instance_name -> Varchar,
         #[max_length = 255]
-        wip -> Nullable<Varchar>,
-        #[max_length = 255]
-        vpc_id -> Nullable<Varchar>,
+        platform -> Varchar,
         #[max_length = 255]
         status -> Varchar,
         #[max_length = 255]
-        os_name -> Varchar,
-        #[max_length = 255]
-        os_type -> Varchar,
-        create_at -> Nullable<Timestamp>,
-        update_at -> Nullable<Timestamp>,
-        full_info -> Nullable<Text>,
-        attach_info -> Nullable<Text>,
+        private_ip -> Varchar,
+        tag -> Jsonb,
+        full_info -> Jsonb,
+        attach_info -> Jsonb,
+        update_at -> Timestamp,
     }
 }
 
 diesel::table! {
     logservice_topic (id) {
-        id -> Unsigned<Bigint>,
+        id -> Int8,
         #[max_length = 255]
         provider -> Varchar,
         #[max_length = 255]
@@ -68,14 +61,15 @@ diesel::table! {
         topic_name -> Varchar,
         #[max_length = 255]
         status -> Varchar,
-        hot_period -> Unsigned<Integer>,
-        period -> Unsigned<Integer>,
-        index -> Tinyint,
-        full_info -> Nullable<Text>,
-        attach_info -> Nullable<Text>,
-        update_at -> Nullable<Timestamp>,
+        hot_period -> Int4,
+        period -> Int4,
+        index -> Bool,
         #[max_length = 255]
         describes -> Varchar,
+        tag -> Jsonb,
+        full_info -> Jsonb,
+        attach_info -> Jsonb,
+        update_at -> Timestamp,
     }
 }
 

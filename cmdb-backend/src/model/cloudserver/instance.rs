@@ -1,53 +1,52 @@
 use chrono::{self, Local};
-use diesel::{prelude::*, result::Error::NotFound};
+use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use crate::models::schema::cloudserver_instance::{self, dsl::*};
+use crate::model::schema::cloudserver_instance::{self, dsl::*};
 
-static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
-// static TMI_ERROR_CODE: u8 = 2;
+static BAD_REQUEST_CODE: u8 = 1;
 
 #[derive(Debug, Serialize, Deserialize, Queryable, Selectable)]
 #[diesel(table_name = cloudserver_instance)]
 pub struct CloudserverInstanceModel {
-    pub id: u64,
+    pub id: i64,
     pub provider: String,
     pub zone: String,
     pub instance_id: String,
     pub instance_name: String,
-    pub plantform: String,
+    pub platform: String,
     pub status: String,
-    pub tag: String,
     pub private_ip: String,
-    pub full_info: Option<String>,
-    pub attach_info: Option<String>,
-    pub update_at: Option<chrono::NaiveDateTime>,
+    pub tag: serde_json::Value,
+    pub full_info: serde_json::Value,
+    pub attach_info: serde_json::Value,
+    pub update_at: chrono::NaiveDateTime,
 }
 
 #[derive(Debug, Serialize, Deserialize, Insertable, AsChangeset)]
 #[diesel(table_name = cloudserver_instance)]
 pub struct CloudserverInstanceInfo {
-    pub id: Option<u64>,
+    pub id: Option<i64>,
     pub provider: Option<String>,
     pub zone: Option<String>,
     pub instance_id: Option<String>,
     pub instance_name: Option<String>,
-    pub plantform: Option<String>,
+    pub platform: Option<String>,
     pub status: Option<String>,
-    pub tag: Option<String>,
     pub private_ip: Option<String>,
-    pub full_info: Option<String>,
-    pub attach_info: Option<String>,
+    pub tag: Option<serde_json::Value>,
+    pub full_info: Option<serde_json::Value>,
+    pub attach_info: Option<serde_json::Value>,
     pub update_at: Option<chrono::NaiveDateTime>,
 }
 
 impl CloudserverInstanceInfo {
-    fn from_map(map: Map<String, Value>) -> Result<Self, String> {
+    pub fn from_map(map: Map<String, Value>) -> Result<Self, String> {
         Ok(CloudserverInstanceInfo {
             id: match map.get("id") {
-                Some(value) => value.as_u64(),
+                Some(value) => value.as_i64(),
                 None => None,
             },
             provider: match map.get("provider") {
@@ -66,7 +65,7 @@ impl CloudserverInstanceInfo {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
-            plantform: match map.get("plantform") {
+            platform: match map.get("plantform") {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
@@ -74,22 +73,13 @@ impl CloudserverInstanceInfo {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
-            tag: match map.get("tag") {
-                Some(value) => value.as_str().map(|s| s.to_string()),
-                None => None,
-            },
             private_ip: match map.get("private_ip") {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
-            full_info: match map.get("full_info") {
-                Some(value) => value.as_str().map(|s| s.to_string()),
-                None => None,
-            },
-            attach_info: match map.get("attach_info") {
-                Some(value) => value.as_str().map(|s| s.to_string()),
-                None => None,
-            },
+            tag: map.get("tag").cloned(),
+            full_info: map.get("full_info").cloned(),
+            attach_info: map.get("attach_info").cloned(),
             update_at: Some(Local::now().naive_local()),
         })
     }
@@ -98,8 +88,8 @@ impl CloudserverInstanceInfo {
 impl CloudserverInstanceModel {
     /// get model full data
     pub fn get_model_info_with_filter(
-        filter: Map<String, Value>,
-        conn: &mut MysqlConnection,
+        filter: &Map<String, Value>,
+        conn: &mut PgConnection,
     ) -> Result<Vec<Value>, (u8, String)> {
         let mut query = cloudserver_instance
             .into_boxed()
@@ -118,9 +108,9 @@ impl CloudserverInstanceModel {
                         query = query.filter(zone.like(pattern));
                     }
                 }
-                "plantform" => {
+                "platform" => {
                     if let Some(value) = q_v.as_str() {
-                        query = query.filter(plantform.eq(value));
+                        query = query.filter(platform.eq(value));
                     }
                 }
                 "instance_id" => {
@@ -158,15 +148,11 @@ impl CloudserverInstanceModel {
 
 impl CloudserverInstanceModel {
     pub fn new(
-        info: Map<String, Value>,
-        conn: &mut MysqlConnection,
+        info: &CloudserverInstanceInfo,
+        conn: &mut PgConnection,
     ) -> Result<usize, (u8, String)> {
-        let info = match CloudserverInstanceInfo::from_map(info) {
-            Ok(info) => info,
-            Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
-        };
         match diesel::insert_into(cloudserver_instance)
-            .values(&info)
+            .values(info)
             .execute(conn)
         {
             Ok(num_of_eff) => Ok(num_of_eff),
@@ -175,30 +161,30 @@ impl CloudserverInstanceModel {
     }
 
     pub fn update(
-        info: Map<String, Value>,
-        conn: &mut MysqlConnection,
+        info: &CloudserverInstanceInfo,
+        conn: &mut PgConnection,
     ) -> Result<usize, (u8, String)> {
-        let info = match CloudserverInstanceInfo::from_map(info) {
-            Ok(info) => info,
-            Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
-        };
         match diesel::update(cloudserver_instance.filter(id.eq(info.id.unwrap())))
-            .set(&info)
+            .set(info)
             .execute(conn)
         {
-            Ok(num_of_eff) => Ok(num_of_eff),
+            Ok(num_of_eff) => match num_of_eff {
+                0 => Err((
+                    BAD_REQUEST_CODE,
+                    format!("id: {} not found", info.id.unwrap()),
+                )),
+                _ => Ok(num_of_eff),
+            },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 
-    pub fn delete(
-        info: Map<String, Value>,
-        conn: &mut MysqlConnection,
-    ) -> Result<usize, (u8, String)> {
-        match diesel::delete(cloudserver_instance.filter(id.eq(info["id"].as_u64().unwrap())))
-            .execute(conn)
-        {
-            Ok(num_of_eff) => Ok(num_of_eff),
+    pub fn delete(_id: i64, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
+        match diesel::delete(cloudserver_instance.filter(id.eq(_id))).execute(conn) {
+            Ok(num_of_eff) => match num_of_eff {
+                0 => Err((BAD_REQUEST_CODE, format!("id: {} not found", _id))),
+                _ => Ok(num_of_eff),
+            },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
