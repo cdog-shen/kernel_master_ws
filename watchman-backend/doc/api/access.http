@@ -1,42 +1,41 @@
 ### vars
-@baseurl = http://localhost:8000/api/subsystem
+@baseurl = http://localhost:8000/api/access
 @token = bearer xxx
 
 
-### all subsystem
+### all access
 GET {{baseurl}} HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
-### new subsystem
+### new access
 POST {{baseurl}} HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "subsys_name": "test",
-    "url": "http://localhost:8000/api/hey",
-    "is_enable": true,
-    "relate_service_id": 0,
-    "token": "ea1ec535-3f77-4df3-9e67-918df7e2f923"
+    "service_id": 0,
+    "group_id": 0,
+    "group_access": 0,
+    "is_enable": false,
+    "comment": "test"
 }
 
-### update subsystem
+### update access
 PATCH {{baseurl}} HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "id": 4,
-    "relate_service_id": 0
-    # "is_enable": false
+    "id": 6,
+    "is_enable": false
 }
 
-### delete subsystem
+### delete access
 DELETE {{baseurl}} HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "id": 3
+    "id": 6
 }
