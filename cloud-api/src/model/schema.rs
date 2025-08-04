@@ -2,18 +2,18 @@
 
 diesel::table! {
     cloud_account (id) {
-        id -> Unsigned<Integer>,
+        id -> Int4,
         #[max_length = 255]
-        cloud_provider -> Varchar,
+        provider -> Varchar,
         #[max_length = 255]
         nick_name -> Varchar,
         #[max_length = 255]
         ak -> Varchar,
         #[max_length = 255]
         sk -> Varchar,
-        is_enable -> Unsigned<Tinyint>,
-        update_time -> Nullable<Datetime>,
+        is_enable -> Bool,
+        update_time -> Timestamp,
         #[max_length = 255]
-        comment -> Nullable<Varchar>,
+        comment -> Varchar,
     }
 }

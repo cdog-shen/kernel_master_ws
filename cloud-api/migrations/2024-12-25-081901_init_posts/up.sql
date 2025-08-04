@@ -1,17 +1,17 @@
 -- Your SQL goes here
--- 创建 cloud_account 表
-DROP TABLE IF EXISTS `cloud_account`;
+DROP TABLE IF EXISTS cloud_account;
 
-CREATE TABLE `cloud_account` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT "access id",
-    `cloud_provider` VARCHAR(255) NOT NULL COMMENT "cloud provider",
-    `nick_name` VARCHAR(255) NOT NULL COMMENT "nick name",
-    `ak` VARCHAR(255) NOT NULL COMMENT "access key",
-    `sk` VARCHAR(255) NOT NULL COMMENT "secret",
-    `is_enable` TINYINT UNSIGNED NOT NULL COMMENT "status",
-    `update_time` DATETIME NULL,
-    `comment` VARCHAR(255) NULL COMMENT "access comment",
-    PRIMARY KEY (`id`),
-    KEY `cloud_provider_key` (`cloud_provider`),
-    KEY `nick_name_key` (`nick_name`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+CREATE TABLE cloud_account (
+    id SERIAL PRIMARY KEY,
+    provider VARCHAR(255) NOT NULL,
+    nick_name VARCHAR(255) NOT NULL,
+    ak VARCHAR(255) NOT NULL,
+    sk VARCHAR(255) NOT NULL,
+    is_enable BOOLEAN NOT NULL,
+    update_time TIMESTAMP NOT NULL,
+    comment VARCHAR(255) NOT NULL
+);
+
+CREATE INDEX provider_idx ON cloud_account (provider);
+
+CREATE INDEX nick_name_idx ON cloud_account (nick_name);
