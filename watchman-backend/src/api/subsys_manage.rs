@@ -28,6 +28,43 @@ pub async fn new_subsys(
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
+    let subsys_info = subsys::SubsysInfo {
+        id: None,
+        subsys_name: Some(subsys_info.subsys_name.clone().ok_or(
+            MailManErrResponser::mapping_from_mme(MailManErr::new(
+                400,
+                "Bad Request",
+                Some("Missing `subsys_name` field.".to_string()),
+                1,
+            )),
+        )?),
+        url: Some(
+            subsys_info
+                .url
+                .clone()
+                .ok_or(MailManErrResponser::mapping_from_mme(MailManErr::new(
+                    400,
+                    "Bad Request",
+                    Some("Missing `url` field.".to_string()),
+                    1,
+                )))?,
+        ),
+        token: Some(
+            subsys_info
+                .token
+                .clone()
+                .ok_or(MailManErrResponser::mapping_from_mme(MailManErr::new(
+                    400,
+                    "Bad Request",
+                    Some("Missing `token` field.".to_string()),
+                    1,
+                )))?,
+        ),
+        relate_service_id: Some(subsys_info.relate_service_id.unwrap_or(0)),
+        is_enable: Some(subsys_info.is_enable.unwrap_or(false)),
+        update_time: subsys_info.update_time,
+    };
+
     match subsys_service::new_subsys(subsys_info, &pool) {
         Ok(subsys_data) => Ok(HttpResponse::Ok().json(subsys_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),

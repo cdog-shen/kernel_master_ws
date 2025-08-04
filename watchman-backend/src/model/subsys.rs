@@ -186,33 +186,8 @@ impl SubsysModel {
         subsys_info: &SubsysInfo,
         conn: &mut PgConnection,
     ) -> Result<usize, (u8, String)> {
-        let ok_to_insert = SubsysInfo {
-            id: None,
-            subsys_name: Some(
-                subsys_info
-                    .subsys_name
-                    .clone()
-                    .ok_or((BAD_REQUEST_CODE, "Missing subsys_name".to_string()))?,
-            ),
-            url: Some(
-                subsys_info
-                    .url
-                    .clone()
-                    .ok_or((BAD_REQUEST_CODE, "Missing url".to_string()))?,
-            ),
-            token: Some(
-                subsys_info
-                    .token
-                    .clone()
-                    .ok_or((BAD_REQUEST_CODE, "Missing url".to_string()))?,
-            ),
-            relate_service_id: Some(subsys_info.relate_service_id.unwrap_or(0)),
-            is_enable: Some(subsys_info.is_enable.unwrap_or(false)),
-            update_time: subsys_info.update_time,
-        };
-
         match diesel::insert_into(subsystem_table)
-            .values(ok_to_insert)
+            .values(subsys_info)
             .execute(conn)
         {
             Ok(num_of_change) => Ok(num_of_change),

@@ -141,21 +141,8 @@ impl GroupModel {
         group_info: &GroupInfo,
         conn: &mut PgConnection,
     ) -> Result<usize, (u8, String)> {
-        let ok_to_insert = GroupInfo {
-            id: None,
-            group_name: Some(
-                group_info
-                    .group_name
-                    .clone()
-                    .ok_or((BAD_REQUEST_CODE, "Missing group_name".to_string()))?,
-            ),
-            is_enable: Some(group_info.is_enable.unwrap_or(false)),
-            update_time: group_info.update_time,
-            user_ids: Some(group_info.user_ids.clone().unwrap_or(serde_json::json!([]))),
-        };
-
         match diesel::insert_into(group_table)
-            .values(ok_to_insert)
+            .values(group_info)
             .execute(conn)
         {
             Ok(num_of_change) => Ok(num_of_change),

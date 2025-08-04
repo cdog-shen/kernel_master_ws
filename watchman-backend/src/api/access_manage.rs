@@ -28,6 +28,33 @@ pub async fn new_access(
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
+    let access_info =
+        access::AccessInfo {
+            id: None,
+            service_id: Some(access_info.service_id.ok_or(
+                MailManErrResponser::mapping_from_mme(MailManErr::new(
+                    400,
+                    "Bad Request",
+                    Some("Missing `service_id` field.".to_string()),
+                    1,
+                )),
+            )?),
+            group_id: Some(
+                access_info
+                    .group_id
+                    .ok_or(MailManErrResponser::mapping_from_mme(MailManErr::new(
+                        400,
+                        "Bad Request",
+                        Some("Missing `group_id` field.".to_string()),
+                        1,
+                    )))?,
+            ),
+            group_access: Some(access_info.group_access.unwrap_or(0)),
+            is_enable: Some(access_info.is_enable.unwrap_or(false)),
+            comment: Some(access_info.comment.clone().unwrap_or(String::new())),
+            update_time: access_info.update_time,
+        };
+
     match access_service::new_access(access_info, &pool) {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),

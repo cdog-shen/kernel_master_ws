@@ -191,26 +191,8 @@ impl AccessModel {
         access_info: &AccessInfo,
         conn: &mut PgConnection,
     ) -> Result<usize, (u8, String)> {
-        let ok_to_insert = AccessInfo {
-            id: None,
-            service_id: Some(
-                access_info
-                    .service_id
-                    .ok_or((BAD_REQUEST_CODE, "Missing service_id".to_string()))?,
-            ),
-            group_id: Some(
-                access_info
-                    .group_id
-                    .ok_or((BAD_REQUEST_CODE, "Missing group_id".to_string()))?,
-            ),
-            group_access: Some(access_info.group_access.unwrap_or(0)),
-            is_enable: Some(access_info.is_enable.unwrap_or(false)),
-            comment: Some(access_info.comment.clone().unwrap_or(String::new())),
-            update_time: access_info.update_time,
-        };
-
         match diesel::insert_into(access_table)
-            .values(ok_to_insert)
+            .values(access_info)
             .execute(conn)
         {
             Ok(num_of_change) => Ok(num_of_change),

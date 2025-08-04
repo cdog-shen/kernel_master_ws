@@ -204,28 +204,8 @@ impl UserModel {
         user_info: &UserInputStream,
         conn: &mut PgConnection,
     ) -> Result<String, (u8, String)> {
-        let ok_to_insert = UserInputStream {
-            id: None,
-            username: Some(
-                user_info
-                    .username
-                    .clone()
-                    .ok_or((BAD_REQUEST_CODE, "Missing username".to_string()))?,
-            ),
-            passwd: Some(
-                user_info
-                    .username
-                    .clone()
-                    .ok_or((BAD_REQUEST_CODE, "Missing passwd".to_string()))?,
-            ),
-            full_name: Some(user_info.full_name.clone().unwrap_or(String::new())),
-            contact: Some(user_info.contact.clone().unwrap_or(serde_json::json!({}))),
-            is_enable: Some(user_info.is_enable.unwrap_or(false)),
-            update_time: user_info.update_time,
-        };
-
         match diesel::insert_into(user_table)
-            .values(ok_to_insert)
+            .values(user_info)
             .execute(conn)
         {
             Ok(num_of_change) => Ok(format!(

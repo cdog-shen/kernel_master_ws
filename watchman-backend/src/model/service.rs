@@ -186,22 +186,8 @@ impl ServiceModel {
         service_info: &ServiceInfo,
         conn: &mut PgConnection,
     ) -> Result<usize, (u8, String)> {
-        let ok_to_insert = ServiceInfo {
-            id: None,
-            service_name: Some(
-                service_info
-                    .service_name
-                    .clone()
-                    .ok_or((BAD_REQUEST_CODE, "Missing service_name".to_string()))?,
-            ),
-            nick_name: Some(service_info.nick_name.clone().unwrap_or(String::new())),
-            service_point: Some(service_info.service_name.clone().unwrap_or(String::new())),
-            is_enable: Some(service_info.is_enable.unwrap_or(false)),
-            update_time: service_info.update_time,
-        };
-
         match diesel::insert_into(service_table)
-            .values(ok_to_insert)
+            .values(service_info)
             .execute(conn)
         {
             Ok(num_of_change) => Ok(num_of_change),

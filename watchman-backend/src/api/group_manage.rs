@@ -28,6 +28,21 @@ pub async fn new_group(
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
+    let group_info = group::GroupInfo {
+        id: None,
+        group_name: Some(group_info.group_name.clone().ok_or(
+            MailManErrResponser::mapping_from_mme(MailManErr::new(
+                400,
+                "Bad Request",
+                Some("Missing `group_name` field.".to_string()),
+                1,
+            )),
+        )?),
+        is_enable: Some(group_info.is_enable.unwrap_or(false)),
+        update_time: group_info.update_time,
+        user_ids: Some(group_info.user_ids.clone().unwrap_or(serde_json::json!([]))),
+    };
+
     match group_service::new_group(group_info, &pool) {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),

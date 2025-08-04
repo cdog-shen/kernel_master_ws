@@ -28,6 +28,22 @@ pub async fn new_service(
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
+    let service_info = service::ServiceInfo {
+        id: None,
+        service_name: Some(service_info.service_name.clone().ok_or(
+            MailManErrResponser::mapping_from_mme(MailManErr::new(
+                400,
+                "Bad Request",
+                Some("Missing `service_info` field.".to_string()),
+                1,
+            )),
+        )?),
+        nick_name: Some(service_info.nick_name.clone().unwrap_or(String::new())),
+        service_point: Some(service_info.service_name.clone().unwrap_or(String::new())),
+        is_enable: Some(service_info.is_enable.unwrap_or(false)),
+        update_time: service_info.update_time,
+    };
+
     match service_service::new_service(service_info, &pool) {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
