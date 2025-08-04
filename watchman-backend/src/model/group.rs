@@ -153,7 +153,7 @@ impl GroupModel {
     pub fn update_group_by_id(
         group_info: &GroupInfo,
         conn: &mut PgConnection,
-    ) -> Result<String, (u8, String)> {
+    ) -> Result<usize, (u8, String)> {
         match diesel::update(group_table.filter(id.eq(group_info.id.unwrap())))
             .set(group_info)
             .execute(conn)
@@ -163,7 +163,7 @@ impl GroupModel {
                     BAD_REQUEST_CODE,
                     format!("id: {} not found", group_info.id.unwrap()),
                 )),
-                _ => Ok(format!("{}'s data updated.", group_info.id.unwrap())),
+                _ => Ok(num_of_eff),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
