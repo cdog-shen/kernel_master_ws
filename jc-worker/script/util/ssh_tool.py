@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Union
+import time
 import paramiko
 
 
@@ -12,6 +13,7 @@ def ssh_execute(
     timeout: int = 30,
     get_pty: bool = False,
     encoding: str = "utf-8",
+    sleep_time=0.2,
 ) -> str:
     """
     Execute a command on a remote server via SSH.
@@ -40,6 +42,7 @@ def ssh_execute(
         return output
     finally:
         client.close()
+        time.sleep(sleep_time)
 
 
 def sftp_download(
@@ -51,6 +54,7 @@ def sftp_download(
     local_path: Union[str, Path],
     timeout: int = 30,
     encoding: str = "utf-8",
+    sleep_time=0.2,
 ) -> None:
     """
     Recursively download a file or directory via SFTP.
@@ -98,6 +102,7 @@ def sftp_download(
 
     finally:
         client.close()
+        time.sleep(sleep_time)
 
 
 def sftp_upload(
@@ -108,6 +113,7 @@ def sftp_upload(
     local_path: Union[str, Path],
     remote_path: Union[str, Path],
     timeout: int = 30,
+    sleep_time=0.2,
 ) -> None:
     """
     Recursively upload a file or directory via SFTP.
@@ -165,3 +171,4 @@ def sftp_upload(
 
     finally:
         client.close()
+        time.sleep(sleep_time)
