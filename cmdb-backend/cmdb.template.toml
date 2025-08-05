@@ -13,4 +13,4 @@ allowed_origin_list = ["http://localhost:3000", "http://127.0.0.1:3000"]
 authenticate_bypass = ["/api/refresh_master"]
 
 [db_config]
-db_str = "mysql://root:778631@127.0.0.1:3306/cmdb"
+db_str = "postgres://postgres:password@localhost:5432/watch_man"

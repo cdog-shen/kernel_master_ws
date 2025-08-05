@@ -2,7 +2,7 @@ FROM ubuntu:latest
 
 LABEL maintainer="shencdog@gmail.com"
 
-RUN apt update && apt install gcc g++ pkg-config libmysqlclient-dev curl -y
+RUN apt update && apt install gcc g++ pkg-config libpq-dev curl -y
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 

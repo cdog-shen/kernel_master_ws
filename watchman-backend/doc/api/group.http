@@ -1,0 +1,39 @@
+### vars
+@baseurl = http://localhost:8000/api/group
+@token = bearer xxx
+
+
+### all group
+GET {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+### new group (signup)
+POST {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "group_name": "test",
+    "is_enable": false,
+    "user_ids": []
+}
+
+### update group
+PATCH {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "id": 5,
+    "is_enable": true
+}
+
+### delete group
+DELETE  {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "id": 3
+}

@@ -18,7 +18,13 @@ actix-cors = "0.7.1"
 futures = "0.3.31"
 # DB dependencies
 diesel_migrations = "2.2.0"
-diesel = { version = "2.2.12", features = ["mysql", "r2d2", "chrono"] }
+diesel = { version = "2.2.12", features = [
+    "postgres",
+    "r2d2",
+    "chrono",
+    "serde_json",
+    "uuid",
+] }
 # serializtion dependencies
 serde = "1.0.219"
 serde_derive = "1.0.219"

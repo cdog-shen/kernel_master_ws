@@ -2,6 +2,6 @@ FROM ubuntu:latest
 
 LABEL maintainer="shencdog@gmail.com"
 
-RUN apt update && apt install libmysqlclient-dev net-tools -y
+RUN apt update && apt install libpq-dev net-tools -y
 
 WORKDIR /root

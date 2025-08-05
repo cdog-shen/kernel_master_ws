@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
 use actix_web::web;
 use diesel::{
+    PgConnection,
     r2d2::{ConnectionManager, Pool},
-    MysqlConnection,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -28,13 +26,18 @@ pub struct TokenBodyResponse {
 /// 4. save token to DB
 pub fn login<'a>(
     user: UserInputStream,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, TokenBodyResponse>, MailManErr<'a, String>> {
     // 1. check user name and password
     let query_result = match UserModel::login(&user, &mut pool.get().unwrap()) {
         Ok(user_info) => user_info,
         Err(msg) => {
-            return Err(MailManErr::new(400, "Bad Request", Some(msg.1), 1));
+            return Err(MailManErr::new(
+                400,
+                "Service: Login - Auth",
+                Some(msg.1),
+                1,
+            ));
         }
     };
 
@@ -50,80 +53,72 @@ pub fn login<'a>(
         Err(err) => {
             return Err(MailManErr::new(
                 500,
-                "Internal Server Error",
+                "Service: Login - JWT generate",
                 Some(err.1),
                 1,
-            ))
+            ));
         }
     };
 
     let output = match serde_json::from_value(response) {
         Ok(token_response_warp) => Ok(MailManOk::<TokenBodyResponse>::new(
             200,
-            "Login in success.",
+            "Service: Login",
             token_response_warp,
         )),
         Err(err) => {
             return Err(MailManErr::new(
                 500,
-                "Internal Server Error",
+                "Service: Login",
                 Some(err.to_string()),
                 1,
-            ))
+            ));
         }
     };
 
     // 3. update user's last login time
     match UserModel::update_last_login(&user, &mut pool.get().unwrap()) {
         Ok(msg) => {
-            MailManOk::<String>::new(
+            MailManOk::new(
                 200,
-                format!("update_last_login call success - {msg}").as_str(),
-                Some(msg),
+                "Service: Login - login time",
+                Some(format!("Line changed: {msg}")),
             );
         }
         Err(msg) => {
             return Err(MailManErr::new(
                 500,
-                "Internal Server Error",
+                "Service: Login - login time",
                 Some(msg.1),
                 1,
-            ))
+            ));
         }
     }
 
     // 4. save token to DB
     match TokenModel::update_token(&token_obj, &mut pool.get().unwrap()) {
         Ok(msg) => {
-            MailManOk::<String>::new(
-                200,
-                format!("update_token call success - {msg}").as_str(),
-                Some(msg),
-            );
+            MailManOk::new(200, "Service: Login - Token save", Some(msg));
         }
         Err(msg) => {
             if msg.0 == 1 {
                 match TokenModel::new_token(&token_obj, &mut pool.get().unwrap()) {
                     Ok(msg) => {
-                        MailManOk::<String>::new(
-                            200,
-                            format!("insert_new_token call success - {msg}").as_str(),
-                            Some(msg),
-                        );
+                        MailManOk::new(200, "Service: Login - Token save", Some(msg));
                     }
                     Err(msg) => {
                         return Err(MailManErr::new(
                             500,
-                            "Internal Server Error",
+                            "Service: Login - Token save",
                             Some(msg.1),
                             1,
-                        ))
+                        ));
                     }
                 }
             } else {
                 return Err(MailManErr::new(
                     500,
-                    "Internal Server Error",
+                    "Service: Login - Token save",
                     Some(msg.1),
                     1,
                 ));
@@ -134,40 +129,30 @@ pub fn login<'a>(
     output
 }
 
-/// signup api logic
-pub fn new_user<'a>(
-    user_to_creat: UserInputStream,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+/// logout api logic
+pub fn logout<'a>(
+    user_info: UserInputStream,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<String>> {
-    match UserModel::new_user(&user_to_creat, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "New user creat success", Some(msg))),
+    match TokenModel::delete(&user_info.username.unwrap(), &mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "Service: Logout", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Internal Server Error",
-                Some(msg.1),
-                1,
-            )),
-            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            1 => Err(MailManErr::new(400, "Service: Logout", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(500, "Service: Logout", Some(msg.1), 1)),
         },
     }
 }
 
-/// logout api logic
-pub fn logout<'a>(
-    username_to_logout: String,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+/// signup api logic
+pub fn new_user<'a>(
+    user_to_creat: UserInputStream,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<String>> {
-    match TokenModel::delete(&username_to_logout, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "Logout success", Some(msg))),
+    match UserModel::new_user(&user_to_creat, &mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "Service: Create user", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Internal Server Error",
-                Some(msg.1),
-                1,
-            )),
-            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            1 => Err(MailManErr::new(400, "Service: Create user", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(500, "Service: Create user", Some(msg.1), 1)),
         },
     }
 }
@@ -175,98 +160,111 @@ pub fn logout<'a>(
 /// user_update api logic
 pub fn user_update<'a>(
     user_info: UserInputStream,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<String>> {
     match UserModel::update_user_by_id(&user_info, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "User info updated", Some(msg))),
+        Ok(msg) => Ok(MailManOk::new(
+            200,
+            "Service: Update user",
+            Some(format!("Line changed: {msg}")),
+        )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Internal Server Error",
-                Some(msg.1),
-                1,
-            )),
-            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            1 => Err(MailManErr::new(400, "Service: Update user", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(500, "Service: Update user", Some(msg.1), 1)),
         },
     }
 }
 
 /// get all user info
 pub fn get_all<'a>(
-    filter: &'a Map<String, Value>,
-    pool: &'a web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    filter: Map<String, Value>,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<UserOutputStream>>, MailManErr<'a, String>> {
-    match UserModel::get_user_info_with_filter(filter.clone(), &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "All user info", Some(msg))),
+    match UserModel::get_user_info_with_filter(&filter, &mut pool.get().unwrap()) {
+        Ok(msg) => Ok(MailManOk::new(200, "Service: All user", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Internal Server Error",
-                Some(msg.1),
-                1,
-            )),
-            _ => Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            1 => Err(MailManErr::new(400, "Service: All user", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(500, "Service: All user", Some(msg.1), 1)),
         },
     }
 }
 
 /// get user's all info
 pub fn get_me(
-    id: u32,
-    pool: &web::Data<Pool<ConnectionManager<MysqlConnection>>>,
-) -> Result<HashMap<String, serde_json::Value>, MailManErr<'_, String>> {
-    let mut result: HashMap<String, serde_json::Value> = HashMap::new();
-
+    id: i32,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<serde_json::Value, MailManErr<'_, String>> {
     let user_basic_info = match UserModel::get_user_by_id(id, &mut pool.get().unwrap()) {
         Ok(ubi) => ubi,
         Err(msg) => match msg.0 {
-            0 => {
+            1 => {
                 return Err(MailManErr::new(
-                    500,
-                    "Internal Server Error",
+                    400,
+                    "Service: Me user - ubi",
                     Some(msg.1),
                     1,
-                ))
+                ));
             }
-            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            _ => {
+                return Err(MailManErr::new(
+                    500,
+                    "Service: Me user - ubi",
+                    Some(msg.1),
+                    1,
+                ));
+            }
         },
     };
 
     let user_group_info = match GroupModel::get_groups_by_uid(id, &mut pool.get().unwrap()) {
         Ok(ugi) => ugi,
         Err(msg) => match msg.0 {
-            0 => {
+            1 => {
                 return Err(MailManErr::new(
-                    500,
-                    "Internal Server Error",
+                    400,
+                    "Service: Me user - ugi",
                     Some(msg.1),
                     1,
-                ))
+                ));
             }
-            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            _ => {
+                return Err(MailManErr::new(
+                    500,
+                    "Service: Me user - ugi",
+                    Some(msg.1),
+                    1,
+                ));
+            }
         },
     };
 
     let user_access_info = match AccessModel::get_access_by_gids(
-        user_group_info.iter().map(|group| group.id).collect(),
+        &user_group_info.iter().map(|group| group.id).collect(),
         &mut pool.get().unwrap(),
     ) {
         Ok(uai) => uai,
         Err(msg) => match msg.0 {
-            0 => {
+            1 => {
                 return Err(MailManErr::new(
-                    500,
-                    "Internal Server Error",
+                    400,
+                    "Service: Me user - uai",
                     Some(msg.1),
                     1,
-                ))
+                ));
             }
-            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            _ => {
+                return Err(MailManErr::new(
+                    500,
+                    "Service: Me user - uai",
+                    Some(msg.1),
+                    1,
+                ));
+            }
         },
     };
 
     let user_service_info = match ServiceModel::get_services_by_id(
-        user_access_info
+        &user_access_info
             .iter()
             .map(|access| access.service_id)
             .collect(),
@@ -274,22 +272,33 @@ pub fn get_me(
     ) {
         Ok(usi) => usi,
         Err(msg) => match msg.0 {
-            0 => {
+            1 => {
                 return Err(MailManErr::new(
-                    500,
-                    "Internal Server Error",
+                    400,
+                    "Service: Me user - usi",
                     Some(msg.1),
                     1,
-                ))
+                ));
             }
-            _ => return Err(MailManErr::new(400, "Bad requests", Some(msg.1), 1)),
+            _ => {
+                return Err(MailManErr::new(
+                    500,
+                    "Service: Me user - usi",
+                    Some(msg.1),
+                    1,
+                ));
+            }
         },
     };
 
-    result.insert("ubi".to_string(), serde_json::json!(&user_basic_info));
-    result.insert("ugi".to_string(), serde_json::json!(&user_group_info));
-    result.insert("uai".to_string(), serde_json::json!(&user_access_info));
-    result.insert("usi".to_string(), serde_json::json!(&user_service_info));
-
-    Ok(result)
+    Ok(serde_json::json!({
+        "code": 200,
+        "key": "Service: Me user",
+        "data": {
+            "ubi": &user_basic_info,
+            "ugi": &user_group_info,
+            "uai": &user_access_info,
+            "usi": &user_service_info,
+        }
+    }))
 }

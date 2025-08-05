@@ -1,27 +1,27 @@
 use crossbeam::queue::SegQueue;
 use std::sync::Arc;
 
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 use chrono::{self, Local};
 use diesel::{
+    PgConnection,
     r2d2::{ConnectionManager, Pool},
-    MysqlConnection,
 };
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use uuid::Uuid;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::config::server;
-use crate::services::job_log;
+use crate::{config::server, model::job_log::JobLogInfo};
+use crate::{service::job_log, util::err_mapping::MailManErrResponser};
 
 // send sync task to message queue
 pub async fn call_sync(
     req: web::Json<Value>,
-    db_pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    db_pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
     mq_pool: web::Data<Arc<lapin::Connection>>,
     done_task_list: web::Data<SegQueue<Uuid>>,
-) -> HttpResponse {
+) -> Result<HttpResponse, MailManErrResponser> {
     let channel = mq_pool.create_channel().await.unwrap();
     let queue_prefix = server::GLOBAL_CONFIG
         .read()
@@ -48,11 +48,21 @@ pub async fn call_sync(
             "create_time": Local::now().naive_local().format("%Y-%m-%dT%H:%M:%S").to_string(),
             "comment": req["comment"],
     });
-    let new_log = new_log_value.as_object().unwrap();
+    let new_log = JobLogInfo::from_map(serde_json::from_value(new_log_value).map_err(|e| {
+        MailManErrResponser::mapping_from_mme(MailManErr::new(
+            500,
+            "Server Error",
+            Some(e.to_string()),
+            1,
+        ))
+    })?)
+    .map_err(|e| {
+        MailManErrResponser::mapping_from_mme(MailManErr::new(500, "Server Error", Some(e), 1))
+    })?;
 
     match job_log::new(new_log, &db_pool) {
         Ok(_) => (),
-        Err(e) => return HttpResponse::InternalServerError().json(e),
+        Err(e) => return Err(MailManErrResponser::mapping_from_mme(e)),
     }
 
     match channel
@@ -68,31 +78,27 @@ pub async fn call_sync(
         .await
     {
         Ok(res_data) => {
-            MailManOk::new(
-                200,
-                "Sync task send success",
-                Some(format!("{res_data:?}")),
-            );
+            MailManOk::new(200, "Sync task send success", Some(format!("{res_data:?}")));
         }
         Err(e) => {
-            return HttpResponse::InternalServerError().json(MailManErr::new(
+            return Err(MailManErrResponser::mapping_from_mme(MailManErr::new(
                 500,
                 "Task sending Failed",
                 Some(e.to_string()),
                 1,
-            ))
+            )));
         }
     }
 
     let start = std::time::Instant::now();
     loop {
         if start.elapsed() > std::time::Duration::from_secs(timeout) {
-            return HttpResponse::GatewayTimeout().json(MailManErr::new(
+            return Err(MailManErrResponser::mapping_from_mme(MailManErr::new(
                 504,
                 "Job execute Timeout",
                 Some(uuid.to_string()),
                 1,
-            ));
+            )));
         }
 
         // Instead of popping, check if the UUID exists in the queue
@@ -125,39 +131,38 @@ pub async fn call_sync(
         }) => match job_log_res {
             Some(job_log) => {
                 if job_log.status == 2 {
-                    HttpResponse::Ok().json(MailManOk::new(
+                    Ok(HttpResponse::Ok().json(MailManOk::new(
                         200,
                         "Sync task called success",
                         Some(json!(job_log)),
-                    ))
+                    )))
                 } else {
-                    HttpResponse::InternalServerError().json(MailManErr::new(
+                    MailManErr::new(500, "Job execute Error", Some(json!(job_log)), 1);
+                    Ok(HttpResponse::InternalServerError().json(MailManErr::new(
                         500,
                         "Job execute Error",
                         Some(json!(job_log)),
                         1,
-                    ))
+                    )))
                 }
             }
-            None => {
-                HttpResponse::InternalServerError().json(MailManErr::new(
-                    500,
-                    "no job found",
-                    Some(uuid.to_string()),
-                    1,
-                ))
-            }
+            None => Err(MailManErrResponser::mapping_from_mme(MailManErr::new(
+                500,
+                "no job found",
+                Some(uuid.to_string()),
+                1,
+            ))),
         },
-        Err(e) => HttpResponse::InternalServerError().json(e),
+        Err(e) => Ok(HttpResponse::InternalServerError().json(e)),
     }
 }
 
 // send async task to message queue
 pub async fn call_async(
     req: web::Json<Value>,
-    db_pool: web::Data<Pool<ConnectionManager<MysqlConnection>>>,
+    db_pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
     mq_pool: web::Data<Arc<lapin::Connection>>,
-) -> HttpResponse {
+) -> Result<HttpResponse, MailManErrResponser> {
     let channel = mq_pool.create_channel().await.unwrap();
     let queue_prefix = server::GLOBAL_CONFIG
         .read()
@@ -183,11 +188,21 @@ pub async fn call_async(
             "create_time": Local::now().naive_local().format("%Y-%m-%dT%H:%M:%S").to_string(),
             "comment": req["comment"],
     });
-    let new_log = new_log_value.as_object().unwrap();
+    let new_log = JobLogInfo::from_map(serde_json::from_value(new_log_value).map_err(|e| {
+        MailManErrResponser::mapping_from_mme(MailManErr::new(
+            500,
+            "Server Error",
+            Some(e.to_string()),
+            1,
+        ))
+    })?)
+    .map_err(|e| {
+        MailManErrResponser::mapping_from_mme(MailManErr::new(500, "Server Error", Some(e), 1))
+    })?;
 
     match job_log::new(new_log, &db_pool) {
         Ok(_) => (),
-        Err(e) => return HttpResponse::InternalServerError().json(e),
+        Err(e) => return Err(MailManErrResponser::mapping_from_mme(e)),
     }
 
     match channel
@@ -201,19 +216,13 @@ pub async fn call_async(
         .await
     {
         Ok(_) => {
-            HttpResponse::Ok().json(MailManOk::new(
-                200,
-                "Async task send success",
-                Some(uuid),
-            ))
+            Ok(HttpResponse::Ok().json(MailManOk::new(200, "Async task send success", Some(uuid))))
         }
-        Err(e) => {
-            HttpResponse::InternalServerError().json(MailManErr::new(
-                500,
-                "Task sending Failed",
-                Some(e.to_string()),
-                1,
-            ))
-        }
+        Err(e) => Err(MailManErrResponser::mapping_from_mme(MailManErr::new(
+            500,
+            "Task sending Failed",
+            Some(e.to_string()),
+            1,
+        ))),
     }
 }

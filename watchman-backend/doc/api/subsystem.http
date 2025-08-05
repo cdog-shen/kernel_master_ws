@@ -1,52 +1,42 @@
 ### vars
-@baseurl = http://127.0.0.1:8000/api
-@token = bearer 
+@baseurl = http://localhost:8000/api/subsystem
+@token = bearer xxx
 
-### all_subsystem
-GET {{baseurl}}/subsystem_control/all_subsystem HTTP/1.1
 
-### reload config
-POST {{baseurl}}/subsystem_control/new_subsystem HTTP/1.1
+### all subsystem
+GET {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+### new subsystem
+POST {{baseurl}} HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "subsys_name": "subsys1",
-    "url": "http://127.0.0.1:8000/api",
-    "is_enable": 1,
-    "relate_service": null,
-    "token": ""
+    "subsys_name": "test",
+    "url": "http://localhost:8000/api/hey",
+    "is_enable": true,
+    "relate_service_id": 0,
+    "token": "ea1ec535-3f77-4df3-9e67-918df7e2f923"
 }
 
-### call cloud API
-POST {{baseurl}}/subsystem_call/cloud_api HTTP/1.1
+### update subsystem
+PATCH {{baseurl}} HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "target": "script",
-    "operation": "call",
-    "data": {
-        "api_name": "tencent_cvm_describeinstances",
-        "cloud_user": "Unknow-api-xx",
-        "region": "ap-shanghai",
-        "params": "{\"Offset\": 1, \"Limit\": 20}"
-    }
+    "id": 4,
+    "relate_service_id": 0
+    # "is_enable": false
 }
 
-### call jc
-POST {{baseurl}}/subsystem_call/jc_commander_1 HTTP/1.1
+### delete subsystem
+DELETE {{baseurl}} HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "target": "script",
-    "operation": "async",
-    "data": {
-        "script": "business_TxCvmUpdate",
-        "host": "any",
-        "params": {}
-    }
+    "id": 3
 }
-
-###

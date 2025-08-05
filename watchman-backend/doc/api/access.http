@@ -1,0 +1,41 @@
+### vars
+@baseurl = http://localhost:8000/api/access
+@token = bearer xxx
+
+
+### all access
+GET {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+### new access
+POST {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "service_id": 0,
+    "group_id": 0,
+    "group_access": 0,
+    "is_enable": false,
+    "comment": "test"
+}
+
+### update access
+PATCH {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "id": 6,
+    "is_enable": false
+}
+
+### delete access
+DELETE {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "id": 6
+}

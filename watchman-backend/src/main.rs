@@ -11,7 +11,7 @@ use actix_web::{http, App, HttpServer};
 use futures::FutureExt;
 // db utils import
 use diesel::r2d2::ConnectionManager;
-use diesel::MysqlConnection;
+use diesel::PgConnection;
 
 // share-lib import
 use share_lib::data_structure::MailManOk;
@@ -49,9 +49,9 @@ async fn main() -> io::Result<()> {
         &server::GLOBAL_CONFIG.read().unwrap().log_level,
     );
 
-    // init mysql connection pool
+    // init postgres connection pool
     let manager =
-        ConnectionManager::<MysqlConnection>::new(&server::GLOBAL_CONFIG.read().unwrap().db_str);
+        ConnectionManager::<PgConnection>::new(&server::GLOBAL_CONFIG.read().unwrap().db_str);
     let pool = diesel::r2d2::Pool::builder()
         .build(manager)
         .expect("Failed to create pool.");
@@ -88,7 +88,7 @@ async fn main() -> io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             // wrap default logger
             .wrap(actix_web::middleware::Logger::default())
-            // Comment this line if you want to integrate with yew-address-book-frontend
+            // wrap Authentication
             .wrap(crate::middleware::auth_middleware::Authentication)
             .wrap_fn(|req, srv| srv.call(req).map(|res| res))
             .configure(config::app::config_services)
