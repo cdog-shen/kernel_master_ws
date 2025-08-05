@@ -6,15 +6,14 @@ diesel::table! {
         id -> Varchar,
         #[max_length = 255]
         script -> Varchar,
-        frequency -> Bigint,
-        launch_at -> Datetime,
-        times -> Unsigned<Integer>,
-        status -> Unsigned<Tinyint>,
-        params -> Text,
-        create_time -> Datetime,
-        update_time -> Datetime,
+        frequency -> Int8,
+        times -> Int8,
+        params -> Jsonb,
         #[max_length = 255]
         comment -> Varchar,
+        is_enable -> Bool,
+        launch_at -> Timestamp,
+        update_time -> Timestamp,
     }
 }
 
@@ -29,15 +28,14 @@ diesel::table! {
         #[max_length = 255]
         commander -> Varchar,
         #[max_length = 255]
-        worker -> Nullable<Varchar>,
-        status -> Unsigned<Tinyint>,
-        params -> Text,
+        worker -> Varchar,
+        status -> Int2,
+        params -> Jsonb,
         result -> Text,
-        create_time -> Nullable<Datetime>,
-        finish_time -> Nullable<Datetime>,
-        update_time -> Nullable<Datetime>,
+        finish_time -> Timestamp,
+        update_time -> Timestamp,
         #[max_length = 255]
-        comment -> Nullable<Varchar>,
+        comment -> Varchar,
     }
 }
 

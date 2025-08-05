@@ -3,11 +3,10 @@ use diesel::{prelude::*, result::Error::NotFound};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use crate::models::schema::job_log::{self, dsl::*};
+use crate::model::schema::job_log::{self, dsl::*};
 
-static NOT_FOUND_CODE: u8 = 1;
 static UNKNOW_ERROR_CODE: u8 = 0;
-// static TMI_ERROR_CODE: u8 = 2;
+static BAD_REQUEST_CODE: u8 = 1;
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
 #[diesel(table_name = job_log)]
@@ -16,14 +15,13 @@ pub struct JobLogModel {
     pub script: String,
     pub exec_type: String,
     pub commander: String,
-    pub worker: Option<String>,
-    pub status: u8,
-    pub params: String,
+    pub worker: String,
+    pub status: i16,
+    pub params: serde_json::Value,
     pub result: String,
-    pub create_time: Option<chrono::NaiveDateTime>,
-    pub finish_time: Option<chrono::NaiveDateTime>,
-    pub update_time: Option<chrono::NaiveDateTime>,
-    pub comment: Option<String>,
+    pub finish_time: chrono::NaiveDateTime,
+    pub update_time: chrono::NaiveDateTime,
+    pub comment: String,
 }
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
@@ -34,73 +32,74 @@ pub struct JobLogInfo {
     pub exec_type: Option<String>,
     pub commander: Option<String>,
     pub worker: Option<String>,
-    pub status: Option<u8>,
-    pub params: Option<String>,
+    pub status: Option<i16>,
+    pub params: Option<serde_json::Value>,
     pub result: Option<String>,
-    pub create_time: Option<chrono::NaiveDateTime>,
     pub finish_time: Option<chrono::NaiveDateTime>,
     pub update_time: Option<chrono::NaiveDateTime>,
     pub comment: Option<String>,
 }
 
 impl JobLogInfo {
-    fn from_map(map: Map<String, Value>) -> Result<Self, String> {
+    pub fn from_map(map: Map<String, Value>) -> Result<Self, String> {
         Ok(JobLogInfo {
             id: map
                 .get("id")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
+
             script: map
                 .get("script")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
+
             exec_type: map
                 .get("exec_type")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
+
             commander: map
                 .get("commander")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
+
             worker: map
                 .get("worker")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
-            status: map.get("status").and_then(|v| v.as_u64().map(|s| s as u8)),
-            params: map
-                .get("params")
-                .and_then(|v| v.as_str().map(|s| s.to_string())),
+
+            status: map.get("status").and_then(|v| v.as_i64().map(|i| i as i16)),
+
+            params: map.get("params").cloned(),
+
             result: map
                 .get("result")
-                .and_then(|v| v.as_str().map(|s| s.to_string())), // Added field
-            create_time: map.get("create_time").and_then(|v| {
-                v.as_str().and_then(|s| {
-                    chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S").ok()
-                })
-            }),
+                .and_then(|v| v.as_str().map(|s| s.to_string())),
+
             finish_time: map.get("finish_time").and_then(|v| {
                 v.as_str().and_then(|s| {
                     chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S").ok()
                 })
             }),
-            update_time: Some(Local::now().naive_local()),
+
             comment: map
                 .get("comment")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
+
+            update_time: Some(Local::now().naive_local()),
         })
     }
 }
 
 impl JobLogModel {
-    pub fn get_log_by_id(log_id: String, conn: &mut MysqlConnection) -> Result<Self, (u8, String)> {
+    pub fn get_log_by_id(log_id: &String, conn: &mut PgConnection) -> Result<Self, (u8, String)> {
         job_log
             .filter(id.eq(log_id))
             .first::<JobLogModel>(conn)
             .map_err(|e| match e {
-                NotFound => (NOT_FOUND_CODE, "log not found".to_string()),
-                _ => (UNKNOW_ERROR_CODE, format!("get log error: {e}")),
+                _ => (UNKNOW_ERROR_CODE, format!("Unknow Error: {e}")),
             })
     }
 
     pub fn get_logs_with_filter(
-        filter: Map<String, Value>,
-        conn: &mut MysqlConnection,
-    ) -> Result<Vec<Value>, (u8, String)> {
+        filter: &Map<String, Value>,
+        conn: &mut PgConnection,
+    ) -> Result<Vec<Self>, (u8, String)> {
         let mut query = job_log.into_boxed().select(JobLogModel::as_select());
 
         for (q_k, q_v) in filter.iter() {
@@ -125,61 +124,38 @@ impl JobLogModel {
         }
 
         match query.get_results::<JobLogModel>(conn) {
-            Ok(vec_item_info) => Ok(vec_item_info
-                .into_iter()
-                .map(|item| {
-                    let item_map = serde_json::to_value(&item)
-                        .unwrap()
-                        .as_object()
-                        .unwrap()
-                        .clone();
-                    Value::Object(item_map)
-                })
-                .collect()),
+            Ok(vec_item_info) => Ok(vec_item_info),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 
-    pub fn new_log(
-        log_map: Map<String, Value>,
-        conn: &mut MysqlConnection,
-    ) -> Result<usize, (u8, String)> {
-        let new_log = match JobLogInfo::from_map(log_map) {
-            Ok(log) => log,
-            Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
-        };
-        match diesel::insert_into(job_log).values(&new_log).execute(conn) {
+    pub fn new_log(info: &JobLogInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
+        match diesel::insert_into(job_log).values(info).execute(conn) {
             Ok(num_of_eff) => Ok(num_of_eff),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 
-    pub fn update_log(
-        log_map: Map<String, Value>,
-        conn: &mut MysqlConnection,
-    ) -> Result<usize, (u8, String)> {
-        let update_log = match JobLogInfo::from_map(log_map) {
-            Ok(log) => {
-                if let Some(ref _uid) = log.id {
-                    log
-                } else {
-                    return Err((UNKNOW_ERROR_CODE, "id is required".to_string()));
-                }
-            }
-            Err(e) => return Err((UNKNOW_ERROR_CODE, e)),
-        };
-        match diesel::update(job_log.filter(id.eq(update_log.id.as_ref().unwrap())))
-            .set(&update_log)
+    pub fn update_log(info: &JobLogInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
+        match diesel::update(job_log.filter(id.eq(info.id.as_ref().unwrap())))
+            .set(info)
             .execute(conn)
         {
-            Ok(num_of_eff) => Ok(num_of_eff),
+            Ok(num_of_eff) => match num_of_eff {
+                0 => Err((
+                    BAD_REQUEST_CODE,
+                    format!("id: {} not found", info.id.as_ref().unwrap()),
+                )),
+                _ => Ok(num_of_eff),
+            },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 
-    pub fn delete_log(log_id: String, conn: &mut MysqlConnection) -> Result<usize, (u8, String)> {
-        match diesel::delete(job_log.filter(id.eq(log_id))).execute(conn) {
+    pub fn delete_log(_id: &String, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
+        match diesel::delete(job_log.filter(id.eq(_id))).execute(conn) {
             Ok(num_of_eff) => Ok(num_of_eff),
+            Err(NotFound) => Err((BAD_REQUEST_CODE, format!("id: {_id} not found"))),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }

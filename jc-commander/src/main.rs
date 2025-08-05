@@ -12,7 +12,7 @@ use actix_web::{http, App, HttpServer};
 use futures::FutureExt;
 // db utils import
 use diesel::r2d2::ConnectionManager;
-use diesel::MysqlConnection;
+use diesel::PgConnection;
 // mq utils import
 use lapin::{Connection, ConnectionProperties};
 // db models
@@ -26,8 +26,8 @@ use config::server;
 mod api;
 mod config;
 mod middleware;
-mod models;
-mod services;
+mod model;
+mod service;
 mod util;
 
 #[actix_rt::main]
@@ -53,7 +53,7 @@ async fn main() -> io::Result<()> {
 
     // init mysql connection pool
     let db_manager =
-        ConnectionManager::<MysqlConnection>::new(&*server::GLOBAL_CONFIG.read().unwrap().db_str);
+        ConnectionManager::<PgConnection>::new(&*server::GLOBAL_CONFIG.read().unwrap().db_str);
     let db_pool = diesel::r2d2::Pool::builder()
         .build(db_manager)
         .expect("Failed to create pool.");
