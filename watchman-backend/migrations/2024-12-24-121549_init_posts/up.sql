@@ -133,9 +133,9 @@ INSERT INTO
     )
 VALUES (
         1,
-        'auth',
-        '认证服务',
-        '/api/auth',
+        'user',
+        '用户服务',
+        '/api/user',
         true,
         '2024-12-01 00:00:00'
     ),
