@@ -37,7 +37,7 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                 web::resource("/service")
                     .route(web::get().to(service_manage::all_service))
                     .route(web::post().to(service_manage::new_service))
-                    .route(web::post().to(service_manage::update_service))
+                    .route(web::patch().to(service_manage::update_service))
                     .route(web::delete().to(service_manage::delete_service))
             )
             .service(
