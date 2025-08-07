@@ -1,12 +1,12 @@
 // std import
-use std::default::Default;
+use log::info;
 // rt import
 use futures::StreamExt;
 // MQ import
-use lapin::{options::*, types::FieldTable, Channel, Connection, ConnectionProperties};
+use lapin::{Channel, Connection, ConnectionProperties, options::*, types::FieldTable};
 // share-lib import
 use share_lib::data_structure::{MailManErr, MailManOk};
-use share_lib::logger;
+use share_lib::{log_info, logger};
 // local import
 use config::worker;
 use service::task;
@@ -37,6 +37,7 @@ async fn main() {
     );
 
     // connect to MQ
+    log_info!("MQ Pool init");
     let mq_str = worker::GLOBAL_CONFIG.read().unwrap().mq_str.clone();
     let conn = match Connection::connect(&mq_str, ConnectionProperties::default()).await {
         Ok(conn) => {
@@ -50,6 +51,7 @@ async fn main() {
     };
 
     // create channel
+    log_info!("MQ Channel init");
     let channel: Channel = match conn.create_channel().await {
         Ok(channel) => {
             MailManOk::new(200, "MQ channel created", Some(channel.id()));
@@ -131,6 +133,7 @@ async fn main() {
     }
 
     // create consumer for Sync channel
+    log_info!("SYNC Consumer init");
     let sync_consumer = match channel
         .basic_consume(
             &sync_queue,
@@ -151,6 +154,7 @@ async fn main() {
     };
 
     // create consumer for Async channel
+    log_info!("ASYNC Consumer init");
     let async_consumer = match channel
         .basic_consume(
             &async_queue,
@@ -171,6 +175,7 @@ async fn main() {
     };
 
     // async rt for different task
+    log_info!("Consumer start");
     tokio::select! {
         _ = async {
             let mut consumer = sync_consumer;

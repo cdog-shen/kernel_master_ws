@@ -1,20 +1,19 @@
 // std import
-use std::default::Default;
-use std::io;
+use log::info;
 // rt import
 use actix_cors::Cors;
 use actix_web::dev::Service;
 use actix_web::web;
-use actix_web::{http, App, HttpServer};
+use actix_web::{App, HttpServer, http};
 use futures::FutureExt;
 // db utils import
-use diesel::r2d2::ConnectionManager;
 use diesel::PgConnection;
+use diesel::r2d2::ConnectionManager;
 // db models
 
 // share-lib import
 use share_lib::data_structure::MailManOk;
-use share_lib::logger;
+use share_lib::{log_info, logger};
 
 // local import
 use config::server;
@@ -28,7 +27,7 @@ mod service;
 mod util;
 
 #[actix_rt::main]
-async fn main() -> io::Result<()> {
+async fn main() -> std::io::Result<()> {
     // reload config
     match server::GLOBAL_CONFIG.write().unwrap().reload() {
         Ok(_) => {
@@ -49,6 +48,7 @@ async fn main() -> io::Result<()> {
     );
 
     // init mysql connection pool
+    log_info!("DB Pool init");
     let manager =
         ConnectionManager::<PgConnection>::new(&*server::GLOBAL_CONFIG.read().unwrap().db_str);
     let pool = diesel::r2d2::Pool::builder()
@@ -56,6 +56,7 @@ async fn main() -> io::Result<()> {
         .expect("Failed to create pool.");
 
     // init some config
+    log_info!("Server config loading");
     let allowed_origin_list = server::GLOBAL_CONFIG
         .read()
         .unwrap()
@@ -68,6 +69,7 @@ async fn main() -> io::Result<()> {
     );
     let workers = server::GLOBAL_CONFIG.read().unwrap().workers as usize;
 
+    log_info!("HTTP start");
     HttpServer::new(move || {
         App::new()
             .wrap(
