@@ -4,13 +4,7 @@ x-common: &common
   image: kernel_master_ws-runner
   volumes:
     - ./target:/root
-  networks:
-    - km_net
   profiles: ["run"]
-
-networks:
-  km_net:
-    driver: bridge
 
 services:
   builder:
