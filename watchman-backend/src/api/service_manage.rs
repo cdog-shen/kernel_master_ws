@@ -39,7 +39,7 @@ pub async fn new_service(
             )),
         )?),
         nick_name: Some(service_info.nick_name.clone().unwrap_or(String::new())),
-        service_point: Some(service_info.service_name.clone().unwrap_or(String::new())),
+        service_point: Some(service_info.service_point.clone().unwrap_or(String::new())),
         is_enable: Some(service_info.is_enable.unwrap_or(false)),
         update_time: service_info.update_time,
     };
