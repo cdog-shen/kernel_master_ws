@@ -53,20 +53,19 @@ def sftp_download(
     remote_path: Union[str, Path],
     local_path: Union[str, Path],
     timeout: int = 30,
-    encoding: str = "utf-8",
-    sleep_time=0.2,
+    sleep_time: float = 0.2,
 ) -> None:
     """
     Recursively download a file or directory via SFTP.
 
     :param host: Remote server hostname or IP address
-    :param port: SSH port
+    :param port: SSH port (default is usually 22)
     :param username: SSH username
     :param password: SSH password
-    :param remote_path: Remote file/dir to download
-    :param local_path: Local destination directory
-    :param timeout: Socket timeout (seconds)
-    :param encoding: Filename encoding
+    :param remote_path: remote file
+    :param local_path: local path
+    :param timeout: connection timeout
+    :param sleep_time: a little delay
     """
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -90,17 +89,18 @@ def sftp_download(
             except FileNotFoundError:
                 raise FileNotFoundError(f"{r_path} does not exist on remote")
 
-            if attr.st_mode & 0o40000:  # directory
+            if attr.st_mode & 0o40000:
                 l_path.mkdir(parents=True, exist_ok=True)
-                for fname in sftp.listdir_attr(str(r_path)):
-                    _download(r_path / fname.filename, l_path / fname.filename)
-            else:  # file
+                for fname in sftp.listdir(str(r_path)):
+                    _download(r_path / fname, l_path / fname)
+            else:
                 l_path.parent.mkdir(parents=True, exist_ok=True)
                 sftp.get(str(r_path), str(l_path))
 
         _download(remote_path, local_path / remote_path.name)
 
     finally:
+        sftp.close()
         client.close()
         time.sleep(sleep_time)
 
