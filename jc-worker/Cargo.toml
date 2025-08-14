@@ -18,10 +18,10 @@ tokio = { version = "1.47.1", features = ["full"] }
 serde = "1.0.219"
 serde_derive = "1.0.219"
 serde_json = "1.0.142"
-uuid = { version = "1.17.0", features = ["v4"] }
+uuid = { version = "1.18.0", features = ["v4"] }
 # RPC dependencies
 ureq = "3.0.12"
 # MQ dependencies
-lapin = "3.1.0" 
+lapin = "3.1.1" 
 # share-lib utils
 share-lib = { path = "../share-lib" }
