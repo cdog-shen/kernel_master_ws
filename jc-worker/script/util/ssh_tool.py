@@ -92,7 +92,7 @@ def sftp_download(
 
             if attr.st_mode & 0o40000:  # directory
                 l_path.mkdir(parents=True, exist_ok=True)
-                for fname in sftp.listdir(str(r_path)):
+                for fname in sftp.listdir_attr(str(r_path)):
                     _download(r_path / fname.filename, l_path / fname.filename)
             else:  # file
                 l_path.parent.mkdir(parents=True, exist_ok=True)
