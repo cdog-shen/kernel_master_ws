@@ -1,6 +1,6 @@
 #!/bin/sh
 
-SYSS="cloud-api cmdb-backend jc-commander jc-worker watchman-backend"
+DIRS="cloud-api cmdb-backend jc-commander jc-worker watchman-backend file-agent"
 
 for sys in $SYSS; do
     if [ ! -f "$sys" ]; then

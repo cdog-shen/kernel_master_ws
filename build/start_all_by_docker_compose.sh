@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DIRS="cloud-api cmdb-backend jc-commander jc-worker watchman-backend"
+DIRS="cloud-api cmdb-backend jc-commander jc-worker watchman-backend file-agent"
 
 mkdir -p ./target/log
 
