@@ -1,7 +1,7 @@
 use actix_web::{HttpResponse, web};
 use serde_json::{Map, Value};
 use std::path::PathBuf;
-use uuid::Uuid;
+// use uuid::Uuid;
 
 use crate::{service::dir_manage, util::err_mapping::MailManErrResponser};
 

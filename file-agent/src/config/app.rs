@@ -24,9 +24,8 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                 web::scope("/file")
                     .service(web::resource("/check").route(web::post().to(file_manage::check)))
                     .service(web::resource("/download/{path:.*}").route(web::get().to(file_manage::download)))
-                    // .service(web::resource("/download").route(web::post().to(file_manage::download)))
                     // .service(web::resource("/upload").route(web::post().to(file_manage::new_table)))
-                    // .service(web::resource("/delete").route(web::post().to(table_manage::delete_table)))
+                    .service(web::resource("/delete").route(web::post().to(file_manage::delete)))
             )
             .service(
                 web::scope("/directory")
