@@ -42,13 +42,14 @@ pub async fn download(
 
 // POST api/file/delete
 pub async fn delete(
-    data: web::Path<String>,
+    data: web::Json<Map<String, Value>>,
     root: web::Data<PathBuf>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    let fp: String = data.to_string();
+    let data = data.into_inner();
+    let file_name = data.get("file").unwrap().as_str().unwrap();
     // let token = data.get("token").unwrap().as_str().unwrap();
     let root = root.into_inner();
-    let file_full_path = root.join(fp);
+    let file_full_path = root.join(file_name);
 
     match file_manage::delete(&file_full_path) {
         Ok(res) => Ok(HttpResponse::Ok().json(res)),
