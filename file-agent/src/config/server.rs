@@ -28,6 +28,7 @@ pub struct AllConfigs {
     pub register_name: String,
 
     pub root: String,
+    pub file_size_limit: u64,
 }
 
 impl AllConfigs {
@@ -51,6 +52,7 @@ impl AllConfigs {
 
             // db_str: String::new(),
             root: String::new(),
+            file_size_limit: 0,
         }
     }
 
@@ -115,7 +117,7 @@ impl AllConfigs {
                     ),
                     0,
                 );
-                &uuid
+                uuid
             })
             .to_string();
 
@@ -159,6 +161,20 @@ impl AllConfigs {
             .as_str()
             .expect("Config path server_config:root (string) not found")
             .to_string();
+
+        self.file_size_limit = match config["server_config"]["file_size_limit"].as_u64() {
+            Some(num) => num,
+            None => {
+                MailManErr::new(
+                    500,
+                    "Config Missing",
+                    Some("server_config:file_size_limit (u64) not found, Using unlimit 0"),
+                    0,
+                );
+
+                0
+            }
+        };
 
         Ok(0)
     }

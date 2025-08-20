@@ -1,4 +1,5 @@
 use actix_web::Result;
+use sanitize_filename::sanitize;
 use serde_json::json;
 use share_lib::data_structure::{MailManErr, MailManOk};
 use std::{fs, path::PathBuf};
@@ -49,6 +50,13 @@ pub fn download<'a>(path: &PathBuf) -> Result<Vec<u8>, MailManErr<'a, String>> {
             1,
         )),
     }
+}
+
+pub fn prepare_path(original: &str, root: &PathBuf) -> Result<PathBuf, String> {
+    let safe = sanitize(original);
+    let dir = root.join("upload");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir.join(safe))
 }
 
 pub fn delete<'a>(path: &PathBuf) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
