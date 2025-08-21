@@ -32,14 +32,12 @@ diesel::table! {
         status -> Int2,
         params -> Jsonb,
         result -> Text,
-        finish_time -> Timestamp,
+        #[max_length = 255]
+        finish_time -> VarChar,
         update_time -> Timestamp,
         #[max_length = 255]
         comment -> Varchar,
     }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(
-    cron_job,
-    job_log,
-);
+diesel::allow_tables_to_appear_in_same_query!(cron_job, job_log,);

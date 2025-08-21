@@ -11,7 +11,7 @@ CREATE TABLE job_log (
     status SMALLINT NOT NULL CHECK (status BETWEEN 0 AND 255),
     params JSONB NOT NULL,
     result TEXT NOT NULL,
-    finish_time TIMESTAMP NOT NULL,
+    finish_time VARCHAR(255) NOT NULL,
     update_time TIMESTAMP NOT NULL,
     comment VARCHAR(255) NOT NULL
 );

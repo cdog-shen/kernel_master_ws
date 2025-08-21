@@ -19,7 +19,7 @@ pub struct JobLogModel {
     pub status: i16,
     pub params: serde_json::Value,
     pub result: String,
-    pub finish_time: chrono::NaiveDateTime,
+    pub finish_time: String,
     pub update_time: chrono::NaiveDateTime,
     pub comment: String,
 }
@@ -35,7 +35,7 @@ pub struct JobLogInfo {
     pub status: Option<i16>,
     pub params: Option<serde_json::Value>,
     pub result: Option<String>,
-    pub finish_time: Option<chrono::NaiveDateTime>,
+    pub finish_time: Option<String>,
     pub update_time: Option<chrono::NaiveDateTime>,
     pub comment: Option<String>,
 }
@@ -71,11 +71,9 @@ impl JobLogInfo {
                 .get("result")
                 .and_then(|v| v.as_str().map(|s| s.to_string())),
 
-            finish_time: map.get("finish_time").and_then(|v| {
-                v.as_str().and_then(|s| {
-                    chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S").ok()
-                })
-            }),
+            finish_time: map
+                .get("finish_time")
+                .and_then(|v| v.as_str().map(|s| s.to_string())),
 
             comment: map
                 .get("comment")

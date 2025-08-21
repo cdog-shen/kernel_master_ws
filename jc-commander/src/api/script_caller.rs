@@ -37,15 +37,17 @@ pub async fn call_sync(
     req["id"] = serde_json::Value::String(uuid.to_string().clone());
     req["commander"] = serde_json::Value::String(self_id.clone());
     let payload = serde_json::to_vec(&req).unwrap();
-    let new_log_value = serde_json::json!(
-            {"id": uuid.to_string().clone(),
+    let new_log_value = serde_json::json!({
+            "id": uuid.to_string().clone(),
             "script": req["script"],
             "exec_type": "sync",
             "commander": self_id,
+            "worker": "",
             "status": 1,
             "params": req["params"].to_string(),
             "result": "{}",
-            "create_time": Local::now().naive_local().format("%Y-%m-%dT%H:%M:%S").to_string(),
+            "update_time": Local::now().naive_local().format("%Y-%m-%dT%H:%M:%S").to_string(),
+            "finish_time": "",
             "comment": req["comment"],
     });
     let new_log = JobLogInfo::from_map(serde_json::from_value(new_log_value).map_err(|e| {
@@ -177,15 +179,17 @@ pub async fn call_async(
     req["id"] = serde_json::Value::String(uuid.clone());
     req["commander"] = serde_json::Value::String(self_id.clone());
     let payload = serde_json::to_vec(&req).unwrap();
-    let new_log_value = serde_json::json!(
-            {"id": uuid.clone(),
+    let new_log_value = serde_json::json!({
+            "id": uuid.to_string().clone(),
             "script": req["script"],
-            "exec_type": "async",
+            "exec_type": "sync",
             "commander": self_id,
+            "worker": "",
             "status": 1,
             "params": req["params"].to_string(),
             "result": "{}",
-            "create_time": Local::now().naive_local().format("%Y-%m-%dT%H:%M:%S").to_string(),
+            "update_time": Local::now().naive_local().format("%Y-%m-%dT%H:%M:%S").to_string(),
+            "finish_time": "",
             "comment": req["comment"],
     });
     let new_log = JobLogInfo::from_map(serde_json::from_value(new_log_value).map_err(|e| {
