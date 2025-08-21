@@ -51,7 +51,6 @@ services:
     container_name: watchman-backend
     command: |
       sh -c './watchman-backend'
-
     healthcheck:
       test: ["CMD", "sh", "-c", "netstat -tupln | grep ':8000 '"]
       interval: 5s
@@ -112,6 +111,22 @@ services:
       sh -c './jc-worker'
     healthcheck:
       test: ["CMD", "sh", "-c", "netstat -tupn | grep ':9003 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  file-agent-1:
+    <<: *common
+    container_name: file-agent-1
+    depends_on:
+      watchman-backend:
+        condition: service_healthy
+      jc-commander-1:
+        condition: service_healthy
+    command: |
+      sh -c './file-agent'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tupln | grep ':9004 '"]
       interval: 5s
       timeout: 3s
       retries: 10
