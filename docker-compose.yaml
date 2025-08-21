@@ -121,8 +121,6 @@ services:
     depends_on:
       watchman-backend:
         condition: service_healthy
-      jc-commander-1:
-        condition: service_healthy
     command: |
       sh -c './file-agent'
     healthcheck:
