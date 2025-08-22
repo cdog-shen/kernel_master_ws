@@ -185,7 +185,7 @@ impl TimeWheel {
         }
     }
 
-    pub fn clear(&self) -> Result<MailManOk<String>, ()> {
+    pub fn clear(&self) -> Result<MailManOk<'_, String>, ()> {
         log::info!("cleaning TimeWheel...");
         let mut inner = self.inner.lock().unwrap();
         inner.s_wheels.iter_mut().for_each(VecDeque::clear);
