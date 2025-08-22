@@ -68,7 +68,7 @@ impl TimeWheel {
             .expect("launch_at is not a valid local datetime")
             .timestamp()
             - Local::now().timestamp()
-            + (job.frequency * job.times as i64);
+            + (job.frequency * job.times);
         if rel_sec < 0 {
             return Err("Invalid launch time".into());
         }

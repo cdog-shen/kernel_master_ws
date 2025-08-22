@@ -136,7 +136,7 @@ impl CronJobModel {
             .execute(conn)
         {
             Ok(num_of_eff) => match num_of_eff {
-                0 => Err((BAD_REQUEST_CODE, format!("id: {} not found", _id))),
+                0 => Err((BAD_REQUEST_CODE, format!("id: {_id} not found"))),
                 _ => Ok(num_of_eff),
             },
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),

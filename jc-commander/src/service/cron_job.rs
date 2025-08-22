@@ -9,7 +9,10 @@ use serde_json::{Map, Value};
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::model::cron_job::*;
+use crate::model::{
+    cron_job::*,
+    job_log::{JobLogInfo, JobLogModel},
+};
 
 // get cron by filter
 pub fn get_all<'a>(
@@ -27,28 +30,53 @@ pub fn get_all<'a>(
 
 // new cron job
 pub fn new<'a>(
-    data: CronJobInfo,
+    cron: CronJobInfo,
+    log: JobLogInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
-    match CronJobModel::new_cron(&data, &mut pool.get().unwrap()) {
+    match CronJobModel::new_cron(&cron, &mut pool.get().unwrap()) {
+        Ok(msg) => {
+            MailManOk::new(
+                200,
+                "Service: New Cron",
+                Some(format!("Line changed: {msg}")),
+            );
+        }
+        Err(msg) => match msg.0 {
+            1 => return Err(MailManErr::new(400, "Service: New Cron", Some(msg.1), 1)),
+            _ => return Err(MailManErr::new(500, "Service: New Cron", Some(msg.1), 1)),
+        },
+    }
+
+    match JobLogModel::new_log(&log, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Service: New Cron",
             Some(format!("Line changed: {msg}")),
         )),
         Err(msg) => match msg.0 {
-            1 => Err(MailManErr::new(400, "Service: New Cron", Some(msg.1), 1)),
-            _ => Err(MailManErr::new(500, "Service: New Cron", Some(msg.1), 1)),
+            1 => Err(MailManErr::new(
+                400,
+                "Service: New Cron (log)",
+                Some(msg.1),
+                1,
+            )),
+            _ => Err(MailManErr::new(
+                500,
+                "Service: New Cron (log)",
+                Some(msg.1),
+                1,
+            )),
         },
     }
 }
 
 // update cron job
 pub fn update<'a>(
-    data: CronJobInfo,
+    cron: CronJobInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
-    match CronJobModel::update_cron(&data, &mut pool.get().unwrap()) {
+    match CronJobModel::update_cron(&cron, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Service: Update Cron",
