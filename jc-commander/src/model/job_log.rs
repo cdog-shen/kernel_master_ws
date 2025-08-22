@@ -61,7 +61,8 @@ impl JobLogInfo {
 
             worker: map
                 .get("worker")
-                .and_then(|v| v.as_str().map(|s| s.to_string())),
+                .and_then(|v| v.as_str().map(|s| s.to_string()))
+                .or_else(|| Some("None".to_string())),
 
             status: map.get("status").and_then(|v| v.as_i64().map(|i| i as i16)),
 
@@ -69,15 +70,18 @@ impl JobLogInfo {
 
             result: map
                 .get("result")
-                .and_then(|v| v.as_str().map(|s| s.to_string())),
+                .and_then(|v| v.as_str().map(|s| s.to_string()))
+                .or_else(|| Some("{}".to_string())),
 
             finish_time: map
                 .get("finish_time")
-                .and_then(|v| v.as_str().map(|s| s.to_string())),
+                .and_then(|v| v.as_str().map(|s| s.to_string()))
+                .or_else(|| Some("None".to_string())),
 
             comment: map
                 .get("comment")
-                .and_then(|v| v.as_str().map(|s| s.to_string())),
+                .and_then(|v| v.as_str().map(|s| s.to_string()))
+                .or_else(|| Some("None".to_string())),
 
             update_time: Some(Local::now().naive_local()),
         })

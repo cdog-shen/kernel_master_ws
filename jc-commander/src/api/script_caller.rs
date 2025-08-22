@@ -42,12 +42,12 @@ pub async fn call_sync(
             "script": req["script"],
             "exec_type": "sync",
             "commander": self_id,
-            "worker": "",
+            "worker": "None",
             "status": 1,
             "params": req["params"].to_string(),
             "result": "{}",
             "update_time": Local::now().naive_local().format("%Y-%m-%dT%H:%M:%S").to_string(),
-            "finish_time": "",
+            "finish_time": "None",
             "comment": req["comment"],
     });
     let new_log = JobLogInfo::from_map(serde_json::from_value(new_log_value).map_err(|e| {
@@ -184,12 +184,12 @@ pub async fn call_async(
             "script": req["script"],
             "exec_type": "sync",
             "commander": self_id,
-            "worker": "",
+            "worker": "None",
             "status": 1,
             "params": req["params"].to_string(),
             "result": "{}",
             "update_time": Local::now().naive_local().format("%Y-%m-%dT%H:%M:%S").to_string(),
-            "finish_time": "",
+            "finish_time": "None",
             "comment": req["comment"],
     });
     let new_log = JobLogInfo::from_map(serde_json::from_value(new_log_value).map_err(|e| {
