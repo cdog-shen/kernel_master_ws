@@ -24,7 +24,7 @@ pub fn run<'a>(
         + &api_name
         + ".py";
     let mut filter = serde_json::Map::new();
-    filter.insert("nick_name".to_string(), serde_json::json!("cloud_user"));
+    filter.insert("nick_name".to_string(), serde_json::json!(cloud_user));
 
     let cloud_user =
         match CloudAccountModel::get_model_with_filter(&filter, &mut pool.get().unwrap()) {
@@ -88,10 +88,10 @@ pub fn run<'a>(
                 "Service: run API script",
                 Some(json_value),
             )),
-            Err(e) => Err(MailManErr::new(
+            Err(_) => Err(MailManErr::new(
                 500,
                 "Service: run API script",
-                Some(format!("Output JSON parse error: {e}")),
+                Some(format!("Output JSON parse error: {res_data}")),
                 1,
             )),
         },
