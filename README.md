@@ -46,6 +46,10 @@ This subsystem is divided into two parts: the worker and the commander.
 
 📋 [worker readme file](./jc-worker/Readme.md)
 
+### File-Agent: A subsystem to operate with file system
+
+📃 [file-agent readme file](./file-agent/Readme.md)
+
 ## DockerFile
 
 🐳 Dockerfile is used to build an `Ubuntu` container, with some built-in static dependencies and variables for static compilation, and can be compiled with `build/build_all_ws.sh` if necessary.
