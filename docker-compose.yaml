@@ -4,13 +4,7 @@ x-common: &common
   image: kernel_master_ws-runner
   volumes:
     - ./target:/root
-  networks:
-    - km_net
   profiles: ["run"]
-
-networks:
-  km_net:
-    driver: bridge
 
 services:
   builder:
@@ -34,12 +28,27 @@ services:
     command: |
       echo "runner build success"
 
+  loadbalancer:
+    image: nginx:latest
+    volumes:
+      - ./target:/root
+      - ./build/km_nginx_proxy.conf:/etc/nginx/conf.d/km_nginx_proxy.conf
+    profiles: ["run"]
+    container_name: loadbalancer
+    ports:
+      - 8000:8000
+    depends_on:
+      watchman-backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tupln | grep ':8000 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   watchman-backend:
     <<: *common
     container_name: watchman-backend
-    ports:
-      - 8000:8000
     command: |
       sh -c './watchman-backend'
     healthcheck:
@@ -102,6 +111,20 @@ services:
       sh -c './jc-worker'
     healthcheck:
       test: ["CMD", "sh", "-c", "netstat -tupn | grep ':9003 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  file-agent-1:
+    <<: *common
+    container_name: file-agent-1
+    depends_on:
+      watchman-backend:
+        condition: service_healthy
+    command: |
+      sh -c './file-agent'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tupln | grep ':9004 '"]
       interval: 5s
       timeout: 3s
       retries: 10

@@ -5,6 +5,10 @@
 **/.DS_Store
 **/Cargo.lock
 
+# cargo build config
+watchman-backend/config.toml
+jc-commander/.cargo/config.toml
+
 # key files
 **/keys
 **/key
@@ -19,9 +23,7 @@ cmdb-backend/cmdb.toml
 cloud-api/cloud_api.toml
 jc-commander/job_center_commander.toml
 jc-worker/job_center_worker.toml
-jc-worker/script/business/business_GenerateServerJson.py
-jc-worker/script/business/business_LightHouseCheck.py
-jc-worker/script/business/business_TxCvmUpdate.py
+file-agent/file_agent.toml
 
 # business script
 **/script/business

@@ -1,37 +1,38 @@
 // std import
 use crossbeam::queue::SegQueue;
-use std::default::Default;
-use std::io;
+use log::info;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 // rt import
 use actix_cors::Cors;
 use actix_web::dev::Service;
 use actix_web::web;
-use actix_web::{http, App, HttpServer};
+use actix_web::{App, HttpServer, http};
 use futures::FutureExt;
 // db utils import
+use diesel::PgConnection;
 use diesel::r2d2::ConnectionManager;
-use diesel::MysqlConnection;
 // mq utils import
 use lapin::{Connection, ConnectionProperties};
 // db models
 
 // share-lib import
 use share_lib::data_structure::MailManOk;
-use share_lib::logger;
+use share_lib::{log_info, logger};
+
 // local import
 use config::server;
+
 // local modules
 mod api;
 mod config;
 mod middleware;
-mod models;
-mod services;
+mod model;
+mod service;
 mod util;
 
 #[actix_rt::main]
-async fn main() -> io::Result<()> {
+async fn main() -> std::io::Result<()> {
     // reload config
     match server::GLOBAL_CONFIG.write().unwrap().reload() {
         Ok(_) => {
@@ -52,13 +53,15 @@ async fn main() -> io::Result<()> {
     );
 
     // init mysql connection pool
+    log_info!("DB Pool init");
     let db_manager =
-        ConnectionManager::<MysqlConnection>::new(&*server::GLOBAL_CONFIG.read().unwrap().db_str);
+        ConnectionManager::<PgConnection>::new(&*server::GLOBAL_CONFIG.read().unwrap().db_str);
     let db_pool = diesel::r2d2::Pool::builder()
         .build(db_manager)
         .expect("Failed to create pool.");
 
     // init MQ connection pool
+    log_info!("MQ Pool init");
     let mq_str = server::GLOBAL_CONFIG.read().unwrap().mq_str.clone();
     let mq_manager = Connection::connect(&mq_str, ConnectionProperties::default())
         .await
@@ -66,10 +69,11 @@ async fn main() -> io::Result<()> {
     let mq_pool: Arc<Connection> = Arc::new(mq_manager);
 
     // init DoneTaskList
-    log::info!("Creating DoneTaskList...");
+    log_info!("Creating DoneTaskList...");
     let done_task_list: Arc<SegQueue<Uuid>> = Arc::new(SegQueue::new());
 
     // initialize the scheduled task scheduler and start Ticking
+    log_info!("TimeWheel init");
     let time_wheel = Arc::new(util::scheduler::TimeWheel::new(
         db_pool.clone(),
         mq_pool.clone(),
@@ -78,7 +82,7 @@ async fn main() -> io::Result<()> {
     let ffc = flush_flag.clone();
     let _ = time_wheel.reload_from_db();
     tokio::spawn(async move {
-        log::info!("TimeWheel thread launched. Ticking...");
+        log_info!("TimeWheel thread launched. Ticking...");
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
         loop {
             if *ffc.lock().unwrap() {
@@ -93,6 +97,7 @@ async fn main() -> io::Result<()> {
     });
 
     // init some config
+    log_info!("Server config loading");
     let allowed_origin_list = server::GLOBAL_CONFIG
         .read()
         .unwrap()
@@ -105,6 +110,7 @@ async fn main() -> io::Result<()> {
     );
     let workers = server::GLOBAL_CONFIG.read().unwrap().workers as usize;
 
+    log_info!("HTTP start");
     HttpServer::new(move || {
         App::new()
             .wrap(

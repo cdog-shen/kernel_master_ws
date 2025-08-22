@@ -15,4 +15,4 @@ python_path = "python"
 script_dir = "script"
 
 [db_config]
-db_str = "mysql://root:778631@127.0.0.1:3306/cloud_api"
+db_str = "postgres://postgres:password@localhost:5432/cloud_api"

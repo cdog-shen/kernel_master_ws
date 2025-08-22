@@ -16,7 +16,7 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
             .service(
                 web::scope("/log")
                     .service(web::resource("/get").route(web::post().to(job_log::get_all)))
-                    .service(web::resource("/new").route(web::post().to(job_log::new)))
+                    // .service(web::resource("/new").route(web::post().to(job_log::new)))
                     .service(web::resource("/update").route(web::post().to(job_log::update)))
                     .service(web::resource("/delete").route(web::post().to(job_log::delete))),
             )

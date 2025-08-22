@@ -1,0 +1,14 @@
+### vars
+@baseurl = http://localhost:8000/api
+@token = bearer xxx
+
+### call test
+POST {{baseurl}}/subsystem_call/test HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "target": "",
+    "operation": "",
+    "data": {}
+}

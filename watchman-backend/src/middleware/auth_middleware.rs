@@ -1,19 +1,19 @@
 use actix_service::forward_ready;
 use actix_web::{
+    Error, HttpResponse,
     body::EitherBody,
     dev::{Service, ServiceRequest, ServiceResponse, Transform},
     http::{
-        header::{HeaderName, HeaderValue},
         Method,
+        header::{HeaderName, HeaderValue},
     },
     web::Data,
-    Error, HttpResponse,
 };
 use diesel::{
+    PgConnection,
     r2d2::{ConnectionManager, Pool},
-    MysqlConnection,
 };
-use futures::future::{ok, LocalBoxFuture, Ready};
+use futures::future::{LocalBoxFuture, Ready, ok};
 // use log::{debug, error};
 
 use share_lib::data_structure::MailManErr;
@@ -125,7 +125,7 @@ where
         }
 
         if !authenticate_pass {
-            if let Some(pool) = req.app_data::<Data<Pool<ConnectionManager<MysqlConnection>>>>() {
+            if let Some(pool) = req.app_data::<Data<Pool<ConnectionManager<PgConnection>>>>() {
                 // log_debug!("Connecting to database...");
                 if let Some(authen_header) = req.headers().get("Authorization") {
                     // log_debug!("Parsing authorization header...");
@@ -151,17 +151,17 @@ where
                                                 .unwrap_or_default();
 
                                                 let sid_list = ServiceModel::get_sids_by_route(
-                                                    &req.uri().to_string(),
+                                                    &req.uri().path(),
                                                     &mut pool.get().unwrap(),
                                                 )
                                                 .unwrap_or_default();
 
                                                 match AccessModel::get_max_permission(
-                                                    gid_list
+                                                    &gid_list
                                                         .into_iter()
                                                         .map(|group_info| group_info.id)
                                                         .collect(),
-                                                    sid_list,
+                                                    &sid_list,
                                                     &mut pool.get().unwrap(),
                                                 ) {
                                                     Ok(access_int) => match access_int {

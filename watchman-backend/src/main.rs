@@ -1,21 +1,20 @@
 // #![allow(unused_must_use)]
 
 // std import
-use std::default::Default;
-use std::io;
+use log::info;
 // rt import
 use actix_cors::Cors;
 use actix_web::dev::Service;
 use actix_web::web;
-use actix_web::{http, App, HttpServer};
+use actix_web::{App, HttpServer, http};
 use futures::FutureExt;
 // db utils import
+use diesel::PgConnection;
 use diesel::r2d2::ConnectionManager;
-use diesel::MysqlConnection;
 
 // share-lib import
 use share_lib::data_structure::MailManOk;
-use share_lib::logger;
+use share_lib::{log_info, logger};
 
 // local import
 use config::server;
@@ -29,7 +28,7 @@ mod service;
 mod util;
 
 #[actix_rt::main]
-async fn main() -> io::Result<()> {
+async fn main() -> std::io::Result<()> {
     // reload config
     match server::GLOBAL_CONFIG.write().unwrap().reload() {
         Ok(_) => {
@@ -49,14 +48,16 @@ async fn main() -> io::Result<()> {
         &server::GLOBAL_CONFIG.read().unwrap().log_level,
     );
 
-    // init mysql connection pool
+    // init postgres connection pool
+    log_info!("DB Pool init");
     let manager =
-        ConnectionManager::<MysqlConnection>::new(&server::GLOBAL_CONFIG.read().unwrap().db_str);
+        ConnectionManager::<PgConnection>::new(&server::GLOBAL_CONFIG.read().unwrap().db_str);
     let pool = diesel::r2d2::Pool::builder()
         .build(manager)
         .expect("Failed to create pool.");
 
     // init some config
+    log_info!("Server config loading");
     let allowed_origin_list = server::GLOBAL_CONFIG
         .read()
         .unwrap()
@@ -69,6 +70,7 @@ async fn main() -> io::Result<()> {
     );
     let workers = server::GLOBAL_CONFIG.read().unwrap().workers as usize;
 
+    log_info!("HTTP start");
     HttpServer::new(move || {
         App::new()
             .wrap(
@@ -88,7 +90,7 @@ async fn main() -> io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             // wrap default logger
             .wrap(actix_web::middleware::Logger::default())
-            // Comment this line if you want to integrate with yew-address-book-frontend
+            // wrap Authentication
             .wrap(crate::middleware::auth_middleware::Authentication)
             .wrap_fn(|req, srv| srv.call(req).map(|res| res))
             .configure(config::app::config_services)

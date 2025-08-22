@@ -18,16 +18,22 @@ actix-cors = "0.7.1"
 futures = "0.3.31"
 # DB dependencies
 diesel_migrations = "2.2.0"
-diesel = { version = "2.2.12", features = ["mysql", "r2d2", "chrono"] }
+diesel = { version = "2.2.12", features = [
+    "postgres",
+    "r2d2",
+    "chrono",
+    "serde_json",
+    "uuid",
+] }
 # serializtion dependencies
 serde = "1.0.219"
 serde_derive = "1.0.219"
-serde_json = "1.0.141"
+serde_json = "1.0.143"
 jsonwebtoken = "9.3.1"
-bcrypt = "0.17.0"
+bcrypt = "0.17.1"
 base64 = "0.22.1"
-uuid = { version = "1.17.0", features = ["v4"] }
+uuid = { version = "1.18.0", features = ["v4", "serde"] }
 # RPC dependencies
-ureq = { version = "3.0.12", features = ["charset", "json"] }
+ureq = { version = "3.1.0", features = ["charset", "json"] }
 # share-lib utils
 share-lib = { path = "../share-lib" }

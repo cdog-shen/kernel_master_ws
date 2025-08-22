@@ -5,7 +5,7 @@ from enum import Enum
 
 WATCHMAN_HOST = os.getenv("WATCHMAN_HOST", "127.0.0.1")
 WATCHMAN_PORT = os.getenv("WATCHMAN_PORT", 8000)
-URL = f"http://{WATCHMAN_HOST}:{WATCHMAN_PORT}/api/subsystem_call/cmdb"
+URL = f"http://{WATCHMAN_HOST}:{WATCHMAN_PORT}/km/watchman/api/subsystem_call/cmdb"
 
 
 class Operation(str, Enum):

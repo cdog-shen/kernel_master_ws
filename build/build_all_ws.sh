@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DIRS="cloud-api cmdb-backend jc-commander jc-worker share-lib watchman-backend"
+DIRS="cloud-api cmdb-backend jc-commander jc-worker share-lib watchman-backend file-agent share-lib"
 
 for dir in $DIRS; do
     if [ ! -d "$dir" ]; then

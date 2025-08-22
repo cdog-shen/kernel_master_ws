@@ -2,7 +2,9 @@ FROM ubuntu:latest
 
 LABEL maintainer="shencdog@gmail.com"
 
-RUN apt update && apt install gcc g++ pkg-config libmysqlclient-dev curl -y
+# ENV HTTPS_PROXY="http://192.168.64.1:1189"
+
+RUN apt update && apt install gcc g++ pkg-config libpq-dev curl -y
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 

@@ -45,6 +45,10 @@
 
 📋 [worker 说明文件](./jc-worker/Readme_ZH-CN.md)
 
+### File-Agent: 与文件系统交互的子系统
+
+📃 [file-agent 说明文件](./file-agent/Readme_ZH-CN.md)
+
 ## DockerFile
 
 🐳 Dockerfile用于构建一个 `alpine linux` 的容器, 内置了一些构建需要的静态依赖库和变量, 用于静态编译, 如果有需要可以使用 `build/build_all_ws_static.sh` 来进行编译

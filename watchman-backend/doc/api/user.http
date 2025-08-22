@@ -1,0 +1,44 @@
+### vars
+@baseurl = http://localhost:8000/api/user
+@token = bearer xxx
+
+
+### all user
+GET {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+### new user (signup)
+POST {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "username": "test",
+    "passwd": "test",
+    "full_name": "test",
+    "contact": {},
+    "is_enable": false
+}
+
+### update user
+PATCH {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "id": 3,
+    "is_enable": false,
+    "contact": {
+        "email": "xxxx@xxxx.xxx"
+    }
+}
+
+### delete user (NOT IN USE!!!)
+POST {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "id": 3
+}

@@ -1,0 +1,9 @@
+### vars
+@baseurl = http://localhost:8000/api
+@token = bearer 
+
+### hey_hi_hello health check POST
+POST {{baseurl}}/hey HTTP/1.1
+
+### hey_hi_hello health check GET
+GET {{baseurl}}/hey HTTP/1.1

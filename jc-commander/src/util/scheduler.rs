@@ -1,7 +1,7 @@
 use chrono::{Local, TimeZone};
 use diesel::{
+    PgConnection,
     r2d2::{ConnectionManager, Pool},
-    MysqlConnection,
 };
 use lapin::Connection;
 use std::{
@@ -12,7 +12,7 @@ use std::{
 use share_lib::data_structure::{MailManErr, MailManOk};
 
 use crate::config::server;
-use crate::models::cron_job::CronJobModel;
+use crate::model::cron_job::CronJobModel;
 
 // 分轮任务容器
 #[derive(Clone)]
@@ -31,7 +31,7 @@ struct HourSlot {
 
 pub struct TimeWheel {
     inner: Mutex<TimeWheelInner>,
-    db_pool: Pool<ConnectionManager<MysqlConnection>>,
+    db_pool: Pool<ConnectionManager<PgConnection>>,
     mq_pool: Arc<Connection>,
 }
 
@@ -45,10 +45,7 @@ struct TimeWheelInner {
 }
 
 impl TimeWheel {
-    pub fn new(
-        db_pool: Pool<ConnectionManager<MysqlConnection>>,
-        mq_pool: Arc<Connection>,
-    ) -> Self {
+    pub fn new(db_pool: Pool<ConnectionManager<PgConnection>>, mq_pool: Arc<Connection>) -> Self {
         log::info!("TimeWheel init...");
         Self {
             inner: Mutex::new(TimeWheelInner {
@@ -71,7 +68,7 @@ impl TimeWheel {
             .expect("launch_at is not a valid local datetime")
             .timestamp()
             - Local::now().timestamp()
-            + (job.frequency * job.times as i64);
+            + (job.frequency * job.times);
         if rel_sec < 0 {
             return Err("Invalid launch time".into());
         }
@@ -188,7 +185,7 @@ impl TimeWheel {
         }
     }
 
-    pub fn clear(&self) -> Result<MailManOk<String>, ()> {
+    pub fn clear(&self) -> Result<MailManOk<'_, String>, ()> {
         log::info!("cleaning TimeWheel...");
         let mut inner = self.inner.lock().unwrap();
         inner.s_wheels.iter_mut().for_each(VecDeque::clear);
@@ -209,7 +206,7 @@ impl TimeWheel {
 
         let filter: serde_json::Map<String, serde_json::Value> =
             serde_json::from_value(serde_json::json!({"status": 1})).expect("filter build error");
-        let jobs = CronJobModel::get_crons_obj_with_filter(filter, &mut conn)
+        let jobs = CronJobModel::get_crons_with_filter(&filter, &mut conn)
             .map_err(|e| format!("Query failed: {e:?}"))?;
 
         let _ = self.clear();
@@ -237,7 +234,7 @@ impl TimeWheel {
             "commander": subsys_uuid,
             "host": "any",
             "id": job.id,
-            "params": serde_json::from_str::<serde_json::Value>(&job.params).expect("param pass Error"),
+            "params": job.params,
             "script": job.script
         });
 
