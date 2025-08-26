@@ -32,7 +32,7 @@ try:
     client = ApiClient_COS(AK, SK, region, endpoint)
 
     resp = client.ClientHandler().list_objects(
-        Bucket=params.get("bucket", None), Prefix=params.get("prefix", None)
+        Bucket=params.get("bucket", None), Prefix=params.get("prefix", "")
     )
 
     print(json.dumps(resp), end="")
