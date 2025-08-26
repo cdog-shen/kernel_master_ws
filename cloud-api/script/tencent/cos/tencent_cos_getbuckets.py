@@ -1,4 +1,5 @@
-# 上传文件到COS
+# -*- coding=utf-8
+# 查询所有桶
 # 参数列表
 # 1. ak: SecretID
 # 2. sk: SecretKEY
@@ -12,7 +13,6 @@
 import json
 import sys
 import os
-import io
 from package_import import ApiClient_COS
 
 FILE_NAME = os.path.basename(__file__)
@@ -31,20 +31,7 @@ try:
 
     client = ApiClient_COS(AK, SK, region, endpoint)
 
-    if params.get("file_path", None):
-        file_bytes = open(params.get("file_path", None), "rb")
-    else:
-        file_bytes = bytes(params.get("file_content", None), encoding="utf-8")
-
-    resp = client.ClientHandler().put_object(
-        Bucket=params.get("bucket", None),
-        Body=file_bytes,
-        Key=params.get("object_key", None),
-        EnableMD5=params.get("enable_md5", False),
-    )
-
-    if isinstance(file_bytes, io.BufferedReader):
-        file_bytes.close()
+    resp = client.ClientHandler().client.list_buckets()
 
     print(resp.to_json_string(), end="")
 
