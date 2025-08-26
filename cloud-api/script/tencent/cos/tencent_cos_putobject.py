@@ -31,22 +31,16 @@ try:
 
     client = ApiClient_COS(AK, SK, region, endpoint)
 
-    if params.get("file_path", None):
-        file_bytes = open(params.get("file_path", None), "rb")
-    else:
-        file_bytes = bytes(params.get("file_content", None), encoding="utf-8")
-
-    resp = client.ClientHandler().put_object(
+    resp = client.ClientHandler().upload_file(
         Bucket=params.get("bucket", None),
-        Body=file_bytes,
+        LocalFilePath=params.get("file_path", None),
         Key=params.get("object_key", None),
+        PartSize=params.get("part_size", 1),
+        MAXThread=params.get("max_thread", 4),
         EnableMD5=params.get("enable_md5", False),
     )
 
-    if isinstance(file_bytes, io.BufferedReader):
-        file_bytes.close()
-
-    print(resp.to_json_string(), end="")
+    print(json.dumps(resp), end="")
 
 
 except Exception as err:
