@@ -6,8 +6,7 @@ import logging
 from qcloud_cos import CosConfig
 from qcloud_cos import CosS3Client
 
-# 正常情况日志级别使用INFO，需要定位时可以修改为DEBUG，此时SDK会打印和服务端的通信信息
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+# logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 
 class ApiClient_COS:
