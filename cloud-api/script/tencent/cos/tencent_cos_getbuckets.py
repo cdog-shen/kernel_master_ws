@@ -33,7 +33,7 @@ try:
 
     resp = client.ClientHandler().list_buckets()
 
-    print(resp.to_json_string(), end="")
+    print(resp, end="")
 
 
 except Exception as err:
