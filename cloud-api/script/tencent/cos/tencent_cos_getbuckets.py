@@ -31,7 +31,7 @@ try:
 
     client = ApiClient_COS(AK, SK, region, endpoint)
 
-    resp = client.ClientHandler().client.list_buckets()
+    resp = client.ClientHandler().list_buckets()
 
     print(resp.to_json_string(), end="")
 
