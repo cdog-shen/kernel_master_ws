@@ -18,7 +18,7 @@ class run:
                 bool(params_dict.get(key, None)) == False
                 and params_dict.get(key, None) != 0
             ):
-                raise ValueError("Error: Not enough parameters")
+                raise ValueError(f"Error: Need parameter ({key})")
 
     def __init__(self, params_dict: str | dict):
         self.params = json.loads(params_dict)
