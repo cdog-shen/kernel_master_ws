@@ -3,8 +3,10 @@ import os
 
 WATCHMAN_HOST = os.getenv("WATCHMAN_HOST", "127.0.0.1")
 WATCHMAN_PORT = os.getenv("WATCHMAN_PORT", 8000)
-CHECK_URL = f"http://{WATCHMAN_HOST}:{WATCHMAN_PORT}/km/watchman/api/auth/me/2"
-LOGIN_URL = f"http://{WATCHMAN_HOST}:{WATCHMAN_PORT}/km/watchman/api/auth/login"
+WATCHMAN_SSL = os.getenv("WATCHMAN_SSL", "disable").lower() == "enable"
+WATCHMAN_VERIFY = os.getenv("WATCHMAN_VERIFY", "disable").lower() == "enable"
+CHECK_URL = f"{"https" if WATCHMAN_SSL else "http"}://{WATCHMAN_HOST}:{WATCHMAN_PORT}/km/watchman/api/auth/me/2"
+LOGIN_URL = f"{"https" if WATCHMAN_SSL else "http"}://{WATCHMAN_HOST}:{WATCHMAN_PORT}/km/watchman/api/auth/login"
 OP_USERNAME = os.getenv("OP_USERNAME", "script_caller")
 OP_PASSWD = os.getenv("OP_PASSWD", "script_caller")
 JWT = os.getenv("WATCHMAN_JWT")
@@ -17,7 +19,9 @@ def login():
         payload = {"username": f"{OP_USERNAME}", "passwd": f"{OP_PASSWD}"}
         headers = {"content-type": "application/json"}
 
-        response = requests.request("POST", LOGIN_URL, json=payload, headers=headers)
+        response = requests.request(
+            "POST", LOGIN_URL, json=payload, headers=headers, verify=WATCHMAN_VERIFY
+        )
         resp_json = response.json()
 
         if resp_json.get("code", 500) != 200:
@@ -44,7 +48,9 @@ def JWT_check():
 
         headers = {"Authorization": f"{JWT}"}
 
-        response = requests.request("GET", CHECK_URL, headers=headers)
+        response = requests.request(
+            "GET", CHECK_URL, headers=headers, verify=WATCHMAN_VERIFY
+        )
         resp_status = response.status_code
 
         if resp_status != 200:

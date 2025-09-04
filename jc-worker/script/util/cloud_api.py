@@ -5,7 +5,9 @@ import requests
 
 WATCHMAN_HOST = os.getenv("WATCHMAN_HOST", "127.0.0.1")
 WATCHMAN_PORT = os.getenv("WATCHMAN_PORT", 8000)
-URL = f"http://{WATCHMAN_HOST}:{WATCHMAN_PORT}/km/watchman/api/subsystem_call/cloud_api"
+WATCHMAN_SSL = os.getenv("WATCHMAN_SSL", "disable").lower() == "enable"
+WATCHMAN_VERIFY = os.getenv("WATCHMAN_VERIFY", "disable").lower() == "enable"
+URL = f"{"https" if WATCHMAN_SSL else "http"}://{WATCHMAN_HOST}:{WATCHMAN_PORT}/km/watchman/api/subsystem_call/cloud_api"
 LIMIT = 100
 
 
@@ -67,7 +69,9 @@ def call(
 
     time.sleep(0.1)  # Avoid rate limit
 
-    response = requests.request("POST", URL, json=payload, headers=headers)
+    response = requests.request(
+        "POST", URL, json=payload, headers=headers, verify=WATCHMAN_VERIFY
+    )
 
     if response.status_code != 200:
         return response.json()

@@ -5,7 +5,9 @@ from enum import Enum
 
 WATCHMAN_HOST = os.getenv("WATCHMAN_HOST", "127.0.0.1")
 WATCHMAN_PORT = os.getenv("WATCHMAN_PORT", 8000)
-URL = f"http://{WATCHMAN_HOST}:{WATCHMAN_PORT}/km/watchman/api/subsystem_call/cmdb"
+WATCHMAN_SSL = os.getenv("WATCHMAN_SSL", "disable").lower() == "enable"
+WATCHMAN_VERIFY = os.getenv("WATCHMAN_VERIFY", "disable").lower() == "enable"
+URL = f"{"https" if WATCHMAN_SSL else "http"}://{WATCHMAN_HOST}:{WATCHMAN_PORT}/km/watchman/api/subsystem_call/cmdb"
 
 
 class Operation(str, Enum):
@@ -27,5 +29,7 @@ def call(operation: Operation, table: str, param: dict = {}):
 
     time.sleep(0.1)  # Avoid rate limit
 
-    response = requests.request("POST", URL, json=payload, headers=headers)
+    response = requests.request(
+        "POST", URL, json=payload, headers=headers, verify=WATCHMAN_VERIFY
+    )
     return response.json()
