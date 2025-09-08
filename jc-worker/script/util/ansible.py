@@ -1,6 +1,7 @@
 import os
 import shutil
 import tempfile
+import textwrap
 import ansible_runner
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Sequence, cast
@@ -15,7 +16,7 @@ PLAYBOOK_DIR.mkdir(parents=True, exist_ok=True)
 INVENTORY_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# privite
+# pri
 def _prepare_private_data_dir(name: str) -> Path:
     tmp = Path(tempfile.mkdtemp(prefix=f"ansible_{name}_", dir=PRIVATE_DATA_ROOT))
     (tmp / "project").mkdir()
@@ -61,22 +62,23 @@ def _run(
     )
 
 
-# public
+# pub
 def ansible_ping(
     hosts: Sequence[str], user: str, password: str, port: int = 22, timeout: int = 60
 ) -> Dict[str, Any]:
     tmpdir = _prepare_private_data_dir("ping")
     try:
         inv = _write_inventory(hosts, port, tmpdir)
-        pb = _write_playbook(
-            """---
+        pb_content = textwrap.dedent(
+            """\
+            ---
             - hosts: all
-                gather_facts: no
-                tasks:
+              gather_facts: no
+              tasks:
                 - ping:
-                """,
-            tmpdir,
+            """
         )
+        pb = _write_playbook(pb_content, tmpdir)
         r = _run(
             pb,
             inv,
@@ -107,22 +109,23 @@ def ansible_shell(
     command: str,
     port: int = 22,
     timeout: int = DEFAULT_TIMEOUT,
-    become: bool = False,  # Become privilege escalation
+    become: bool = False,
 ) -> Dict[str, Any]:
     tmpdir = _prepare_private_data_dir("shell")
     try:
         inv = _write_inventory(hosts, port, tmpdir)
-        pb = _write_playbook(
-            f"""---
+        pb_content = textwrap.dedent(
+            f"""\
+            ---
             - hosts: all
-                gather_facts: no
-                tasks:
+              gather_facts: no
+              tasks:
                 - name: run shell
-                    shell: {command}
-                    become: {'yes' if become else 'no'}
-            """,
-            tmpdir,
+                  shell: {command}
+                  become: {'yes' if become else 'no'}
+            """
         )
+        pb = _write_playbook(pb_content, tmpdir)
         r = _run(
             pb,
             inv,
@@ -152,6 +155,8 @@ def ansible_playbook(
     tmpdir = _prepare_private_data_dir("pb")
     try:
         inv = _write_inventory(hosts, port, tmpdir)
+        # 外部传入的 playbook_content 必须本身是合法 YAML；
+        # 如需自动 dedent，可在外部先 textwrap.dedent 再传进来。
         pb = _write_playbook(playbook_content, tmpdir)
         r = _run(
             pb,
