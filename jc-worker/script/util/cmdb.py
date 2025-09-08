@@ -7,7 +7,7 @@ WATCHMAN_HOST = os.getenv("WATCHMAN_HOST", "127.0.0.1")
 WATCHMAN_PORT = os.getenv("WATCHMAN_PORT", 8000)
 WATCHMAN_SSL = os.getenv("WATCHMAN_SSL", "disable").lower() == "enable"
 WATCHMAN_VERIFY = os.getenv("WATCHMAN_VERIFY", "disable").lower() == "enable"
-URL = f"{"https" if WATCHMAN_SSL else "http"}://{WATCHMAN_HOST}:{WATCHMAN_PORT}/km/watchman/api/subsystem_call/cmdb"
+URL = f"{'https' if WATCHMAN_SSL else 'http'}://{WATCHMAN_HOST}:{WATCHMAN_PORT}/km/watchman/api/subsystem_call/cmdb"
 
 
 class Operation(str, Enum):
