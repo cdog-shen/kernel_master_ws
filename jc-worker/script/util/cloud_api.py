@@ -74,12 +74,21 @@ def call(
     )
 
     if response.status_code != 200:
-        return response.json()
+        try:
+            return response.json()
+        except Exception as e:
+            raise Exception(f"login error, not json response {response.text}") from e
 
     offset = int(params.get("Offset", 0))
-    if response.json().get("data", {}).get("data", {}).get("TotalCount"):
+
+    try:
+        resp_json = response.json()
+    except Exception as e:
+        raise Exception(f"login error, not json response {response.text}") from e
+    
+    if resp_json.get("data", {}).get("data", {}).get("TotalCount"):
         total_count = int(
-            response.json().get("data", {}).get("data", {}).get("TotalCount")
+            resp_json.get("data", {}).get("data", {}).get("TotalCount")
         )
     else:
         total_count = 1
@@ -91,6 +100,6 @@ def call(
             region=region,
             params={"Offset": offset + 1, "Limit": LIMIT},
         )
-        return merge_json(response.json(), next_resp_json)
+        return merge_json(resp_json, next_resp_json)
     else:
-        return response.json()
+        return resp_json

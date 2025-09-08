@@ -32,4 +32,7 @@ def call(operation: Operation, table: str, param: dict = {}):
     response = requests.request(
         "POST", URL, json=payload, headers=headers, verify=WATCHMAN_VERIFY
     )
-    return response.json()
+    try:
+        return response.json()
+    except Exception as e:
+        raise Exception(f"login error, not json response {response.text}") from e

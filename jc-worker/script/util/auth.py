@@ -22,7 +22,10 @@ def login():
         response = requests.request(
             "POST", LOGIN_URL, json=payload, headers=headers, verify=WATCHMAN_VERIFY
         )
-        resp_json = response.json()
+        try:
+            resp_json = response.json()
+        except Exception as e:
+            raise Exception(f"login error, not json response {response.text}") from e
 
         if resp_json.get("code", 500) != 200:
             count += 1
