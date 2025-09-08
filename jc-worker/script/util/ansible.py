@@ -194,6 +194,13 @@ def ansible_task(
         task_content = textwrap.dedent(task_content)
 
         task_lines = task_content.splitlines(keepends=True)
+
+        task_lines = [
+            ln
+            for ln in task_content.splitlines(keepends=True)
+            if not ln.strip().startswith(("---", "#"))
+        ]
+
         indented_tasks = "".join(
             f"  {line}" if line.strip() else line for line in task_lines
         )
