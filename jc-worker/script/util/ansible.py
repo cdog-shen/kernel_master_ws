@@ -54,8 +54,8 @@ def _run(
             extravars=extravars or {},
             passwords=passwords or {},
             quiet=False,
-            cancel_callback=lambda: False,
-            finished_callback=lambda: None,
+            cancel_callback=lambda _: False,
+            finished_callback=lambda _: None,
             timeout=timeout,
         ),
     )
