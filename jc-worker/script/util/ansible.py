@@ -176,3 +176,51 @@ def ansible_playbook(
         return {"status": r.status, "rc": r.rc, "stats": stats}
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+def ansible_task(
+    task_content: str,
+    hosts: Sequence[str],
+    user: str,
+    password: str,
+    port: int = 22,
+    extravars: Optional[Dict[str, Any]] = None,
+    timeout: int = DEFAULT_TIMEOUT,
+) -> Dict[str, Any]:
+    tmpdir = _prepare_private_data_dir("pb")
+    try:
+        inv = _write_inventory(hosts, port, tmpdir)
+
+        task_content = textwrap.dedent(task_content)
+
+        task_lines = task_content.splitlines(keepends=True)
+        indented_tasks = "".join(
+            f"  {line}" if line.strip() else line for line in task_lines
+        )
+
+        playbook_content = f"""\
+---
+- hosts: all
+  gather_facts: no
+  tasks:
+{indented_tasks}"""
+        pb = _write_playbook(playbook_content, tmpdir)
+
+        r = _run(
+            pb,
+            inv,
+            extravars={**(extravars or {}), "ansible_user": user},
+            passwords={"conn_pass": password},
+            timeout=timeout,
+        )
+        stats = next(
+            (
+                ev["event_data"]
+                for ev in r.events
+                if ev.get("event") == "playbook_on_stats"
+            ),
+            {},
+        )
+        return {"status": r.status, "rc": r.rc, "stats": stats}
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
