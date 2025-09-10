@@ -3,20 +3,32 @@ import shutil
 import logging
 import tempfile
 import textwrap
+import subprocess
 import ansible_runner
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
 from typing import Dict, Any, Optional, List, Sequence, cast
+
+
+# const
+DEFAULT_TIMEOUT: int = 300
+PRIVATE_DATA_ROOT = Path("/tmp/ansible_agent")
+PLAYBOOK_DIR = PRIVATE_DATA_ROOT / "project"
+INVENTORY_DIR = PRIVATE_DATA_ROOT / "inventory"
+LOG_LOC = "/tmp/km_ansible_agent.log"
+
+PLAYBOOK_DIR.mkdir(parents=True, exist_ok=True)
+INVENTORY_DIR.mkdir(parents=True, exist_ok=True)
 
 # setup logger
 logger = logging.getLogger("ansible")
 logger.setLevel(logging.INFO)
 
 for h in logger.handlers[:]:
-    logger.removeHandler(h) # remove all old handlers
+    logger.removeHandler(h)  # remove all old handlers
 
 file_handler = RotatingFileHandler(
-    "/tmp/km_ansible_agent.log",
+    LOG_LOC,
     maxBytes=10 * 1024 * 1024,
     backupCount=5,
 )
@@ -25,15 +37,6 @@ formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.propagate = False
-
-# const
-DEFAULT_TIMEOUT: int = 300
-PRIVATE_DATA_ROOT = Path("/tmp/ansible_agent")
-PLAYBOOK_DIR = PRIVATE_DATA_ROOT / "project"
-INVENTORY_DIR = PRIVATE_DATA_ROOT / "inventory"
-
-PLAYBOOK_DIR.mkdir(parents=True, exist_ok=True)
-INVENTORY_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # pri
@@ -76,20 +79,23 @@ def _run(
     passwords: Optional[Dict[str, str]] = None,
     timeout: int = DEFAULT_TIMEOUT,
 ) -> ansible_runner.Runner:
-    return cast(
-        ansible_runner.Runner,
-        ansible_runner.run(
-            private_data_dir=str(inventory_path.parent),
-            playbook=str(playbook),
-            inventory=str(inventory_path),
-            extravars=extravars or {},
-            passwords=passwords or {},
-            quiet=False,
-            cancel_callback=_cancel_callback,
-            finished_callback=_finished_callback,
-            timeout=timeout,
-        ),
-    )
+    with open(LOG_LOC, "a") as log:
+        return cast(
+            ansible_runner.Runner,
+            ansible_runner.run(
+                private_data_dir=str(inventory_path.parent),
+                playbook=str(playbook),
+                inventory=str(inventory_path),
+                extravars=extravars or {},
+                passwords=passwords or {},
+                quiet=False,
+                cancel_callback=_cancel_callback,
+                finished_callback=_finished_callback,
+                timeout=timeout,
+                stdout=log,
+                stderr=subprocess.STDOUT,  # redirect stderr to stdout
+            ),
+        )
 
 
 # pub
