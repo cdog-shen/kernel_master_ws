@@ -92,10 +92,10 @@ def _run(
                 cancel_callback=_cancel_callback,
                 finished_callback=_finished_callback,
                 timeout=timeout,
-                runner_kwargs={
-                    "stdout": log,
-                    "stderr": subprocess.STDOUT,
-                },
+                # runner_kwargs={
+                #     "stdout": log,
+                #     "stderr": subprocess.STDOUT,
+                # },
             ),
         )
 
