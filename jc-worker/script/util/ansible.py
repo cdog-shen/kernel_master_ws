@@ -39,6 +39,14 @@ def _write_playbook(yml_content: str, tmpdir: Path) -> Path:
     return pb_file
 
 
+def _cancel_callback(runner):
+    return False
+
+
+def _finished_callback(runner):
+    pass
+
+
 def _run(
     playbook: Path,
     inventory_path: Path,
@@ -55,8 +63,8 @@ def _run(
             extravars=extravars or {},
             passwords=passwords or {},
             quiet=False,
-            cancel_callback=lambda _: False,
-            finished_callback=lambda _: None,
+            cancel_callback=_cancel_callback,
+            finished_callback=_finished_callback,
             timeout=timeout,
         ),
     )
