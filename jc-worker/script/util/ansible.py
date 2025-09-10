@@ -39,11 +39,12 @@ def _write_playbook(yml_content: str, tmpdir: Path) -> Path:
     return pb_file
 
 
-def _cancel_callback(runner):
+def _cancel_callback(runner=None):
+    print("[DEBUG] _cancel_callback called, runner=", runner)
     return False
 
 
-def _finished_callback(runner):
+def _finished_callback(runner=None):
     pass
 
 
