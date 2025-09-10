@@ -5,9 +5,26 @@ import tempfile
 import textwrap
 import ansible_runner
 from pathlib import Path
+from logging.handlers import RotatingFileHandler
 from typing import Dict, Any, Optional, List, Sequence, cast
 
-logging.basicConfig(level=logging.INFO, filename="/tmp/ansible_util.log")
+# setup logger
+logger = logging.getLogger("ansible")
+logger.setLevel(logging.INFO)
+
+for h in logger.handlers[:]:
+    logger.removeHandler(h) # remove all old handlers
+
+file_handler = RotatingFileHandler(
+    "/tmp/km_ansible_agent.log",
+    maxBytes=10 * 1024 * 1024,
+    backupCount=5,
+)
+file_handler.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.propagate = False
 
 # const
 DEFAULT_TIMEOUT: int = 300
