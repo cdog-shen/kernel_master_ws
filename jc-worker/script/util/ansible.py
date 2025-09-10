@@ -79,7 +79,7 @@ def _run(
     passwords: Optional[Dict[str, str]] = None,
     timeout: int = DEFAULT_TIMEOUT,
 ) -> ansible_runner.Runner:
-    with open(LOG_LOC, "a") as log:
+    with Path(LOG_LOC).open("a") as log:
         return cast(
             ansible_runner.Runner,
             ansible_runner.run(
@@ -88,12 +88,14 @@ def _run(
                 inventory=str(inventory_path),
                 extravars=extravars or {},
                 passwords=passwords or {},
-                quiet=False,
+                quiet=True,
                 cancel_callback=_cancel_callback,
                 finished_callback=_finished_callback,
                 timeout=timeout,
-                stdout=log,
-                stderr=subprocess.STDOUT,  # redirect stderr to stdout
+                runner_kwargs={
+                    "stdout": log,
+                    "stderr": subprocess.STDOUT,
+                },
             ),
         )
 
