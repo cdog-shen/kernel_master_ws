@@ -231,3 +231,60 @@ def ansible_task(
         return {"status": r.status, "rc": r.rc, "stats": stats}
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+def ansible_task_project(
+    project_root: Path,
+    task_content: str,
+    hosts: Sequence[str],
+    user: str,
+    password: str,
+    port: int = 22,
+    extravars: Optional[Dict[str, Any]] = None,
+    timeout: int = DEFAULT_TIMEOUT,
+) -> Dict[str, Any]:
+    tmpdir = _prepare_private_data_dir("pb")
+    try:
+        inv = _write_inventory(hosts, port, tmpdir)
+
+        # 1. copy project root to temp
+        shutil.copytree(project_root, tmpdir / "project", dirs_exist_ok=True)
+
+        # 2. gen main yaml file of Playbook
+        task_content = textwrap.dedent(task_content).strip()
+        task_lines = [
+            ln
+            for ln in task_content.splitlines(keepends=True)
+            if not ln.strip().startswith(("---", "#"))
+        ]
+        indented_tasks = "".join(f"  {ln}" if ln.strip() else ln for ln in task_lines)
+
+        playbook_content = f"""\
+---
+- hosts: all
+  gather_facts: no
+  tasks:
+{indented_tasks}"""
+        # 3. write to main.yml
+        (tmpdir / "project" / "main.yml").write_text(playbook_content)
+
+        # 4. run playbook
+        pb = tmpdir / "project" / "main.yml"
+        r = _run(
+            pb,
+            inv,
+            extravars={**(extravars or {}), "ansible_user": user},
+            passwords={"conn_pass": password},
+            timeout=timeout,
+        )
+        stats = next(
+            (
+                ev["event_data"]
+                for ev in r.events
+                if ev.get("event") == "playbook_on_stats"
+            ),
+            {},
+        )
+        return {"status": r.status, "rc": r.rc, "stats": stats}
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
