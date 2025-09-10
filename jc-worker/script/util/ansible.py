@@ -1,10 +1,13 @@
 import os
 import shutil
+import logging
 import tempfile
 import textwrap
 import ansible_runner
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Sequence, cast
+
+logging.basicConfig(level=logging.INFO, filename="/tmp/ansible_util.log")
 
 # const
 DEFAULT_TIMEOUT: int = 300
@@ -40,12 +43,13 @@ def _write_playbook(yml_content: str, tmpdir: Path) -> Path:
 
 
 def _cancel_callback(runner=None):
-    print("[DEBUG] _cancel_callback called, runner=", runner)
+    logging.debug("[DEBUG] _cancel_callback called, runner=", runner)
     return False
 
 
 def _finished_callback(runner=None):
-    pass
+    logging.debug("[DEBUG] _finished_callback called, runner=", runner)
+    return None
 
 
 def _run(
