@@ -70,6 +70,7 @@ impl TimeWheel {
             - Local::now().timestamp()
             + (job.frequency * job.times);
         if rel_sec < 0 {
+            log::error!("Invalid launch time");
             return Err("Invalid launch time".into());
         }
         let rel_sec = rel_sec as usize;

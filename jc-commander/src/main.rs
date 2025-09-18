@@ -73,13 +73,14 @@ async fn main() -> std::io::Result<()> {
     let done_task_list: Arc<SegQueue<Uuid>> = Arc::new(SegQueue::new());
 
     // initialize the scheduled task scheduler and start Ticking
-    log_info!("TimeWheel init");
+    log_info!("TimeWheel init...");
     let time_wheel = Arc::new(util::scheduler::TimeWheel::new(
         db_pool.clone(),
         mq_pool.clone(),
     ));
     let flush_flag = Arc::new(Mutex::new(false));
     let ffc = flush_flag.clone();
+    log_info!("Loading Tasks from DB...");
     let _ = time_wheel.reload_from_db();
     tokio::spawn(async move {
         log_info!("TimeWheel thread launched. Ticking...");
