@@ -206,7 +206,8 @@ impl TimeWheel {
             .map_err(|e| format!("DB connection failed: {e:?}"))?;
 
         let filter: serde_json::Map<String, serde_json::Value> =
-            serde_json::from_value(serde_json::json!({"status": 1})).expect("filter build error");
+            serde_json::from_value(serde_json::json!({"is_enabel": true}))
+                .expect("filter build error");
         let jobs = CronJobModel::get_crons_with_filter(&filter, &mut conn)
             .map_err(|e| format!("Query failed: {e:?}"))?;
 
