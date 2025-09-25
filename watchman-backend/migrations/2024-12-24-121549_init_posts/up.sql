@@ -72,6 +72,13 @@ VALUES (
         'subsys:admin'
     );
 
+SELECT setval (
+        pg_get_serial_sequence ('access_table', 'id'), (
+            SELECT max(id)
+            FROM access_table
+        ) + 1
+    );
+
 -- 创建 group_table 表
 DROP TABLE IF EXISTS group_table;
 
@@ -104,6 +111,13 @@ VALUES (
         true,
         '2024-12-01 00:00:00',
         '[2]'::jsonb
+    );
+
+SELECT setval (
+        pg_get_serial_sequence ('group_table', 'id'), (
+            SELECT max(id)
+            FROM group_table
+        ) + 1
     );
 
 -- 创建 service_table 表
@@ -170,6 +184,13 @@ VALUES (
         '/api/subsystem',
         true,
         '2024-12-01 00:00:00'
+    );
+
+SELECT setval (
+        pg_get_serial_sequence ('service_table', 'id'), (
+            SELECT max(id)
+            FROM service_table
+        ) + 1
     );
 
 -- 创建 subsystem_table 表
@@ -249,3 +270,31 @@ VALUES (
         '2024-12-01 00:00:00',
         '2024-12-01 00:00:00'
     );
+
+SELECT setval (
+        pg_get_serial_sequence ('user_table', 'id'), (
+            SELECT max(id)
+            FROM user_table
+        ) + 1
+    );
+
+-- 创建 webhook_table 表
+DROP TABLE IF EXISTS webhook_table;
+
+CREATE TABLE webhook_table (
+    id SERIAL PRIMARY KEY CHECK (id >= 0),
+    token VARCHAR(255) NOT NULL UNIQUE,
+    hook_name VARCHAR(255) NOT NULL UNIQUE,
+    method_type VARCHAR(255) NOT NULL,
+    target_url VARCHAR(255) NOT NULL,
+    query_json JSONB NOT NULL,
+    header_json JSONB NOT NULL,
+    body_json JSONB NOT NULL,
+    ttl BIGINT NOT NULL,
+    is_enable BOOLEAN NOT NULL,
+    update_time TIMESTAMP NOT NULL
+);
+
+CREATE INDEX webhook_table_username_idx ON webhook_table (hook_name);
+
+CREATE INDEX webhook_table_full_name_idx ON webhook_table (token);
