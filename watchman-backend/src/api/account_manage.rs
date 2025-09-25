@@ -20,7 +20,7 @@ pub async fn get_me(
 }
 
 // GET api/auth/all_user
-pub async fn get_all(
+pub async fn all_user(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
