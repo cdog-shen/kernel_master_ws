@@ -2,6 +2,8 @@ version: "3"
 
 x-common: &common
   image: kernel_master_ws-runner
+  environment:
+    - TZ=Asia/Shanghai
   volumes:
     - ./target:/root
   profiles: ["run"]
