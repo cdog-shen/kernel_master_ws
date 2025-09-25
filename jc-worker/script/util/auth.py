@@ -67,3 +67,6 @@ def JWT_check():
 
         elif resp_status == 200:
             break
+
+if __name__ == "main":
+    JWT_check()
