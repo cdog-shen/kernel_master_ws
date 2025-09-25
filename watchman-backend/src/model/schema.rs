@@ -78,6 +78,26 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    webhook_table (id) {
+        id -> Int4,
+        #[max_length = 255]
+        token -> Varchar,
+        #[max_length = 255]
+        hook_name -> Varchar,
+        #[max_length = 255]
+        method_type -> Varchar,
+        #[max_length = 255]
+        target_url -> Varchar,
+        query_json -> Jsonb,
+        header_json -> Jsonb,
+        body_json -> Jsonb,
+        ttl -> Int8,
+        is_enable -> Bool,
+        update_time -> Timestamp,
+    }
+}
+
 diesel::allow_tables_to_appear_in_same_query!(
     access_table,
     group_table,
@@ -85,4 +105,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     subsystem_table,
     token_table,
     user_table,
+    webhook_table,
 );
