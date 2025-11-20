@@ -5,5 +5,6 @@ pub mod service;
 pub mod subsys;
 pub mod user;
 pub mod user_token;
+pub mod webhook;
 // table schema
 pub mod schema;
