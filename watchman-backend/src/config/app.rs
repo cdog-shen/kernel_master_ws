@@ -3,62 +3,94 @@ use log::info;
 use share_lib::log_info;
 
 use crate::api::*;
+use crate::middleware::auth_middleware::{JwtAuth, PermissionCheck};
 
 pub fn config_services(cfg: &mut web::ServiceConfig) {
     log_info!("Configuring routes...");
     cfg.service(
+        // API scope
         web::scope("/api")
+            // healthy check
             .service(
                 web::resource("/hey")
                     .route(web::get().to(hey_hi_hello::hey))
                     .route(web::post().to(hey_hi_hello::hey)),
             )
+            // Hot reload
             .service(web::resource("/reload").route(web::post().to(system_manage::reload_config)))
+            .wrap(JwtAuth)
+            .wrap(PermissionCheck)
+            // Auth
             .service(
                 web::scope("/auth")
                     .service(web::resource("/login").route(web::post().to(account_manage::login)))
-                    .service(web::resource("/me/{id}").route(web::get().to(account_manage::get_me)))
                     .service(web::resource("/logout").route(web::post().to(account_manage::logout)))
+                    // UID check (No need to check permission)
+                    .service(web::resource("/me/{id}").route(web::get().to(account_manage::get_me)))
+                    .wrap(JwtAuth),
             )
+            // user management
             .service(
                 web::resource("/user")
-                    .route(web::get().to(account_manage::get_all))
+                    .route(web::get().to(account_manage::all_user))
                     .route(web::post().to(account_manage::signup))
-                    .route(web::patch().to(account_manage::user_update))
+                    .route(web::patch().to(account_manage::user_update)),
             )
+            .wrap(JwtAuth)
+            .wrap(PermissionCheck)
+            // group (role) management
             .service(
                 web::resource("/group")
                     .route(web::get().to(group_manage::all_group))
                     .route(web::post().to(group_manage::new_group))
                     .route(web::patch().to(group_manage::update_group))
-                    .route(web::delete().to(group_manage::delete_group))
+                    .route(web::delete().to(group_manage::delete_group)),
             )
+            .wrap(JwtAuth)
+            .wrap(PermissionCheck)
+            // service management
             .service(
                 web::resource("/service")
                     .route(web::get().to(service_manage::all_service))
                     .route(web::post().to(service_manage::new_service))
                     .route(web::patch().to(service_manage::update_service))
-                    .route(web::delete().to(service_manage::delete_service))
+                    .route(web::delete().to(service_manage::delete_service)),
             )
+            .wrap(JwtAuth)
+            .wrap(PermissionCheck)
+            // access management
             .service(
                 web::resource("/access")
-                .route(web::get().to(access_manage::all_access))
-                .route(web::post().to(access_manage::new_access))
-                .route(web::patch().to(access_manage::update_access))
-                .route(web::delete().to(access_manage::delete_access))
+                    .route(web::get().to(access_manage::all_access))
+                    .route(web::post().to(access_manage::new_access))
+                    .route(web::patch().to(access_manage::update_access))
+                    .route(web::delete().to(access_manage::delete_access)),
             )
+            .wrap(JwtAuth)
+            .wrap(PermissionCheck)
+            // subsystem management
             .service(
                 web::resource("/subsystem")
-                .route(web::get().to(subsys_manage::all_subsys))
-                .route(web::post().to(subsys_manage::new_subsys))
-                .route(web::patch().to(subsys_manage::update_subsys))
-                .route(web::delete().to(subsys_manage::delete_subsys))
+                    .route(web::get().to(subsys_manage::all_subsys))
+                    .route(web::post().to(subsys_manage::new_subsys))
+                    .route(web::patch().to(subsys_manage::update_subsys))
+                    .route(web::delete().to(subsys_manage::delete_subsys)),
             )
+            .wrap(JwtAuth)
+            .wrap(PermissionCheck)
+            // Subsystem JSON RPC call
             .service(
                 web::scope("/subsystem_call").service(
                     web::resource("/{subsystem_name}")
                         .route(web::post().to(subsys_manage::call_subsys)),
                 ),
+            )
+            .wrap(JwtAuth)
+            .wrap(PermissionCheck)
+            .service(
+                web::scope("/webhook")
+                // .route("/{token}", web::get().to(webhook_handler))
+                // .route("/{token}", web::post().to(webhook_handler)),
             ),
     );
 }
