@@ -24,6 +24,7 @@ diesel = { version = "2.2.12", features = [
     "serde_json",
     "uuid",
 ] }
+pq-sys = { version = "0.6", features = ["bundled"] }
 # serializtion dependencies
 serde = "1.0.219"
 serde_derive = "1.0.219"
@@ -37,6 +38,10 @@ ureq = { version = "3.0.12", features = ["charset", "json"] }
 async-trait = "0.1"
 tokio = { version = "1", features = ["sync"] }
 # Email dependencies
-lettre = { version = "0.11.0", features = ["tokio1", "tokio1-native-tls", "builder"] }
+lettre = { version = "0.11.0", features = [
+    "tokio1",
+    "tokio1-native-tls",
+    "builder",
+] }
 # share-lib utils
 share-lib = { path = "../share-lib" }

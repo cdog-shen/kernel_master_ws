@@ -24,6 +24,7 @@ diesel = { version = "2.2.12", features = [
     "serde_json",
     "uuid",
 ] }
+pq-sys = { version = "0.6", features = ["bundled"] }
 # serializtion dependencies
 serde = "1.0.219"
 serde_derive = "1.0.219"
