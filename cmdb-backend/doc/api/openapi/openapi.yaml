@@ -1,0 +1,179 @@
+openapi: "3.0.3"
+info:
+  title: CMDB API
+  description: 配置管理数据库子系统 — 管理云服务器实例、轻量应用服务器、日志服务等资源信息
+  version: "0.1.0"
+servers:
+  - url: http://localhost:9001/api
+    description: 本地开发环境
+
+paths:
+  /hey:
+    post:
+      summary: 健康检查
+      operationId: healthCheck
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /manage/refresh_master:
+    post:
+      summary: 刷新主节点注册
+      description: 向 watchman 重新注册当前服务的 UUID
+      operationId: refreshMaster
+      responses:
+        "200":
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
+  /table/query:
+    post:
+      summary: 查询表数据
+      description: 根据表名和查询条件获取记录。支持的表: lighthouse, cloudserver_instance, logservice_topic
+      operationId: queryTable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [table, query]
+              properties:
+                table:
+                  type: string
+                  enum: [lighthouse, cloudserver_instance, logservice_topic]
+                  description: 表名
+                query:
+                  type: object
+                  description: 查询条件(JSON对象，字段为列名，值为匹配值)
+      responses:
+        "200":
+          description: 查询结果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
+  /table/new:
+    post:
+      summary: 插入新记录
+      description: 向指定表中插入新记录
+      operationId: newTable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [table, new]
+              properties:
+                table:
+                  type: string
+                  enum: [lighthouse, cloudserver_instance, logservice_topic]
+                new:
+                  type: object
+                  description: 新记录数据(字段根据表结构而定)
+      responses:
+        "200":
+          description: 插入成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
+  /table/update:
+    post:
+      summary: 更新记录
+      description: 更新指定表中的记录
+      operationId: updateTable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [table, update]
+              properties:
+                table:
+                  type: string
+                  enum: [lighthouse, cloudserver_instance, logservice_topic]
+                update:
+                  type: object
+                  description: 更新数据(需包含id字段)
+              example:
+                table: lighthouse
+                update:
+                  id: 1
+                  instance_name: "renamed-instance"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
+  /table/delete:
+    post:
+      summary: 删除记录
+      description: 删除指定表中的记录
+      operationId: deleteTable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [table, delete]
+              properties:
+                table:
+                  type: string
+                  enum: [lighthouse, cloudserver_instance, logservice_topic]
+                delete:
+                  type: object
+                  required: [id]
+                  properties:
+                    id:
+                      type: integer
+                      description: 记录ID
+      responses:
+        "200":
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
+components:
+  schemas:
+    MailManOk:
+      type: object
+      properties:
+        code:
+          type: integer
+        key:
+          type: string
+        data:
+          oneOf:
+            - type: object
+            - type: array
+            - type: string
+            - type: "null"
+    MailManErr:
+      type: object
+      properties:
+        code:
+          type: integer
+        key:
+          type: string
+        msg:
+          type: string
+        level:
+          type: integer

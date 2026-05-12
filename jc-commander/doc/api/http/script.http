@@ -1,0 +1,22 @@
+### vars
+@baseurl = http://localhost:9003/api/script
+
+### sync script call (wait for result)
+POST {{baseurl}}/sync HTTP/1.1
+Content-Type: application/json
+
+{
+    "script_name": "check_instance.sh",
+    "params": "{\"instance_id\": \"ins-xxxxxxxx\"}",
+    "target_worker": "worker-1"
+}
+
+### async script call (fire and forget)
+POST {{baseurl}}/async HTTP/1.1
+Content-Type: application/json
+
+{
+    "script_name": "batch_sync.sh",
+    "params": "{\"region\": \"ap-guangzhou\"}",
+    "target_worker": "worker-1"
+}

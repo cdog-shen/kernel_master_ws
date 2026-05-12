@@ -1,0 +1,700 @@
+openapi: "3.0.3"
+info:
+  title: Watchman API
+  description: >
+    IAM 身份认证与权限管理系统，作为所有子系统的统一入口。
+    提供用户管理(JWT认证)、角色组管理、服务管理、权限控制、子系统调度和 Webhook 功能。
+  version: "0.1.0"
+servers:
+  - url: http://localhost:8000/api
+    description: 本地开发环境 (via Nginx)
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ====== Health Check ======
+  /hey:
+    get:
+      summary: 健康检查
+      operationId: healthCheck
+      security: []
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: 健康检查
+      operationId: healthCheckPost
+      security: []
+      responses:
+        "200":
+          description: OK
+
+  # ====== System ======
+  /reload:
+    post:
+      summary: 热重载配置
+      description: 无需重启服务即可重新加载 watchman.toml 配置
+      operationId: reloadConfig
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 配置重载成功
+
+  # ====== Auth ======
+  /auth/login:
+    post:
+      summary: 用户登录
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, passwd]
+              properties:
+                username:
+                  type: string
+                passwd:
+                  type: string
+      responses:
+        "200":
+          description: 登录成功，返回 JWT token
+
+  /auth/logout:
+    post:
+      summary: 用户登出
+      operationId: logout
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username:
+                  type: string
+      responses:
+        "200":
+          description: 登出成功
+
+  /auth/me/{id}:
+    get:
+      summary: 获取用户信息
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 用户详细信息
+
+  # ====== User Management ======
+  /user:
+    get:
+      summary: 获取所有用户
+      operationId: allUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: query
+          schema:
+            type: string
+        - name: is_enable
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: 用户列表
+    post:
+      summary: 注册新用户
+      operationId: signup
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, passwd]
+              properties:
+                username:
+                  type: string
+                passwd:
+                  type: string
+                full_name:
+                  type: string
+                contact:
+                  type: object
+                is_enable:
+                  type: boolean
+      responses:
+        "200":
+          description: 注册成功
+    patch:
+      summary: 更新用户信息
+      operationId: userUpdate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                full_name:
+                  type: string
+                contact:
+                  type: object
+                is_enable:
+                  type: boolean
+      responses:
+        "200":
+          description: 更新成功
+
+  # ====== Group (Role) Management ======
+  /group:
+    get:
+      summary: 获取所有角色组
+      operationId: allGroup
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 角色组列表
+    post:
+      summary: 新建角色组
+      operationId: newGroup
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [group_name]
+              properties:
+                group_name:
+                  type: string
+                is_enable:
+                  type: boolean
+                user_ids:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        "200":
+          description: 创建成功
+    patch:
+      summary: 更新角色组
+      operationId: updateGroup
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                group_name:
+                  type: string
+                is_enable:
+                  type: boolean
+                user_ids:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        "200":
+          description: 更新成功
+    delete:
+      summary: 删除角色组
+      operationId: deleteGroup
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: 删除成功
+
+  # ====== Service Management ======
+  /service:
+    get:
+      summary: 获取所有服务
+      operationId: allService
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 服务列表
+    post:
+      summary: 新建服务
+      operationId: newService
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service_name]
+              properties:
+                service_name:
+                  type: string
+                nick_name:
+                  type: string
+                service_point:
+                  type: string
+                  description: 服务入口路径 (e.g. /api/hey)
+                is_enable:
+                  type: boolean
+      responses:
+        "200":
+          description: 创建成功
+    patch:
+      summary: 更新服务
+      operationId: updateService
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                service_name:
+                  type: string
+                nick_name:
+                  type: string
+                service_point:
+                  type: string
+                is_enable:
+                  type: boolean
+      responses:
+        "200":
+          description: 更新成功
+    delete:
+      summary: 删除服务
+      operationId: deleteService
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: 删除成功
+
+  # ====== Access Management ======
+  /access:
+    get:
+      summary: 获取所有权限记录
+      operationId: allAccess
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 权限列表
+    post:
+      summary: 新建权限
+      description: 为角色组分配对某个服务的访问权限级别
+      operationId: newAccess
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service_id, group_id]
+              properties:
+                service_id:
+                  type: integer
+                group_id:
+                  type: integer
+                group_access:
+                  type: integer
+                  description: 权限级别 (0=只读, 1=读写, 2=管理)
+                is_enable:
+                  type: boolean
+                comment:
+                  type: string
+      responses:
+        "200":
+          description: 创建成功
+    patch:
+      summary: 更新权限
+      operationId: updateAccess
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                group_access:
+                  type: integer
+                is_enable:
+                  type: boolean
+                comment:
+                  type: string
+      responses:
+        "200":
+          description: 更新成功
+    delete:
+      summary: 删除权限
+      operationId: deleteAccess
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: 删除成功
+
+  # ====== Subsystem Management ======
+  /subsystem:
+    get:
+      summary: 获取所有子系统
+      operationId: allSubsystem
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: subsys_name
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 子系统列表
+    post:
+      summary: 注册新子系统
+      operationId: newSubsystem
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subsys_name, url, token]
+              properties:
+                subsys_name:
+                  type: string
+                url:
+                  type: string
+                  description: 子系统URL
+                token:
+                  type: string
+                  format: uuid
+                  description: 子系统认证UUID
+                relate_service_id:
+                  type: integer
+                is_enable:
+                  type: boolean
+      responses:
+        "200":
+          description: 注册成功
+    patch:
+      summary: 更新子系统
+      operationId: updateSubsystem
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                subsys_name:
+                  type: string
+                url:
+                  type: string
+                token:
+                  type: string
+                relate_service_id:
+                  type: integer
+                is_enable:
+                  type: boolean
+      responses:
+        "200":
+          description: 更新成功
+    delete:
+      summary: 删除子系统
+      operationId: deleteSubsystem
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: 删除成功
+
+  # ====== Subsystem Call ======
+  /subsystem_call/{subsystem_name}:
+    post:
+      summary: 调用子系统
+      description: 将请求代理转发到已注册的子系统
+      operationId: callSubsystem
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: subsystem_name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                target:
+                  type: string
+                operation:
+                  type: string
+                data:
+                  type: object
+      responses:
+        "200":
+          description: 子系统返回结果
+
+  # ====== Webhook Management ======
+  /webhook:
+    get:
+      summary: 获取所有 Webhook
+      operationId: allWebhook
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hook_name
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Webhook 列表
+    post:
+      summary: 新建 Webhook
+      operationId: newWebhook
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hook_name, target_url]
+              properties:
+                hook_name:
+                  type: string
+                target_url:
+                  type: string
+                  format: uri
+                method_type:
+                  type: string
+                  enum: [GET, POST]
+                  default: POST
+                header_json:
+                  type: object
+                  description: 自定义请求头
+                body_json:
+                  type: object
+                  description: 固定请求体模板
+                query_json:
+                  type: object
+                  description: 固定查询参数
+                ttl:
+                  type: integer
+                  default: 86400
+                  description: 令牌有效期(秒)
+                is_enable:
+                  type: boolean
+                  default: true
+      responses:
+        "200":
+          description: 创建成功
+    patch:
+      summary: 更新 Webhook
+      operationId: updateWebhook
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                hook_name:
+                  type: string
+                target_url:
+                  type: string
+                method_type:
+                  type: string
+                header_json:
+                  type: object
+                body_json:
+                  type: object
+                query_json:
+                  type: object
+                ttl:
+                  type: integer
+                is_enable:
+                  type: boolean
+      responses:
+        "200":
+          description: 更新成功
+    delete:
+      summary: 删除 Webhook
+      operationId: deleteWebhook
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: 删除成功
+
+  /webhook/{token}:
+    post:
+      summary: 触发 Webhook (POST)
+      description: 公开端点，通过 token 触发 webhook 回调
+      operationId: postWebhook
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Webhook 触发结果
+    get:
+      summary: 获取 Webhook 信息 (GET)
+      description: 公开端点，通过 token 获取 webhook 配置信息
+      operationId: getWebhook
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Webhook 配置信息
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    MailManOk:
+      type: object
+      properties:
+        code:
+          type: integer
+        key:
+          type: string
+        data: {}
+    MailManErr:
+      type: object
+      properties:
+        code:
+          type: integer
+        key:
+          type: string
+        msg:
+          type: string
+        level:
+          type: integer

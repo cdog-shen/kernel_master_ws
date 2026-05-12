@@ -1,0 +1,56 @@
+### vars
+@baseurl = http://localhost:8000/api/webhook
+@token = bearer xxx
+
+### get all webhooks
+GET {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+### new webhook
+POST {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "hook_name": "test-webhook",
+    "target_url": "https://example.com/callback",
+    "method_type": "POST",
+    "header_json": {"Authorization": "Bearer xxx"},
+    "body_json": {"event": "notification"},
+    "query_json": {},
+    "ttl": 86400,
+    "is_enable": true
+}
+
+### update webhook
+PATCH {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "id": 1,
+    "hook_name": "updated-webhook",
+    "target_url": "https://example.com/new-callback",
+    "is_enable": false
+}
+
+### delete webhook
+DELETE {{baseurl}} HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "id": 1
+}
+
+### call webhook POST (public endpoint)
+POST {{baseurl}}/test-webhook HTTP/1.1
+Content-Type: application/json
+
+{
+    "message": "trigger event"
+}
+
+### call webhook GET (public endpoint)
+GET {{baseurl}}/test-webhook HTTP/1.1

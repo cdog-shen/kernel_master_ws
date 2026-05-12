@@ -1,0 +1,37 @@
+### vars
+@baseurl = http://localhost:9004/api/file
+@token = uuid xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+### check file exists
+POST {{baseurl}}/check HTTP/1.1
+Content-Type: application/json
+
+{
+    "path": "/path/to/file.txt"
+}
+
+### download file
+GET {{baseurl}}/download/path/to/file.txt HTTP/1.1
+
+### upload file
+POST {{baseurl}}/upload HTTP/1.1
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="file"; filename="test.txt"
+Content-Type: text/plain
+
+<file content here>
+------boundary
+Content-Disposition: form-data; name="path"
+
+/path/to/destination.txt
+------boundary--
+
+### delete file
+POST {{baseurl}}/delete HTTP/1.1
+Content-Type: application/json
+
+{
+    "path": "/path/to/file.txt"
+}

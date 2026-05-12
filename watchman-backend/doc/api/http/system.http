@@ -1,0 +1,5 @@
+### vars
+@baseurl = http://localhost:8000/api
+
+### reload config (hot reload without restart)
+POST {{baseurl}}/reload HTTP/1.1

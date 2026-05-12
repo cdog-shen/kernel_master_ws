@@ -1,0 +1,36 @@
+### vars
+@baseurl = http://localhost:9003/api/log
+
+### get job logs
+POST {{baseurl}}/get HTTP/1.1
+Content-Type: application/json
+
+{
+    "job_id": 1
+}
+
+### get logs by status
+POST {{baseurl}}/get HTTP/1.1
+Content-Type: application/json
+
+{
+    "status": "running"
+}
+
+### update job log
+POST {{baseurl}}/update HTTP/1.1
+Content-Type: application/json
+
+{
+    "id": 1,
+    "status": "completed",
+    "result": "{\"output\": \"success\"}"
+}
+
+### delete job log
+POST {{baseurl}}/delete HTTP/1.1
+Content-Type: application/json
+
+{
+    "id": 1
+}

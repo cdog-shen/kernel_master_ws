@@ -1,0 +1,5 @@
+### vars
+@baseurl = http://localhost:9003/api
+
+### health check
+POST {{baseurl}}/hey HTTP/1.1

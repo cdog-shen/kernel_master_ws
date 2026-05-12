@@ -1,0 +1,43 @@
+### vars
+@baseurl = http://localhost:9003/api/cron
+
+### get all cron jobs
+POST {{baseurl}}/get HTTP/1.1
+Content-Type: application/json
+
+{
+    "is_enable": true
+}
+
+### new cron job
+POST {{baseurl}}/new HTTP/1.1
+Content-Type: application/json
+
+{
+    "job_name": "daily-sync",
+    "cron_expr": "0 2 * * *",
+    "script_name": "sync_instances.sh",
+    "params": "{\"region\": \"ap-guangzhou\"}",
+    "is_enable": true
+}
+
+### update cron job
+POST {{baseurl}}/update HTTP/1.1
+Content-Type: application/json
+
+{
+    "id": 1,
+    "cron_expr": "0 3 * * *",
+    "is_enable": false
+}
+
+### delete cron job
+POST {{baseurl}}/delete HTTP/1.1
+Content-Type: application/json
+
+{
+    "id": 1
+}
+
+### refresh cron scheduler
+POST {{baseurl}}/refresh HTTP/1.1

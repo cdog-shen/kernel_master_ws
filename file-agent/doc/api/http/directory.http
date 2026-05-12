@@ -1,0 +1,19 @@
+### vars
+@baseurl = http://localhost:9004/api/directory
+@token = uuid xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+### check directory exists
+POST {{baseurl}}/check HTTP/1.1
+Content-Type: application/json
+
+{
+    "path": "/path/to/dir"
+}
+
+### list directory contents
+POST {{baseurl}}/list HTTP/1.1
+Content-Type: application/json
+
+{
+    "path": "/path/to/dir"
+}

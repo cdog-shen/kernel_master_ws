@@ -1,0 +1,227 @@
+openapi: "3.0.3"
+info:
+  title: File-Agent API
+  description: 文件系统交互子系统，提供文件上传/下载/删除和目录操作
+  version: "0.1.0"
+servers:
+  - url: http://localhost:9004/api
+    description: 本地开发环境
+
+paths:
+  /hey:
+    post:
+      summary: 健康检查
+      operationId: healthCheck
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /manage/refresh_master:
+    post:
+      summary: 刷新主节点注册
+      description: 向 watchman 重新注册当前服务的 UUID
+      operationId: refreshMaster
+      responses:
+        "200":
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
+  /token/gen:
+    post:
+      summary: 生成下载令牌
+      description: 为指定文件生成临时下载令牌
+      operationId: generateToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [file_path]
+              properties:
+                file_path:
+                  type: string
+                  description: 文件路径
+                expire_secs:
+                  type: integer
+                  description: 令牌有效期(秒)，默认3600
+      responses:
+        "200":
+          description: 令牌生成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
+  /file/check:
+    post:
+      summary: 检查文件是否存在
+      operationId: checkFile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [path]
+              properties:
+                path:
+                  type: string
+                  description: 文件路径
+      responses:
+        "200":
+          description: 检查结果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
+  /file/download/{path}:
+    get:
+      summary: 下载文件
+      operationId: downloadFile
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 文件路径(URL编码)
+      responses:
+        "200":
+          description: 文件内容
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /file/upload:
+    post:
+      summary: 上传文件
+      operationId: uploadFile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, path]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: 文件内容
+                path:
+                  type: string
+                  description: 目标路径
+      responses:
+        "200":
+          description: 上传成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
+  /file/delete:
+    post:
+      summary: 删除文件
+      operationId: deleteFile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [path]
+              properties:
+                path:
+                  type: string
+                  description: 文件路径
+      responses:
+        "200":
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
+  /directory/check:
+    post:
+      summary: 检查目录是否存在
+      operationId: checkDirectory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [path]
+              properties:
+                path:
+                  type: string
+                  description: 目录路径
+      responses:
+        "200":
+          description: 检查结果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
+  /directory/list:
+    post:
+      summary: 列出目录内容
+      operationId: listDirectory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [path]
+              properties:
+                path:
+                  type: string
+                  description: 目录路径
+      responses:
+        "200":
+          description: 目录内容列表
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
+components:
+  schemas:
+    MailManOk:
+      type: object
+      properties:
+        code:
+          type: integer
+        key:
+          type: string
+        data:
+          oneOf:
+            - type: object
+            - type: array
+            - type: string
+            - type: "null"
+    MailManErr:
+      type: object
+      properties:
+        code:
+          type: integer
+        key:
+          type: string
+        msg:
+          type: string
+        level:
+          type: integer

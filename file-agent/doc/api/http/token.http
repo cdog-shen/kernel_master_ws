@@ -1,0 +1,12 @@
+### vars
+@baseurl = http://localhost:9004/api/token
+@token = uuid xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+### generate download token
+POST {{baseurl}}/gen HTTP/1.1
+Content-Type: application/json
+
+{
+    "file_path": "/path/to/file.txt",
+    "expire_secs": 3600
+}

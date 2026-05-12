@@ -1,0 +1,41 @@
+### vars
+@baseurl = http://localhost:9002/api/account_db
+
+### get all accounts
+POST {{baseurl}}/get?provider_name=tencentcloud HTTP/1.1
+Content-Type: application/json
+
+### get account by account_id
+POST {{baseurl}}/get?account_id=100012345678 HTTP/1.1
+Content-Type: application/json
+
+### new account
+POST {{baseurl}}/new HTTP/1.1
+Content-Type: application/json
+
+{
+    "provider_name": "tencentcloud",
+    "account_id": "100012345678",
+    "secret_id": "AKIDxxxxxxxxxxxxxxxxxxxx",
+    "secret_key": "xxxxxxxxxxxxxxxxxxxxxxxx",
+    "nick_name": "主账号",
+    "is_enable": true
+}
+
+### update account
+POST {{baseurl}}/update HTTP/1.1
+Content-Type: application/json
+
+{
+    "id": 1,
+    "nick_name": "新备注名",
+    "is_enable": true
+}
+
+### delete account
+POST {{baseurl}}/delete HTTP/1.1
+Content-Type: application/json
+
+{
+    "id": 1
+}

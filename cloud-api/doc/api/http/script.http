@@ -1,0 +1,22 @@
+### vars
+@baseurl = http://localhost:9002/api/script
+
+### call cloud API script
+POST {{baseurl}}/call HTTP/1.1
+Content-Type: application/json
+
+{
+    "api_name": "DescribeInstances",
+    "cloud_user": "tencentcloud",
+    "region": "ap-guangzhou",
+    "params": "{\"Limit\": 10}"
+}
+
+### get available scripts
+POST {{baseurl}}/get HTTP/1.1
+Content-Type: application/json
+
+{
+    "provider_name": "tencentcloud",
+    "product_name": "cvm"
+}

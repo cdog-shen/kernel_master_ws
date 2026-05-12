@@ -1,0 +1,9 @@
+### vars
+@baseurl = http://localhost:9004/api
+@token = uuid xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+### health check
+POST {{baseurl}}/hey HTTP/1.1
+
+### refresh master
+POST {{baseurl}}/manage/refresh_master HTTP/1.1

@@ -1,0 +1,200 @@
+openapi: "3.0.3"
+info:
+  title: Cloud-API
+  description: 云资产权限管理和统一接口子系统 — 管理云账号密钥，支持调用云厂商API脚本
+  version: "0.1.0"
+servers:
+  - url: http://localhost:9002/api
+    description: 本地开发环境
+
+paths:
+  /hey:
+    post:
+      summary: 健康检查
+      operationId: healthCheck
+      responses:
+        "200":
+          description: OK
+
+  /refresh_master:
+    post:
+      summary: 刷新主节点注册
+      operationId: refreshMaster
+      responses:
+        "200":
+          description: 注册成功
+
+  /account_db/get:
+    post:
+      summary: 查询云账号
+      operationId: getAccounts
+      parameters:
+        - name: provider_name
+          in: query
+          schema:
+            type: string
+        - name: account_id
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 账号列表
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
+  /account_db/new:
+    post:
+      summary: 新增云账号
+      operationId: newAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider_name, account_id, secret_id, secret_key]
+              properties:
+                provider_name:
+                  type: string
+                  description: 云厂商名称 (e.g. tencentcloud, aliyun, aws)
+                account_id:
+                  type: string
+                  description: 主账号ID
+                secret_id:
+                  type: string
+                  description: API密钥ID
+                secret_key:
+                  type: string
+                  description: API密钥Key
+                nick_name:
+                  type: string
+                  description: 备注名称
+                is_enable:
+                  type: boolean
+                  description: 是否启用
+      responses:
+        "200":
+          description: 创建成功
+
+  /account_db/update:
+    post:
+      summary: 更新云账号
+      operationId: updateAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                provider_name:
+                  type: string
+                account_id:
+                  type: string
+                secret_id:
+                  type: string
+                secret_key:
+                  type: string
+                nick_name:
+                  type: string
+                is_enable:
+                  type: boolean
+      responses:
+        "200":
+          description: 更新成功
+
+  /account_db/delete:
+    post:
+      summary: 删除云账号
+      operationId: deleteAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: 删除成功
+
+  /script/call:
+    post:
+      summary: 调用云API脚本
+      operationId: callScript
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [api_name, cloud_user, region, params]
+              properties:
+                api_name:
+                  type: string
+                  description: API名称 (对应脚本文件)
+                cloud_user:
+                  type: string
+                  description: 云账号标识
+                region:
+                  type: string
+                  description: 区域
+                params:
+                  type: string
+                  description: API参数(JSON字符串)
+      responses:
+        "200":
+          description: 调用结果
+
+  /script/get:
+    post:
+      summary: 获取可用脚本列表
+      operationId: getScripts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider_name, product_name]
+              properties:
+                provider_name:
+                  type: string
+                  description: 云厂商名称
+                product_name:
+                  type: string
+                  description: 产品名称 (e.g. cvm, lighthouse)
+      responses:
+        "200":
+          description: 脚本列表
+
+components:
+  schemas:
+    MailManOk:
+      type: object
+      properties:
+        code:
+          type: integer
+        key:
+          type: string
+        data: {}
+    MailManErr:
+      type: object
+      properties:
+        code:
+          type: integer
+        key:
+          type: string
+        msg:
+          type: string
+        level:
+          type: integer

@@ -1,0 +1,260 @@
+openapi: "3.0.3"
+info:
+  title: Job-Center Commander API
+  description: 任务调度中心 — 管理定时任务(CronJob)、任务日志(JobLog)和同步/异步脚本调用
+  version: "0.1.0"
+servers:
+  - url: http://localhost:9003/api
+    description: 本地开发环境
+
+paths:
+  /hey:
+    post:
+      summary: 健康检查
+      operationId: healthCheck
+      responses:
+        "200":
+          description: OK
+
+  /refresh_master:
+    post:
+      summary: 刷新主节点注册
+      operationId: refreshMaster
+      responses:
+        "200":
+          description: 注册成功
+
+  /log/get:
+    post:
+      summary: 查询任务日志
+      operationId: getJobLogs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                job_id:
+                  type: integer
+                  description: 任务ID
+                status:
+                  type: string
+                  description: 状态过滤
+      responses:
+        "200":
+          description: 日志列表
+
+  /log/update:
+    post:
+      summary: 更新任务日志
+      operationId: updateJobLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                status:
+                  type: string
+                result:
+                  type: string
+      responses:
+        "200":
+          description: 更新成功
+
+  /log/delete:
+    post:
+      summary: 删除任务日志
+      operationId: deleteJobLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: 删除成功
+
+  /cron/get:
+    post:
+      summary: 查询定时任务
+      operationId: getCronJobs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                is_enable:
+                  type: boolean
+      responses:
+        "200":
+          description: 定时任务列表
+
+  /cron/new:
+    post:
+      summary: 新建定时任务
+      operationId: newCronJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [job_name, cron_expr, script_name]
+              properties:
+                job_name:
+                  type: string
+                  description: 任务名称
+                cron_expr:
+                  type: string
+                  description: Cron 表达式 (e.g. "0 */1 * * *")
+                script_name:
+                  type: string
+                  description: 脚本名称
+                params:
+                  type: string
+                  description: 脚本参数(JSON字符串)
+                is_enable:
+                  type: boolean
+                  description: 是否启用
+      responses:
+        "200":
+          description: 创建成功
+
+  /cron/update:
+    post:
+      summary: 更新定时任务
+      operationId: updateCronJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                job_name:
+                  type: string
+                cron_expr:
+                  type: string
+                script_name:
+                  type: string
+                params:
+                  type: string
+                is_enable:
+                  type: boolean
+      responses:
+        "200":
+          description: 更新成功
+
+  /cron/delete:
+    post:
+      summary: 删除定时任务
+      operationId: deleteCronJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: 删除成功
+
+  /cron/refresh:
+    post:
+      summary: 刷新定时任务调度
+      description: 重新加载所有启用的定时任务到调度器
+      operationId: refreshCronJobs
+      responses:
+        "200":
+          description: 刷新成功
+
+  /script/sync:
+    post:
+      summary: 同步执行脚本
+      description: 同步调用脚本并等待返回结果
+      operationId: callScriptSync
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [script_name]
+              properties:
+                script_name:
+                  type: string
+                  description: 脚本名称
+                params:
+                  type: string
+                  description: 脚本参数(JSON字符串)
+                target_worker:
+                  type: string
+                  description: 目标 worker 标识
+      responses:
+        "200":
+          description: 执行结果
+
+  /script/async:
+    post:
+      summary: 异步执行脚本
+      description: 异步调用脚本，通过MQ分发到 worker 执行
+      operationId: callScriptAsync
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [script_name]
+              properties:
+                script_name:
+                  type: string
+                params:
+                  type: string
+                target_worker:
+                  type: string
+      responses:
+        "200":
+          description: 任务已提交
+
+components:
+  schemas:
+    MailManOk:
+      type: object
+      properties:
+        code:
+          type: integer
+        key:
+          type: string
+        data: {}
+    MailManErr:
+      type: object
+      properties:
+        code:
+          type: integer
+        key:
+          type: string
+        msg:
+          type: string
+        level:
+          type: integer

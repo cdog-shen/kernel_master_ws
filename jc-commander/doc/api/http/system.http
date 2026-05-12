@@ -1,0 +1,5 @@
+### vars
+@baseurl = http://localhost:9003/api
+
+### refresh master (re-register UUID to watchman)
+POST {{baseurl}}/refresh_master HTTP/1.1
