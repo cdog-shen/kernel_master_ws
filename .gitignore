@@ -24,6 +24,7 @@ cloud-api/cloud_api.toml
 jc-commander/job_center_commander.toml
 jc-worker/job_center_worker.toml
 file-agent/file_agent.toml
+yell/yell_backend.toml
 
 # business script
 **/script/business
