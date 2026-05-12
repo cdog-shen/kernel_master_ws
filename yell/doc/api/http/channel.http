@@ -1,0 +1,54 @@
+### vars
+@baseurl = http://localhost:9005/api/channel
+@token = uuid xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+### get all channel configs
+GET {{baseurl}}/get HTTP/1.1
+Authorization: {{token}}
+
+### update SMTP channel config
+POST {{baseurl}}/update HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "channel_type": "smtp",
+    "config_json": {
+        "host": "smtp.example.com",
+        "port": 587,
+        "username": "noreply@example.com",
+        "password": "your_password",
+        "from": "noreply@example.com",
+        "use_tls": true
+    },
+    "is_enabled": true
+}
+
+### update WeCom channel config
+POST {{baseurl}}/update HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "channel_type": "wecom",
+    "config_json": {
+        "corp_id": "wwxxxxxxxxxxxx",
+        "agent_id": "1000001",
+        "secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "is_enabled": true
+}
+
+### update Bark channel config
+POST {{baseurl}}/update HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "channel_type": "bark",
+    "config_json": {
+        "server_url": "https://api.day.app/YOUR_KEY",
+        "device_key": "YOUR_DEVICE_KEY"
+    },
+    "is_enabled": true
+}

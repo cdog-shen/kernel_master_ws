@@ -1,0 +1,19 @@
+### vars
+@baseurl = http://localhost:9005/api/record
+@token = uuid xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+### get all records
+GET {{baseurl}}/get HTTP/1.1
+Authorization: {{token}}
+
+### get records by channel type
+GET {{baseurl}}/get?channel_type=smtp HTTP/1.1
+Authorization: {{token}}
+
+### get failed records
+GET {{baseurl}}/get?status=failed HTTP/1.1
+Authorization: {{token}}
+
+### get records by recipient
+GET {{baseurl}}/get?recipient=admin@example.com HTTP/1.1
+Authorization: {{token}}

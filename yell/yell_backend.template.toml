@@ -1,0 +1,15 @@
+[server_config]
+log_path = "logs/yell.log"
+log_level = "INFO"
+clear_log = "True"
+listen_addr = "127.0.0.1"
+listen_port = 9005
+uuid = "550e8400-e29b-41d4-a716-446655440000"
+register_name = "yell"
+master_addr = "127.0.0.1"
+master_port = 8000
+workers = 1
+authenticate_bypass = ["/api/refresh_master"]
+
+[db_config]
+db_str = "postgres://postgres:password@localhost:5432/yell"

@@ -1,0 +1,50 @@
+### vars
+@baseurl = http://localhost:9005/api/template
+@token = uuid xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+### get all templates
+GET {{baseurl}}/get HTTP/1.1
+Authorization: {{token}}
+
+### get templates by channel type
+GET {{baseurl}}/get?channel_type=smtp HTTP/1.1
+Authorization: {{token}}
+
+### get enabled templates
+GET {{baseurl}}/get?is_enabled=true HTTP/1.1
+Authorization: {{token}}
+
+### new template
+POST {{baseurl}}/new HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "name": "alert_template",
+    "description": "通用告警模板",
+    "channel_type": "smtp",
+    "subject_template": "[{{level}}] {{service}} 告警",
+    "content_template": "<h2>告警级别: {{level}}</h2><p>服务: {{service}}</p><p>详情: {{message}}</p>",
+    "content_format": "html",
+    "is_enabled": true
+}
+
+### update template
+POST {{baseurl}}/update HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "id": 1,
+    "description": "更新后的描述",
+    "is_enabled": false
+}
+
+### delete template
+POST {{baseurl}}/delete HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "id": 1
+}

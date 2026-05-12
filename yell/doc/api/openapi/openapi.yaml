@@ -1,0 +1,376 @@
+openapi: "3.0.3"
+info:
+  title: Yell Notification API
+  description: 统一通知服务 — 支持多渠道(SMTP/企业微信/Bark等)消息推送、模板管理和发送记录追踪
+  version: "0.1.0"
+servers:
+  - url: http://localhost:9005/api
+    description: 本地开发环境
+
+security:
+  - subsystemAuth: []
+
+paths:
+  /hey:
+    post:
+      summary: 健康检查
+      description: 公开端点，无需认证
+      operationId: healthCheck
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "hi hello! -from yell"
+
+  /notify/send:
+    post:
+      summary: 统一发送通知
+      description: >
+        向指定接收者列表发送通知。每个接收者指定渠道类型和目标地址，
+        渠道类型自行决定 target 的含义（邮件地址/用户ID/群组ID/openID/token等）。
+        支持并发多渠道发送。
+      operationId: sendNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body, recipients]
+              properties:
+                title:
+                  type: string
+                  description: 消息标题
+                body:
+                  type: string
+                  description: 消息正文
+                format:
+                  type: string
+                  enum: [text, html, markdown]
+                  default: text
+                  description: 消息格式
+                priority:
+                  type: string
+                  enum: [low, normal, high, urgent]
+                  default: normal
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  description: 标签列表
+                url:
+                  type: string
+                  description: 关联链接
+                mentions:
+                  type: array
+                  items:
+                    type: string
+                  description: 提醒列表
+                recipients:
+                  type: array
+                  items:
+                    type: object
+                    required: [channel_type, recipient]
+                    properties:
+                      channel_type:
+                        type: string
+                        description: 渠道类型 (smtp/wecom/bark/lark/dingtalk...)
+                      recipient:
+                        type: string
+                        description: 接收者标识 (邮箱地址/用户ID/群组ID/openID/token等)
+      responses:
+        "200":
+          description: 发送结果列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  key:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChannelResult"
+        "401":
+          description: UUID 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
+
+  /notify/template:
+    post:
+      summary: 使用模板发送通知
+      description: 使用预定义的模板渲染后发送通知
+      operationId: sendWithTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [template_name, recipients]
+              properties:
+                template_name:
+                  type: string
+                  description: 模板名称(唯一)
+                variables:
+                  type: object
+                  description: 模板变量键值对 (模板中用 {{key}} 引用)
+                recipients:
+                  type: array
+                  items:
+                    type: object
+                    required: [channel_type, recipient]
+                    properties:
+                      channel_type:
+                        type: string
+                      recipient:
+                        type: string
+      responses:
+        "200":
+          description: 发送结果列表
+
+  /template/get:
+    get:
+      summary: 查询模板列表
+      operationId: getTemplates
+      parameters:
+        - name: channel_type
+          in: query
+          schema:
+            type: string
+        - name: is_enabled
+          in: query
+          schema:
+            type: boolean
+        - name: name
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 模板列表
+
+  /template/new:
+    post:
+      summary: 创建模板
+      operationId: createTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, content_template]
+              properties:
+                name:
+                  type: string
+                  description: 模板名称(唯一)
+                description:
+                  type: string
+                channel_type:
+                  type: string
+                  default: smtp
+                subject_template:
+                  type: string
+                  description: 主题模板 (支持 {{var}} 变量)
+                content_template:
+                  type: string
+                  description: 内容模板 (支持 {{var}} 变量)
+                content_format:
+                  type: string
+                  enum: [text, html, markdown]
+                is_enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: 创建成功
+
+  /template/update:
+    post:
+      summary: 更新模板
+      operationId: updateTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                description:
+                  type: string
+                channel_type:
+                  type: string
+                subject_template:
+                  type: string
+                content_template:
+                  type: string
+                content_format:
+                  type: string
+                is_enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: 更新成功
+
+  /template/delete:
+    post:
+      summary: 删除模板
+      operationId: deleteTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: 删除成功
+
+  /record/get:
+    get:
+      summary: 查询通知发送记录
+      operationId: getRecords
+      parameters:
+        - name: channel_type
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, sent, failed]
+        - name: recipient
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 记录列表
+
+  /channel/get:
+    get:
+      summary: 获取所有渠道配置
+      operationId: getChannelConfigs
+      responses:
+        "200":
+          description: 渠道配置列表
+
+  /channel/update:
+    post:
+      summary: 更新渠道配置
+      description: 创建或更新指定渠道的配置(upsert)
+      operationId: updateChannelConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [channel_type, config_json]
+              properties:
+                channel_type:
+                  type: string
+                  description: 渠道类型 (smtp/wecom/bark/lark/dingtalk...)
+                config_json:
+                  type: object
+                  description: 渠道配置(各渠道自行定义结构, 参见 components.schemas)
+                is_enabled:
+                  type: boolean
+                  default: true
+      responses:
+        "200":
+          description: 更新成功
+
+components:
+  securitySchemes:
+    subsystemAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: |
+        子系统 UUID 认证。格式: `uuid {subsystem_uuid}`
+        例如: `uuid 550e8400-e29b-41d4-a716-446655440000`
+        该 UUID 在 watchman 注册子系统时生成。
+  schemas:
+    ChannelResult:
+      type: object
+      properties:
+        channel_type:
+          type: string
+        success:
+          type: boolean
+        record_id:
+          type: integer
+        error_msg:
+          type: string
+    MailManOk:
+      type: object
+      properties:
+        code:
+          type: integer
+        key:
+          type: string
+        data: {}
+    MailManErr:
+      type: object
+      properties:
+        code:
+          type: integer
+        key:
+          type: string
+        msg:
+          type: string
+        level:
+          type: integer
+
+    SmtpConfig:
+      type: object
+      description: SMTP 渠道配置 (config_json 结构)
+      properties:
+        host:
+          type: string
+          example: smtp.example.com
+        port:
+          type: integer
+          example: 587
+        username:
+          type: string
+        password:
+          type: string
+        from:
+          type: string
+          description: 发件人地址
+        use_tls:
+          type: boolean
+          default: true
+
+    BarkConfig:
+      type: object
+      description: Bark 推送渠道配置 (config_json 结构)
+      properties:
+        server_url:
+          type: string
+          description: Bark 服务器地址
+          example: https://api.day.app/YOUR_KEY
+        device_key:
+          type: string
+          description: 默认设备 key (可选，发送时可通过 recipient 覆盖)

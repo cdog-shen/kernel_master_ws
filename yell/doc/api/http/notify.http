@@ -1,0 +1,71 @@
+### vars
+@baseurl = http://localhost:9005/api/notify
+@token = uuid xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+### send notification (direct recipients)
+POST {{baseurl}}/send HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "title": "系统通知",
+    "body": "这是一条测试通知",
+    "format": "text",
+    "priority": "normal",
+    "tags": ["test", "demo"],
+    "url": "https://example.com",
+    "mentions": ["user1", "user2"],
+    "recipients": [
+        {"channel_type": "smtp", "recipient": "admin@example.com"},
+        {"channel_type": "smtp", "recipient": "ops@example.com"}
+    ]
+}
+
+### send HTML notification
+POST {{baseurl}}/send HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "title": "告警通知",
+    "body": "<h1>CPU 使用率超过 90%</h1><p>请及时处理</p>",
+    "format": "html",
+    "priority": "urgent",
+    "recipients": [
+        {"channel_type": "smtp", "recipient": "oncall@example.com"}
+    ]
+}
+
+### send Bark notification
+POST {{baseurl}}/send HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "title": "Yell Bark 测试",
+    "body": "这是一条来自 Yell 的 Bark 推送",
+    "format": "text",
+    "priority": "normal",
+    "tags": ["test"],
+    "url": "https://example.com",
+    "recipients": [
+        {"channel_type": "bark", "recipient": "YOUR_DEVICE_KEY"}
+    ]
+}
+
+### send with template
+POST {{baseurl}}/template HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "template_name": "alert_template",
+    "variables": {
+        "level": "严重",
+        "service": "CMDB",
+        "message": "数据库连接超时"
+    },
+    "recipients": [
+        {"channel_type": "smtp", "recipient": "devops@example.com"}
+    ]
+}
