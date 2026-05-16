@@ -71,17 +71,24 @@ paths:
                     type: string
                   description: 提醒列表
                 recipients:
-                  type: array
-                  items:
-                    type: object
-                    required: [channel_type, recipient]
-                    properties:
-                      channel_type:
-                        type: string
-                        description: 渠道类型 (smtp/wecom/bark/lark/dingtalk...)
-                      recipient:
-                        type: string
-                        description: 接收者标识 (邮箱地址/用户ID/群组ID/openID/token等)
+                  oneOf:
+                    - type: array
+                      description: 接收者列表（直接指定）
+                      items:
+                        type: object
+                        required: [channel_type, recipient, instance]
+                        properties:
+                          channel_type:
+                            type: string
+                            description: 渠道类型 (smtp/wecom/bark/lark/dingtalk...)
+                          recipient:
+                            type: string
+                            description: 接收者标识。SMTP 支持逗号/分号分隔多个邮箱，其他渠道按各自格式填写
+                          instance:
+                            type: string
+                            description: 配置实例名（必填，对应 channel_configs.name）
+                    - type: string
+                      description: Alias 名称（自动展开为预设的接收者列表）
       responses:
         "200":
           description: 发送结果列表
@@ -98,6 +105,12 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/ChannelResult"
+        "400":
+          description: 请求参数错误（如缺少必填字段）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
         "401":
           description: UUID 认证失败
           content:
@@ -125,18 +138,50 @@ paths:
                   type: object
                   description: 模板变量键值对 (模板中用 {{key}} 引用)
                 recipients:
-                  type: array
-                  items:
-                    type: object
-                    required: [channel_type, recipient]
-                    properties:
-                      channel_type:
-                        type: string
-                      recipient:
-                        type: string
+                  oneOf:
+                    - type: array
+                      description: 接收者列表（直接指定）
+                      items:
+                        type: object
+                        required: [channel_type, recipient, instance]
+                        properties:
+                          channel_type:
+                            type: string
+                          recipient:
+                            type: string
+                          instance:
+                            type: string
+                            description: 配置实例名（必填，对应 channel_configs.name）
+                    - type: string
+                      description: Alias 名称（自动展开为预设的接收者列表）
       responses:
         "200":
           description: 发送结果列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  key:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChannelResult"
+        "400":
+          description: 请求参数错误（如模板不存在、缺少必填字段）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
+        "401":
+          description: UUID 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
 
   /template/get:
     get:
@@ -158,6 +203,25 @@ paths:
       responses:
         "200":
           description: 模板列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  key:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NotificationTemplate"
+        "401":
+          description: UUID 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
 
   /template/new:
     post:
@@ -193,6 +257,22 @@ paths:
       responses:
         "200":
           description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+        "400":
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
+        "401":
+          description: UUID 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
 
   /template/update:
     post:
@@ -225,6 +305,22 @@ paths:
       responses:
         "200":
           description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+        "400":
+          description: 请求参数错误（如模板不存在）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
+        "401":
+          description: UUID 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
 
   /template/delete:
     post:
@@ -243,6 +339,22 @@ paths:
       responses:
         "200":
           description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+        "400":
+          description: 请求参数错误（如模板不存在）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
+        "401":
+          description: UUID 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
 
   /record/get:
     get:
@@ -265,6 +377,25 @@ paths:
       responses:
         "200":
           description: 记录列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  key:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NotificationRecord"
+        "401":
+          description: UUID 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
 
   /channel/get:
     get:
@@ -273,6 +404,25 @@ paths:
       responses:
         "200":
           description: 渠道配置列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  key:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChannelConfig"
+        "401":
+          description: UUID 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
 
   /channel/update:
     post:
@@ -285,11 +435,14 @@ paths:
           application/json:
             schema:
               type: object
-              required: [channel_type, config_json]
+              required: [channel_type, name, config_json]
               properties:
                 channel_type:
                   type: string
                   description: 渠道类型 (smtp/wecom/bark/lark/dingtalk...)
+                name:
+                  type: string
+                  description: 配置实例名（必填，对应 channel_configs.name）
                 config_json:
                   type: object
                   description: 渠道配置(各渠道自行定义结构, 参见 components.schemas)
@@ -299,6 +452,186 @@ paths:
       responses:
         "200":
           description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+        "400":
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
+        "401":
+          description: UUID 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
+
+  /alias/get:
+    get:
+      summary: 获取所有 alias
+      operationId: getAliases
+      responses:
+        "200":
+          description: alias 列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  key:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NotificationAlias"
+        "401":
+          description: UUID 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
+
+  /alias/new:
+    post:
+      summary: 创建 alias
+      operationId: createAlias
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, recipients]
+              properties:
+                name:
+                  type: string
+                  description: alias 名称（唯一）
+                description:
+                  type: string
+                recipients:
+                  type: array
+                  description: 预设的接收者列表
+                  items:
+                    type: object
+                    required: [channel_type, recipient, instance]
+                    properties:
+                      channel_type:
+                        type: string
+                      recipient:
+                        type: string
+                      instance:
+                        type: string
+                is_enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+        "400":
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
+        "401":
+          description: UUID 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
+
+  /alias/update:
+    post:
+      summary: 更新 alias
+      operationId: updateAlias
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                description:
+                  type: string
+                recipients:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      channel_type:
+                        type: string
+                      recipient:
+                        type: string
+                      instance:
+                        type: string
+                is_enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+        "400":
+          description: 请求参数错误（如 alias 不存在）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
+        "401":
+          description: UUID 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
+
+  /alias/delete:
+    post:
+      summary: 删除 alias
+      operationId: deleteAlias
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+        "400":
+          description: 请求参数错误（如 alias 不存在）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
+        "401":
+          description: UUID 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManErr"
 
 components:
   securitySchemes:
@@ -363,6 +696,94 @@ components:
           type: boolean
           default: true
 
+    NotificationTemplate:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          description: 模板名称(唯一)
+        description:
+          type: string
+        channel_type:
+          type: string
+        subject_template:
+          type: string
+          description: 主题模板 (支持 {{var}} 变量)
+        content_template:
+          type: string
+          description: 内容模板 (支持 {{var}} 变量)
+        content_format:
+          type: string
+          enum: [text, html, markdown]
+        is_enabled:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    NotificationRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        channel_type:
+          type: string
+        recipient:
+          type: string
+        subject:
+          type: string
+        content:
+          type: string
+        content_format:
+          type: string
+        template_id:
+          type: integer
+          nullable: true
+        status:
+          type: string
+          enum: [pending, sent, failed]
+        error_msg:
+          type: string
+          nullable: true
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ChannelConfig:
+      type: object
+      properties:
+        id:
+          type: integer
+        channel_type:
+          type: string
+          description: 渠道类型
+        name:
+          type: string
+          description: 配置实例名
+        config_json:
+          type: object
+          description: 渠道配置(JSON对象)
+        is_enabled:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
     BarkConfig:
       type: object
       description: Bark 推送渠道配置 (config_json 结构)
@@ -373,4 +794,35 @@ components:
           example: https://api.day.app/YOUR_KEY
         device_key:
           type: string
-          description: 默认设备 key (可选，发送时可通过 recipient 覆盖)
+          description: 设备 key（可选，发送时可通过 recipient 覆盖）
+
+    NotificationAlias:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          description: alias 名称（唯一）
+        description:
+          type: string
+        recipients:
+          type: array
+          description: 预设的接收者列表
+          items:
+            type: object
+            properties:
+              channel_type:
+                type: string
+              recipient:
+                type: string
+              instance:
+                type: string
+        is_enabled:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time

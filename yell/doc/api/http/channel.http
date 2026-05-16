@@ -13,6 +13,7 @@ Content-Type: application/json
 
 {
     "channel_type": "smtp",
+    "name": "smtp-main",
     "config_json": {
         "host": "smtp.example.com",
         "port": 587,
@@ -24,21 +25,6 @@ Content-Type: application/json
     "is_enabled": true
 }
 
-### update WeCom channel config
-POST {{baseurl}}/update HTTP/1.1
-Authorization: {{token}}
-Content-Type: application/json
-
-{
-    "channel_type": "wecom",
-    "config_json": {
-        "corp_id": "wwxxxxxxxxxxxx",
-        "agent_id": "1000001",
-        "secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-    },
-    "is_enabled": true
-}
-
 ### update Bark channel config
 POST {{baseurl}}/update HTTP/1.1
 Authorization: {{token}}
@@ -46,9 +32,25 @@ Content-Type: application/json
 
 {
     "channel_type": "bark",
+    "name": "bark-main",
     "config_json": {
         "server_url": "https://api.day.app/YOUR_KEY",
         "device_key": "YOUR_DEVICE_KEY"
+    },
+    "is_enabled": true
+}
+
+### update Bark channel config (named instance: bark-prod)
+POST {{baseurl}}/update HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "channel_type": "bark",
+    "name": "bark-prod",
+    "config_json": {
+        "server_url": "https://api.day.app/PROD_KEY",
+        "device_key": "PROD_DEVICE_KEY"
     },
     "is_enabled": true
 }
