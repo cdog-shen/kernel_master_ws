@@ -36,7 +36,7 @@ pub struct WebhookModel {
     pub update_time: chrono::NaiveDateTime,
 }
 
-#[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
+#[derive(Default, Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
 #[diesel(table_name = webhook_table)]
 pub struct WebhookInfo {
     pub id: Option<i32>,
@@ -119,6 +119,22 @@ impl WebhookModel {
         match query.get_results::<WebhookModel>(conn) {
             Ok(webhook_table_data) => Ok(webhook_table_data),
             Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
+        }
+    }
+
+    /// get enable by token
+    pub fn get_enable_by_token(
+        _token: &str,
+        conn: &mut PgConnection,
+    ) -> Result<Self, (u8, String)> {
+        match webhook_table
+            .filter(token.eq(_token))
+            .select(WebhookModel::as_select())
+            .first(conn)
+        {
+            Ok(webhook_table_data) => Ok(webhook_table_data),
+            Err(NotFound) => Err((BAD_REQUEST_CODE, format!("token: {_token} not found"))),
+            Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 }

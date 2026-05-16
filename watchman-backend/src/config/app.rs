@@ -87,10 +87,23 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
             )
             .wrap(JwtAuth)
             .wrap(PermissionCheck)
+            // webhook management
             .service(
-                web::scope("/webhook")
-                // .route("/{token}", web::get().to(webhook_handler))
-                // .route("/{token}", web::post().to(webhook_handler)),
+                web::resource("/webhook")
+                    .route(web::get().to(webhook_manage::all_webhook))
+                    .route(web::post().to(webhook_manage::new_webhook))
+                    .route(web::patch().to(webhook_manage::update_webhook))
+                    .route(web::delete().to(webhook_manage::delete_webhook)),
+            )
+            .wrap(JwtAuth)
+            .wrap(PermissionCheck)
+            // webhook call
+            .service(
+                web::scope("/webhook").service(
+                    web::resource("/{token}")
+                        .route(web::post().to(webhook_manage::post_webhook))
+                        .route(web::get().to(webhook_manage::get_webhook)),
+                ),
             ),
     );
 }
