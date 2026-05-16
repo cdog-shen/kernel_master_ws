@@ -124,3 +124,27 @@ CREATE INDEX idx_logservice_topic_provider ON logservice_topic (provider);
 CREATE INDEX idx_logservice_topic_instance_id ON logservice_topic (topic_id);
 
 CREATE INDEX idx_logservice_topic_instance_name ON logservice_topic (topic_name);
+
+-- 创建 cloudstorage_bucket 表
+DROP TABLE IF EXISTS cloudstorage_bucket;
+
+CREATE TABLE cloudstorage_bucket (
+    id BIGSERIAL PRIMARY KEY,
+    provider VARCHAR(255) NOT NULL,
+
+    bucket_name VARCHAR(255) NOT NULL,
+    bucket_type VARCHAR(255) NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    creation_date VARCHAR(255) NOT NULL,
+
+    describes VARCHAR(255) NOT NULL,
+    tag JSONB NOT NULL,
+    full_info JSONB NOT NULL,
+    attach_info JSONB NOT NULL,
+    update_at TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_cloudstorage_bucket_provider ON cloudstorage_bucket (provider);
+
+CREATE INDEX idx_cloudstorage_bucket_bucket_name ON cloudstorage_bucket (bucket_name);
+
