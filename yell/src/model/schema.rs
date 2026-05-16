@@ -9,6 +9,22 @@ diesel::table! {
         is_enabled -> Nullable<Bool>,
         created_at -> Nullable<Timestamp>,
         updated_at -> Nullable<Timestamp>,
+        #[max_length = 128]
+        name -> Varchar,
+    }
+}
+
+diesel::table! {
+    notification_aliases (id) {
+        id -> Int4,
+        #[max_length = 128]
+        name -> Varchar,
+        #[max_length = 512]
+        description -> Nullable<Varchar>,
+        recipients -> Jsonb,
+        is_enabled -> Nullable<Bool>,
+        created_at -> Nullable<Timestamp>,
+        updated_at -> Nullable<Timestamp>,
     }
 }
 
@@ -83,6 +99,7 @@ diesel::joinable!(notification_group_members -> notification_groups (group_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     channel_configs,
+    notification_aliases,
     notification_group_members,
     notification_groups,
     notification_records,

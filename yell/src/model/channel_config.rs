@@ -13,6 +13,7 @@ static BAD_REQUEST_CODE: u8 = 1;
 pub struct ChannelConfig {
     pub id: i32,
     pub channel_type: String,
+    pub name: String,
     pub config_json: Value,
     pub is_enabled: Option<bool>,
     pub created_at: Option<NaiveDateTime>,
@@ -23,6 +24,7 @@ pub struct ChannelConfig {
 #[diesel(table_name = channel_configs)]
 pub struct NewChannelConfig {
     pub channel_type: String,
+    pub name: String,
     pub config_json: Value,
     pub is_enabled: Option<bool>,
 }
@@ -54,10 +56,11 @@ pub struct BarkConfig {
 }
 
 impl ChannelConfig {
-    /// 根据通道类型获取配置
-    pub fn get_by_type(channel: &str, conn: &mut PgConnection) -> Result<Option<Self>, (u8, String)> {
+    /// 根据通道类型 + 实例名获取配置
+    pub fn get_by_name(channel: &str, instance_name: &str, conn: &mut PgConnection) -> Result<Option<Self>, (u8, String)> {
         match channel_configs
             .filter(channel_type.eq(channel))
+            .filter(name.eq(instance_name))
             .filter(is_enabled.eq(Some(true)))
             .select(ChannelConfig::as_select())
             .first(conn)
@@ -66,6 +69,11 @@ impl ChannelConfig {
             Err(diesel::result::Error::NotFound) => Ok(None),
             Err(e) => Err((UNKNOWN_ERROR_CODE, e.to_string())),
         }
+    }
+
+    /// 获取默认配置（name 为空字符串）
+    pub fn get_default_by_type(channel: &str, conn: &mut PgConnection) -> Result<Option<Self>, (u8, String)> {
+        Self::get_by_name(channel, "", conn)
     }
 
     /// 获取所有配置
@@ -79,26 +87,32 @@ impl ChannelConfig {
         }
     }
 
-    /// 创建或更新配置
+    /// 创建或更新配置（按 channel_type + name 联合键）
     pub fn upsert(
         channel: &str,
+        instance_name: &str,
         config_value: &Value,
         enabled: bool,
         conn: &mut PgConnection,
     ) -> Result<usize, (u8, String)> {
         // 尝试更新现有配置
-        let update_result = diesel::update(channel_configs.filter(channel_type.eq(channel)))
-            .set((
-                config_json.eq(config_value),
-                is_enabled.eq(enabled),
-            ))
-            .execute(conn);
+        let update_result = diesel::update(
+            channel_configs
+                .filter(channel_type.eq(channel))
+                .filter(name.eq(instance_name)),
+        )
+        .set((
+            config_json.eq(config_value),
+            is_enabled.eq(enabled),
+        ))
+        .execute(conn);
 
         match update_result {
             Ok(0) => {
                 // 没有更新到记录，插入新记录
                 let new_config = NewChannelConfig {
                     channel_type: channel.to_string(),
+                    name: instance_name.to_string(),
                     config_json: config_value.clone(),
                     is_enabled: Some(enabled),
                 };
@@ -115,9 +129,17 @@ impl ChannelConfig {
         }
     }
 
-    /// 获取 SMTP 配置
+    /// 获取 SMTP 配置（默认实例）
     pub fn get_smtp_config(conn: &mut PgConnection) -> Result<Option<SmtpConfig>, (u8, String)> {
-        match Self::get_by_type("smtp", conn)? {
+        Self::get_smtp_config_by_name("", conn)
+    }
+
+    /// 获取指定实例的 SMTP 配置
+    pub fn get_smtp_config_by_name(
+        instance_name: &str,
+        conn: &mut PgConnection,
+    ) -> Result<Option<SmtpConfig>, (u8, String)> {
+        match Self::get_by_name("smtp", instance_name, conn)? {
             Some(config) => {
                 match serde_json::from_value::<SmtpConfig>(config.config_json) {
                     Ok(smtp_config) => Ok(Some(smtp_config)),
@@ -128,9 +150,17 @@ impl ChannelConfig {
         }
     }
 
-    /// 获取 Bark 配置
+    /// 获取 Bark 配置（默认实例）
     pub fn get_bark_config(conn: &mut PgConnection) -> Result<Option<BarkConfig>, (u8, String)> {
-        match Self::get_by_type("bark", conn)? {
+        Self::get_bark_config_by_name("", conn)
+    }
+
+    /// 获取指定实例的 Bark 配置
+    pub fn get_bark_config_by_name(
+        instance_name: &str,
+        conn: &mut PgConnection,
+    ) -> Result<Option<BarkConfig>, (u8, String)> {
+        match Self::get_by_name("bark", instance_name, conn)? {
             Some(config) => match serde_json::from_value::<BarkConfig>(config.config_json) {
                 Ok(bark_config) => Ok(Some(bark_config)),
                 Err(e) => Err((BAD_REQUEST_CODE, format!("Invalid Bark config: {}", e))),

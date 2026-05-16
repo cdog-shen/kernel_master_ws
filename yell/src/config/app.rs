@@ -40,5 +40,14 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                     .service(web::resource("/update").route(web::post().to(notify::update_channel_config)))
                     .wrap(Authentication)
             )
+            // Alias management APIs
+            .service(
+                web::scope("/alias")
+                    .service(web::resource("/get").route(web::get().to(notify::get_aliases)))
+                    .service(web::resource("/new").route(web::post().to(notify::create_alias)))
+                    .service(web::resource("/update").route(web::post().to(notify::update_alias)))
+                    .service(web::resource("/delete").route(web::post().to(notify::delete_alias)))
+                    .wrap(Authentication)
+            )
     );
 }

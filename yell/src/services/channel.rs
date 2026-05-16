@@ -54,6 +54,7 @@ pub trait Channel: Send + Sync {
     async fn send(
         &self,
         recipient: &str,
+        instance_name: &str,
         request: &NotificationRequest,
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<ChannelResult, String>;

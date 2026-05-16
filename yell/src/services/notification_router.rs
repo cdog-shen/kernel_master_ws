@@ -40,12 +40,13 @@ impl NotificationRouter {
 
     /// 发送消息到指定渠道列表
     ///
-    /// recipients: Vec<(channel_type, recipient)>
+    /// recipients: Vec<(channel_type, recipient, instance)>
     /// 各 channel_type 自行解释 recipient 的含义（邮件地址/用户ID/群组ID/openID/token等）
+    /// instance 为配置实例名，必填
     pub async fn send_to_channels<'a>(
         &self,
         request: NotificationRequest,
-        recipients: Vec<(String, String)>,
+        recipients: Vec<(String, String, String)>,
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<MailManOk<'a, Vec<ChannelResult>>, MailManErr<'a, String>> {
         if recipients.is_empty() {
@@ -70,7 +71,7 @@ impl NotificationRouter {
 
         let mut tasks = Vec::new();
 
-        for (channel_type, recipient) in recipients {
+        for (channel_type, recipient, instance) in recipients {
             if let Some(channel) = self.channels.get(&channel_type) {
                 let channel = Arc::clone(channel);
                 let request = request.clone();
@@ -89,7 +90,7 @@ impl NotificationRouter {
                 }
 
                 let task = tokio::spawn(async move {
-                    channel.send(&recipient, &request, &pool).await
+                    channel.send(&recipient, &instance, &request, &pool).await
                 });
 
                 tasks.push(task);
@@ -131,7 +132,7 @@ impl NotificationRouter {
         &self,
         template_name: &str,
         variables: serde_json::Map<String, Value>,
-        recipients: Vec<(String, String)>,
+        recipients: Vec<(String, String, String)>,
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<MailManOk<'a, Vec<ChannelResult>>, MailManErr<'a, String>> {
         let template = web::block({

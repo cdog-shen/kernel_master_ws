@@ -33,15 +33,17 @@ impl Channel for BarkChannel {
     async fn send(
         &self,
         recipient: &str,
+        instance_name: &str,
         request: &NotificationRequest,
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<ChannelResult, String> {
-        // 从数据库获取 Bark 配置
+        // 从数据库获取 Bark 配置（按实例名）
         let bark_config = web::block({
             let pool = pool.clone();
+            let name = instance_name.to_string();
             move || {
                 let mut conn = pool.get().map_err(|e| e.to_string())?;
-                ChannelConfig::get_bark_config(&mut conn).map_err(|(_, msg)| msg)
+                ChannelConfig::get_bark_config_by_name(&name, &mut conn).map_err(|(_, msg)| msg)
             }
         })
         .await

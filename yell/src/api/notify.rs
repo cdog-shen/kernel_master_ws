@@ -9,6 +9,7 @@ use serde_json::{Map, Value};
 use crate::{
     model::{
         channel_config::ChannelConfig,
+        notification_alias::NotificationAlias,
         notification_record::NotificationRecord,
         notification_template::{
             NewNotificationTemplate, NotificationTemplate, UpdateNotificationTemplate,
@@ -18,6 +19,108 @@ use crate::{
     services::notification_router::NotificationRouter,
     util::err_mapping::MailManErrResponser,
 };
+
+// ==================== recipients 解析辅助函数 ====================
+
+/// 解析 recipients 字段，支持 String（alias）和 Array 两种格式
+async fn resolve_recipients(
+    recipients_value: Option<&Value>,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<Vec<(String, String, String)>, MailManErrResponser> {
+    match recipients_value {
+        Some(Value::String(alias_name)) => {
+            // String 格式：查找 alias
+            let alias_name = alias_name.clone();
+            let result = web::block({
+                let pool = pool.clone();
+                let name = alias_name.clone();
+                move || {
+                    let mut conn = pool.get().unwrap();
+                    NotificationAlias::get_by_name(&name, &mut conn)
+                }
+            })
+            .await;
+
+            match result {
+                Ok(Ok(Some(alias))) => {
+                    let arr = alias.recipients.as_array().ok_or_else(|| {
+                        MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
+                            500,
+                            "Internal Error",
+                            Some("Alias recipients is not an array".to_string()),
+                            0,
+                        ))
+                    })?;
+                    parse_recipients_array(arr)
+                }
+                Ok(Ok(None)) => Err(MailManErrResponser::mapping_from_mme(
+                    share_lib::data_structure::MailManErr::new(
+                        404,
+                        "Not Found",
+                        Some(format!("Alias '{}' not found or disabled", alias_name)),
+                        1,
+                    ),
+                )),
+                Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
+                    share_lib::data_structure::MailManErr::new(500, "Failed to get alias", Some(msg), 0),
+                )),
+                Err(e) => Err(MailManErrResponser::mapping_from_mme(
+                    share_lib::data_structure::MailManErr::new(500, "Failed to get alias", Some(e.to_string()), 0),
+                )),
+            }
+        }
+        Some(Value::Array(arr)) => parse_recipients_array(arr),
+        _ => Err(MailManErrResponser::mapping_from_mme(
+            share_lib::data_structure::MailManErr::new(
+                400,
+                "Bad Request",
+                Some("Missing 'recipients' field (must be an array or alias name string)".to_string()),
+                1,
+            ),
+        )),
+    }
+}
+
+/// 解析 recipients JSON 数组为 Vec<(channel_type, recipient, instance)>
+fn parse_recipients_array(arr: &[Value]) -> Result<Vec<(String, String, String)>, MailManErrResponser> {
+    let mut recipients = Vec::new();
+    for v in arr {
+        let obj = v.as_object().ok_or_else(|| {
+            MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
+                400,
+                "Bad Request",
+                Some("Each recipient must be an object".to_string()),
+                1,
+            ))
+        })?;
+        let channel_type = obj.get("channel_type").and_then(|v| v.as_str()).ok_or_else(|| {
+            MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
+                400,
+                "Bad Request",
+                Some("Missing 'channel_type' in recipient".to_string()),
+                1,
+            ))
+        })?;
+        let recipient = obj.get("recipient").and_then(|v| v.as_str()).ok_or_else(|| {
+            MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
+                400,
+                "Bad Request",
+                Some("Missing 'recipient' in recipient".to_string()),
+                1,
+            ))
+        })?;
+        let instance = obj.get("instance").and_then(|v| v.as_str()).ok_or_else(|| {
+            MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
+                400,
+                "Bad Request",
+                Some("Missing 'instance' in recipient".to_string()),
+                1,
+            ))
+        })?;
+        recipients.push((channel_type.to_string(), recipient.to_string(), instance.to_string()));
+    }
+    Ok(recipients)
+}
 
 // ==================== 统一通知发送 API ====================
 
@@ -88,29 +191,7 @@ pub async fn send(
         template_id: None,
     };
 
-    // 解析 recipients: [{"channel_type": "...", "recipient": "..."}, ...]
-    let recipients = req
-        .get("recipients")
-        .and_then(|v| v.as_array())
-        .ok_or_else(|| {
-            MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
-                400,
-                "Bad Request",
-                Some("Missing 'recipients' field".to_string()),
-                1,
-            ))
-        })?
-        .iter()
-        .filter_map(|v| {
-            if let Some(obj) = v.as_object() {
-                let channel_type = obj.get("channel_type")?.as_str()?.to_string();
-                let recipient = obj.get("recipient")?.as_str()?.to_string();
-                Some((channel_type, recipient))
-            } else {
-                None
-            }
-        })
-        .collect();
+    let recipients = resolve_recipients(req.get("recipients"), &pool).await?;
 
     let router = NotificationRouter::new();
 
@@ -143,23 +224,7 @@ pub async fn send_with_template(
         .cloned()
         .unwrap_or_default();
 
-    let recipients = req
-        .get("recipients")
-        .and_then(|v| v.as_array())
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|v| {
-                    if let Some(obj) = v.as_object() {
-                        let channel_type = obj.get("channel_type")?.as_str()?.to_string();
-                        let recipient = obj.get("recipient")?.as_str()?.to_string();
-                        Some((channel_type, recipient))
-                    } else {
-                        None
-                    }
-                })
-                .collect()
-        })
-        .unwrap_or_default();
+    let recipients = resolve_recipients(req.get("recipients"), &pool).await?;
 
     let router = NotificationRouter::new();
 
@@ -428,13 +493,22 @@ pub async fn update_channel_config(
     })?;
 
     let is_enabled = req.get("is_enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+    let instance_name = req.get("name").and_then(|v| v.as_str()).ok_or_else(|| {
+        MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
+            400,
+            "Bad Request",
+            Some("Missing 'name' field (instance name is required)".to_string()),
+            1,
+        ))
+    })?;
 
     match web::block({
         let pool = pool.clone();
         let channel = channel_type.to_string();
+        let name = instance_name.to_string();
         move || {
             let mut conn = pool.get().unwrap();
-            ChannelConfig::upsert(&channel, &config_json, is_enabled, &mut conn)
+            ChannelConfig::upsert(&channel, &name, &config_json, is_enabled, &mut conn)
         }
     })
     .await
@@ -449,6 +523,166 @@ pub async fn update_channel_config(
         )),
         Err(e) => Err(MailManErrResponser::mapping_from_mme(
             share_lib::data_structure::MailManErr::new(500, "Failed to update channel config", Some(e.to_string()), 0),
+        )),
+    }
+}
+
+// ==================== Alias 管理 API ====================
+
+/// GET /api/alias/get - 获取所有 alias
+pub async fn get_aliases(
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<HttpResponse, MailManErrResponser> {
+    match web::block({
+        let pool = pool.clone();
+        move || {
+            let mut conn = pool.get().unwrap();
+            NotificationAlias::get_all(&mut conn)
+        }
+    })
+    .await
+    {
+        Ok(Ok(data)) => Ok(HttpResponse::Ok().json(data)),
+        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
+            share_lib::data_structure::MailManErr::new(500, "Failed to get aliases", Some(msg), 0),
+        )),
+        Err(e) => Err(MailManErrResponser::mapping_from_mme(
+            share_lib::data_structure::MailManErr::new(500, "Failed to get aliases", Some(e.to_string()), 0),
+        )),
+    }
+}
+
+/// POST /api/alias/new - 创建 alias
+pub async fn create_alias(
+    req: web::Json<Map<String, Value>>,
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<HttpResponse, MailManErrResponser> {
+    let name = req.get("name").and_then(|v| v.as_str()).ok_or_else(|| {
+        MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
+            400,
+            "Bad Request",
+            Some("Missing 'name' field".to_string()),
+            1,
+        ))
+    })?;
+
+    let recipients = req.get("recipients").cloned().ok_or_else(|| {
+        MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
+            400,
+            "Bad Request",
+            Some("Missing 'recipients' field".to_string()),
+            1,
+        ))
+    })?;
+
+    let new_alias = crate::model::notification_alias::NewNotificationAlias {
+        name: name.to_string(),
+        description: req.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        recipients,
+        is_enabled: req.get("is_enabled").and_then(|v| v.as_bool()),
+    };
+
+    match web::block({
+        let pool = pool.clone();
+        move || {
+            let mut conn = pool.get().unwrap();
+            NotificationAlias::create(&new_alias, &mut conn)
+        }
+    })
+    .await
+    {
+        Ok(Ok(id)) => Ok(HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
+            200,
+            "Alias created",
+            Some(format!("Alias ID: {}", id)),
+        ))),
+        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
+            share_lib::data_structure::MailManErr::new(500, "Failed to create alias", Some(msg), 0),
+        )),
+        Err(e) => Err(MailManErrResponser::mapping_from_mme(
+            share_lib::data_structure::MailManErr::new(500, "Failed to create alias", Some(e.to_string()), 0),
+        )),
+    }
+}
+
+/// POST /api/alias/update - 更新 alias
+pub async fn update_alias(
+    req: web::Json<Map<String, Value>>,
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<HttpResponse, MailManErrResponser> {
+    let alias_id = req.get("id").and_then(|v| v.as_i64()).ok_or_else(|| {
+        MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
+            400,
+            "Bad Request",
+            Some("Missing 'id' field".to_string()),
+            1,
+        ))
+    })? as i32;
+
+    let update = crate::model::notification_alias::UpdateNotificationAlias {
+        name: req.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        description: req.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        recipients: req.get("recipients").cloned(),
+        is_enabled: req.get("is_enabled").and_then(|v| v.as_bool()),
+        updated_at: Some(chrono::Local::now().naive_local()),
+    };
+
+    match web::block({
+        let pool = pool.clone();
+        move || {
+            let mut conn = pool.get().unwrap();
+            NotificationAlias::update(alias_id, &update, &mut conn)
+        }
+    })
+    .await
+    {
+        Ok(Ok(num)) => Ok(HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
+            200,
+            "Alias updated",
+            Some(format!("Rows affected: {}", num)),
+        ))),
+        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
+            share_lib::data_structure::MailManErr::new(500, "Failed to update alias", Some(msg), 0),
+        )),
+        Err(e) => Err(MailManErrResponser::mapping_from_mme(
+            share_lib::data_structure::MailManErr::new(500, "Failed to update alias", Some(e.to_string()), 0),
+        )),
+    }
+}
+
+/// POST /api/alias/delete - 删除 alias
+pub async fn delete_alias(
+    req: web::Json<Map<String, Value>>,
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<HttpResponse, MailManErrResponser> {
+    let alias_id = req.get("id").and_then(|v| v.as_i64()).ok_or_else(|| {
+        MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
+            400,
+            "Bad Request",
+            Some("Missing 'id' field".to_string()),
+            1,
+        ))
+    })? as i32;
+
+    match web::block({
+        let pool = pool.clone();
+        move || {
+            let mut conn = pool.get().unwrap();
+            NotificationAlias::delete(alias_id, &mut conn)
+        }
+    })
+    .await
+    {
+        Ok(Ok(num)) => Ok(HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
+            200,
+            "Alias deleted",
+            Some(format!("Rows affected: {}", num)),
+        ))),
+        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
+            share_lib::data_structure::MailManErr::new(500, "Failed to delete alias", Some(msg), 0),
+        )),
+        Err(e) => Err(MailManErrResponser::mapping_from_mme(
+            share_lib::data_structure::MailManErr::new(500, "Failed to delete alias", Some(e.to_string()), 0),
         )),
     }
 }

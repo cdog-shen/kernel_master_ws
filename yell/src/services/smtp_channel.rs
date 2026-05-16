@@ -33,6 +33,7 @@ impl SmtpChannel {
     /// 初始化 SMTP 客户端（懒加载，第一次发送时初始化）
     async fn init_transport(
         &self,
+        instance_name: &str,
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<(), String> {
         let mut transport_lock = self.transport.lock().await;
@@ -41,12 +42,13 @@ impl SmtpChannel {
             return Ok(());
         }
 
-        // 从数据库获取 SMTP 配置
+        // 从数据库获取 SMTP 配置（按实例名）
         let smtp_config = web::block({
             let pool = pool.clone();
+            let name = instance_name.to_string();
             move || {
                 let mut conn = pool.get().map_err(|e| e.to_string())?;
-                ChannelConfig::get_smtp_config(&mut conn)
+                ChannelConfig::get_smtp_config_by_name(&name, &mut conn)
                     .map_err(|(_, msg)| msg)
             }
         })
@@ -90,11 +92,12 @@ impl Channel for SmtpChannel {
     async fn send(
         &self,
         recipient: &str,
+        instance_name: &str,
         request: &NotificationRequest,
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<ChannelResult, String> {
         // 初始化传输器（懒加载）
-        self.init_transport(pool).await?;
+        self.init_transport(instance_name, pool).await?;
 
         // 创建通知记录
         let record_id = create_record("smtp", recipient, request, pool).await?;
@@ -108,12 +111,13 @@ impl Channel for SmtpChannel {
                 .clone()
         };
 
-        // 获取 SMTP 配置中的 from 地址
+        // 获取 SMTP 配置中的 from 地址（按实例名）
         let from_addr = web::block({
             let pool = pool.clone();
+            let name = instance_name.to_string();
             move || {
                 let mut conn = pool.get().map_err(|e| e.to_string())?;
-                let config = ChannelConfig::get_smtp_config(&mut conn)
+                let config = ChannelConfig::get_smtp_config_by_name(&name, &mut conn)
                     .map_err(|(_, msg)| msg)?;
                 config.ok_or("SMTP config not found".to_string())
                     .map(|c| c.from)
@@ -123,11 +127,19 @@ impl Channel for SmtpChannel {
         .map_err(|e| e.to_string())?
         .map_err(|e| e)?;
 
-        // 构建邮件
+        // 解析收件人列表（支持逗号或分号分隔）
+        let addresses: Vec<&str> = recipient
+            .split(|c| c == ',' || c == ';')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        if addresses.is_empty() {
+            return Err("No valid recipient addresses provided".to_string());
+        }
+
         let from_mailbox = Mailbox::from_str(&from_addr)
             .map_err(|e| format!("Invalid from address: {}", e))?;
-        let to_mailbox = Mailbox::from_str(recipient)
-            .map_err(|e| format!("Invalid recipient address: {}", e))?;
 
         let content_type = if request.format == "html" {
             ContentType::TEXT_HTML
@@ -135,9 +147,14 @@ impl Channel for SmtpChannel {
             ContentType::TEXT_PLAIN
         };
 
-        let email = Message::builder()
-            .from(from_mailbox)
-            .to(to_mailbox)
+        let mut builder = Message::builder().from(from_mailbox);
+        for addr in &addresses {
+            let mailbox = Mailbox::from_str(addr)
+                .map_err(|e| format!("Invalid recipient address '{}': {}", addr, e))?;
+            builder = builder.to(mailbox);
+        }
+
+        let email = builder
             .subject(request.title.clone())
             .header(content_type)
             .body(request.body.clone())
