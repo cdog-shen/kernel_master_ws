@@ -15,6 +15,7 @@ use crate::model::{
 };
 use crate::services::bark_channel::BarkChannel;
 use crate::services::channel::{Channel, ChannelResult, NotificationRequest};
+use crate::services::gotify_channel::GotifyChannel;
 use crate::services::smtp_channel::SmtpChannel;
 
 /// 通知路由分发器
@@ -29,6 +30,7 @@ impl NotificationRouter {
 
         channels.insert("smtp".to_string(), Arc::new(SmtpChannel::new()));
         channels.insert("bark".to_string(), Arc::new(BarkChannel::new()));
+        channels.insert("gotify".to_string(), Arc::new(GotifyChannel::new()));
 
         // TODO: 注册更多渠道
         // channels.insert("wecom".to_string(), Arc::new(WeComChannel::new()));

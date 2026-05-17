@@ -55,6 +55,13 @@ pub struct BarkConfig {
     pub device_key: Option<String>,
 }
 
+/// Gotify 配置结构
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GotifyConfig {
+    pub server_url: String,
+    pub app_token: String,
+}
+
 impl ChannelConfig {
     /// 根据通道类型 + 实例名获取配置
     pub fn get_by_name(channel: &str, instance_name: &str, conn: &mut PgConnection) -> Result<Option<Self>, (u8, String)> {
@@ -164,6 +171,25 @@ impl ChannelConfig {
             Some(config) => match serde_json::from_value::<BarkConfig>(config.config_json) {
                 Ok(bark_config) => Ok(Some(bark_config)),
                 Err(e) => Err((BAD_REQUEST_CODE, format!("Invalid Bark config: {}", e))),
+            },
+            None => Ok(None),
+        }
+    }
+
+    /// 获取 Gotify 配置（默认实例）
+    pub fn get_gotify_config(conn: &mut PgConnection) -> Result<Option<GotifyConfig>, (u8, String)> {
+        Self::get_gotify_config_by_name("", conn)
+    }
+
+    /// 获取指定实例的 Gotify 配置
+    pub fn get_gotify_config_by_name(
+        instance_name: &str,
+        conn: &mut PgConnection,
+    ) -> Result<Option<GotifyConfig>, (u8, String)> {
+        match Self::get_by_name("gotify", instance_name, conn)? {
+            Some(config) => match serde_json::from_value::<GotifyConfig>(config.config_json) {
+                Ok(gotify_config) => Ok(Some(gotify_config)),
+                Err(e) => Err((BAD_REQUEST_CODE, format!("Invalid Gotify config: {}", e))),
             },
             None => Ok(None),
         }

@@ -1,7 +1,7 @@
 openapi: "3.0.3"
 info:
   title: Yell Notification API
-  description: 统一通知服务 — 支持多渠道(SMTP/企业微信/Bark等)消息推送、模板管理和发送记录追踪
+  description: 统一通知服务 — 支持多渠道(SMTP/企业微信/Bark/Gotify等)消息推送、模板管理和发送记录追踪
   version: "0.1.0"
 servers:
   - url: http://localhost:9005/api
@@ -80,7 +80,7 @@ paths:
                         properties:
                           channel_type:
                             type: string
-                            description: 渠道类型 (smtp/wecom/bark/lark/dingtalk...)
+                            description: 渠道类型 (smtp/wecom/bark/gotify/lark/dingtalk...)
                           recipient:
                             type: string
                             description: 接收者标识。SMTP 支持逗号/分号分隔多个邮箱，其他渠道按各自格式填写
@@ -254,7 +254,7 @@ paths:
                   enum: [text, html, markdown]
                 params_template:
                   type: object
-                  description: "渠道扩展参数模板 (JSON, 支持 {{var}} 变量). Bark: level/sound/group/url/icon 等"
+                  description: "渠道扩展参数模板 (JSON, 支持 {{var}} 变量). Bark: level/sound/group/url/icon 等. Gotify: priority(0-10)/url"
                 is_enabled:
                   type: boolean
       responses:
@@ -445,7 +445,7 @@ paths:
               properties:
                 channel_type:
                   type: string
-                  description: 渠道类型 (smtp/wecom/bark/lark/dingtalk...)
+                  description: 渠道类型 (smtp/wecom/bark/gotify/lark/dingtalk...)
                 name:
                   type: string
                   description: 配置实例名（必填，对应 channel_configs.name）
@@ -730,6 +730,7 @@ components:
           description: |
             渠道扩展参数模板 (JSON, 支持 {{var}} 变量)。
             Bark 支持: level(active/timeSensitive/passive/critical), sound, group, url, icon, copy, isArchive, volume
+            Gotify 支持: priority(0-10), url
           example:
             level: "active"
             sound: "alarm"
@@ -830,6 +831,29 @@ components:
         device_key:
           type: string
           description: 设备 key（可选，发送时可通过 recipient 覆盖）
+
+    GotifyConfig:
+      type: object
+      description: Gotify 推送渠道配置 (config_json 结构)
+      properties:
+        server_url:
+          type: string
+          description: Gotify 服务器地址
+          example: https://gotify.example.com
+        app_token:
+          type: string
+          description: Gotify 应用 token（可选，发送时可通过 recipient 覆盖）
+
+    GotifyTemplatePreset:
+      type: object
+      description: "Gotify 预置模板说明"
+      properties:
+        gotify_urgent:
+          type: string
+          description: "紧急告警 — priority=8，高优先级推送"
+        gotify_normal:
+          type: string
+          description: "普通通知 — priority=5，标准优先级"
 
     NotificationAlias:
       type: object
