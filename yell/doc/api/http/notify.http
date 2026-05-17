@@ -127,3 +127,39 @@ Content-Type: application/json
     },
     "recipients": "ops-team"
 }
+
+### send Bark urgent alert (预置模板 bark_urgent_alert)
+POST {{baseurl}}/template HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "template_name": "bark_urgent_alert",
+    "variables": {
+        "level": "严重",
+        "service": "CMDB",
+        "message": "生产环境 CPU 使用率超过 95%，请立即处理",
+        "group": "cmdb-alerts",
+        "url": "https://monitor.example.com/alert/123"
+    },
+    "recipients": [
+        {"channel_type": "bark", "instance": "cdog_main_bark", "recipient": "YOUR_DEVICE_KEY"}
+    ]
+}
+
+### send Bark silent notification (预置模板 bark_silent)
+POST {{baseurl}}/template HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "template_name": "bark_silent",
+    "variables": {
+        "title": "日报提醒",
+        "message": "今日日报尚未提交，请尽快完成",
+        "group": "daily-report"
+    },
+    "recipients": [
+        {"channel_type": "bark", "instance": "cdog_main_bark", "recipient": "YOUR_DEVICE_KEY"}
+    ]
+}

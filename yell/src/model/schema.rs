@@ -92,6 +92,7 @@ diesel::table! {
         is_enabled -> Nullable<Bool>,
         created_at -> Nullable<Timestamp>,
         updated_at -> Nullable<Timestamp>,
+        params_template -> Nullable<Jsonb>,
     }
 }
 

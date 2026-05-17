@@ -18,6 +18,7 @@ pub struct NotificationTemplate {
     pub subject_template: Option<String>,
     pub content_template: String,
     pub content_format: Option<String>,
+    pub params_template: Option<Value>,
     pub is_enabled: Option<bool>,
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
@@ -32,6 +33,7 @@ pub struct NewNotificationTemplate {
     pub subject_template: Option<String>,
     pub content_template: String,
     pub content_format: Option<String>,
+    pub params_template: Option<Value>,
     pub is_enabled: Option<bool>,
 }
 
@@ -44,6 +46,7 @@ pub struct UpdateNotificationTemplate {
     pub subject_template: Option<String>,
     pub content_template: Option<String>,
     pub content_format: Option<String>,
+    pub params_template: Option<Value>,
     pub is_enabled: Option<bool>,
     pub updated_at: Option<NaiveDateTime>,
 }
@@ -54,7 +57,8 @@ impl NotificationTemplate {
         match notification_templates
             .filter(id.eq(template_id))
             .filter(is_enabled.eq(Some(true)))
-            .first::<NotificationTemplate>(conn)
+            .select(NotificationTemplate::as_select())
+            .first(conn)
         {
             Ok(template) => Ok(Some(template)),
             Err(diesel::result::Error::NotFound) => Ok(None),
@@ -67,7 +71,8 @@ impl NotificationTemplate {
         match notification_templates
             .filter(name.eq(template_name))
             .filter(is_enabled.eq(Some(true)))
-            .first::<NotificationTemplate>(conn)
+            .select(NotificationTemplate::as_select())
+            .first(conn)
         {
             Ok(template) => Ok(Some(template)),
             Err(diesel::result::Error::NotFound) => Ok(None),
@@ -158,11 +163,12 @@ impl NotificationTemplate {
         }
     }
 
-    /// 渲染模板
-    pub fn render(&self, variables: &Map<String, Value>) -> (String, String) {
+    /// 渲染模板，返回 (subject, content, params)
+    pub fn render(&self, variables: &Map<String, Value>) -> (String, String, Value) {
         let subject = self.subject_template.as_ref().map(|s| self.replace_vars(s, variables));
         let content = self.replace_vars(&self.content_template, variables);
-        (subject.unwrap_or_default(), content)
+        let params = self.params_template.as_ref().map(|p| self.render_value(p, variables)).unwrap_or(Value::Null);
+        (subject.unwrap_or_default(), content, params)
     }
 
     fn replace_vars(&self, template: &str, variables: &Map<String, Value>) -> String {
@@ -173,5 +179,21 @@ impl NotificationTemplate {
             result = result.replace(&placeholder, &value_str);
         }
         result
+    }
+
+    /// 递归渲染 JSON Value 中的 {{var}} 占位符
+    fn render_value(&self, value: &Value, variables: &Map<String, Value>) -> Value {
+        match value {
+            Value::String(s) => Value::String(self.replace_vars(s, variables)),
+            Value::Object(map) => {
+                let mut rendered = serde_json::Map::new();
+                for (k, v) in map {
+                    rendered.insert(k.clone(), self.render_value(v, variables));
+                }
+                Value::Object(rendered)
+            }
+            Value::Array(arr) => Value::Array(arr.iter().map(|v| self.render_value(v, variables)).collect()),
+            other => other.clone(),
+        }
     }
 }

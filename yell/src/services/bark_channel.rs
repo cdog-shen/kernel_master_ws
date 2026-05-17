@@ -71,10 +71,41 @@ impl Channel for BarkChannel {
             "body": request.body,
         });
 
-        if let Some(url) = &request.url {
+        // 从 params 中读取 Bark 扩展参数
+        if let Some(level) = request.params.get("level").and_then(|v| v.as_str()) {
+            payload["level"] = json!(level);
+        }
+        if let Some(sound) = request.params.get("sound").and_then(|v| v.as_str()) {
+            payload["sound"] = json!(sound);
+        }
+        if let Some(icon) = request.params.get("icon").and_then(|v| v.as_str()) {
+            payload["icon"] = json!(icon);
+        }
+        if let Some(copy) = request.params.get("copy").and_then(|v| v.as_str()) {
+            payload["copy"] = json!(copy);
+        }
+        if let Some(is_archive) = request.params.get("isArchive").and_then(|v| v.as_i64()) {
+            payload["isArchive"] = json!(is_archive);
+        }
+        if let Some(automatically_copy) = request.params.get("automaticallyCopy").and_then(|v| v.as_i64()) {
+            payload["automaticallyCopy"] = json!(automatically_copy);
+        }
+
+        // url: params 中的优先，否则用 request.url
+        if let Some(url) = request.params.get("url").and_then(|v| v.as_str()) {
+            if !url.is_empty() {
+                payload["url"] = json!(url);
+            }
+        } else if let Some(url) = &request.url {
             payload["url"] = json!(url);
         }
-        if !request.tags.is_empty() {
+
+        // group: params 中的优先，否则用 tags
+        if let Some(group) = request.params.get("group").and_then(|v| v.as_str()) {
+            if !group.is_empty() {
+                payload["group"] = json!(group);
+            }
+        } else if !request.tags.is_empty() {
             payload["group"] = json!(request.tags.join(","));
         }
 

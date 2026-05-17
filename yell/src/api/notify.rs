@@ -189,6 +189,7 @@ pub async fn send(
         url,
         mentions,
         template_id: None,
+        params: serde_json::Value::Null,
     };
 
     let recipients = resolve_recipients(req.get("recipients"), &pool).await?;
@@ -303,6 +304,7 @@ pub async fn create_template(
         subject_template: req.get("subject_template").and_then(|v| v.as_str()).map(|s| s.to_string()),
         content_template: content_template.to_string(),
         content_format: req.get("content_format").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        params_template: req.get("params_template").cloned(),
         is_enabled: req.get("is_enabled").and_then(|v| v.as_bool()),
     };
 
@@ -350,6 +352,7 @@ pub async fn update_template(
         subject_template: req.get("subject_template").and_then(|v| v.as_str()).map(|s| s.to_string()),
         content_template: req.get("content_template").and_then(|v| v.as_str()).map(|s| s.to_string()),
         content_format: req.get("content_format").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        params_template: req.get("params_template").cloned(),
         is_enabled: req.get("is_enabled").and_then(|v| v.as_bool()),
         updated_at: Some(chrono::Local::now().naive_local()),
     };

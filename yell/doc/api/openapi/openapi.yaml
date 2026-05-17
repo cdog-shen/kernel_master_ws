@@ -252,6 +252,9 @@ paths:
                 content_format:
                   type: string
                   enum: [text, html, markdown]
+                params_template:
+                  type: object
+                  description: "渠道扩展参数模板 (JSON, 支持 {{var}} 变量). Bark: level/sound/group/url/icon 等"
                 is_enabled:
                   type: boolean
       responses:
@@ -300,6 +303,9 @@ paths:
                   type: string
                 content_format:
                   type: string
+                params_template:
+                  type: object
+                  description: "渠道扩展参数模板 (JSON, 支持 {{var}} 变量)"
                 is_enabled:
                   type: boolean
       responses:
@@ -708,15 +714,27 @@ components:
           type: string
         channel_type:
           type: string
+          description: "渠道类型 (smtp/bark/...), 决定模板字段的含义"
         subject_template:
           type: string
-          description: 主题模板 (支持 {{var}} 变量)
+          description: "SMTP: 邮件主题 | Bark: 通知标题 (支持 {{var}} 变量)"
         content_template:
           type: string
-          description: 内容模板 (支持 {{var}} 变量)
+          description: "SMTP: 邮件正文 | Bark: 通知正文 (支持 {{var}} 变量)"
         content_format:
           type: string
           enum: [text, html, markdown]
+        params_template:
+          type: object
+          nullable: true
+          description: |
+            渠道扩展参数模板 (JSON, 支持 {{var}} 变量)。
+            Bark 支持: level(active/timeSensitive/passive/critical), sound, group, url, icon, copy, isArchive, volume
+          example:
+            level: "active"
+            sound: "alarm"
+            group: "{{group}}"
+            url: "{{url}}"
         is_enabled:
           type: boolean
         created_at:
@@ -725,6 +743,23 @@ components:
         updated_at:
           type: string
           format: date-time
+
+    BarkTemplatePreset:
+      type: object
+      description: "Bark 预置模板说明"
+      properties:
+        bark_urgent_alert:
+          type: string
+          description: "紧急告警 — level=active, sound=alarm, 立即弹出持续提醒"
+        bark_timesensitive_alert:
+          type: string
+          description: "时效性通知 — level=timeSensitive, sound=multiwayinvitation, 专注模式可显示"
+        bark_normal:
+          type: string
+          description: "普通通知 — level=active, sound=healthnotification, 标准弹出"
+        bark_silent:
+          type: string
+          description: "静默通知 — level=passive, 不弹窗不响铃, 仅通知中心"
 
     NotificationRecord:
       type: object

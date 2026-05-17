@@ -174,7 +174,7 @@ impl NotificationRouter {
             }
         };
 
-        let (subject, content) = template.render(&variables);
+        let (subject, content, params) = template.render(&variables);
 
         let request = NotificationRequest {
             title: subject,
@@ -185,6 +185,7 @@ impl NotificationRouter {
             url: None,
             mentions: Vec::new(),
             template_id: Some(template.id),
+            params,
         };
 
         self.send_to_channels(request, recipients, pool).await

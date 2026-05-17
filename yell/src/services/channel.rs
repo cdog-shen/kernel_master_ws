@@ -23,6 +23,7 @@ pub struct NotificationRequest {
     pub url: Option<String>,
     pub mentions: Vec<String>,
     pub template_id: Option<i32>,
+    pub params: Value,       // 渠道扩展参数（Bark: level/sound/group/icon 等）
 }
 
 /// 渠道推送结果
