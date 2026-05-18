@@ -211,7 +211,7 @@ class YellClient implements Serializable {
 //   yell.sendWithTemplate(...)
 
 /** 模块级 YellClient 实例 */
-def _client
+@Field def _client = null
 
 def _getClient(Map args = [:]) {
     if (!_client) {
