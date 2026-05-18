@@ -48,8 +48,11 @@
  *          ]
  *      )
  *
- *   5. 全局配置（避免每次传 url/token）:
- *      yell.setConfig(yellUrl: 'http://yell-host:9005', token: 'uuid xxx')
+ *   5. 全局配置（通过 environment 块设置环境变量）:
+ *      environment {
+ *          YELL_URL = 'http://yell-host:9005'
+ *          YELL_TOKEN = 'uuid xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+ *      }
  *      yell.sendNotification(title: '...', body: '...', recipients: [...])
  */
 
@@ -201,24 +204,18 @@ class YellClient implements Serializable {
 // 在 Pipeline 中通过 load 或 shared library 引用后，可直接调用:
 //   yell.sendNotification(...)
 //   yell.sendWithTemplate(...)
-
-/** 默认配置 */
-def _defaultYellUrl = null
-def _defaultToken = null
-
-/**
- * 配置全局 Yell 参数
- */
-def setConfig(Map config) {
-    if (config.yellUrl) _defaultYellUrl = config.yellUrl
-    if (config.token) _defaultToken = config.token
-}
+//
+// 默认配置通过环境变量设置:
+//   environment {
+//       YELL_URL = 'http://yell-host:9005'
+//       YELL_TOKEN = 'uuid xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+//   }
 
 /**
  * 直接发送通知
  */
 def sendNotification(Map args) {
-    def client = new YellClient(this, args.yellUrl ?: _defaultYellUrl, args.token ?: _defaultToken)
+    def client = new YellClient(this, args.yellUrl, args.token)
     return client.sendNotification(args)
 }
 
@@ -226,6 +223,6 @@ def sendNotification(Map args) {
  * 使用模板发送通知
  */
 def sendWithTemplate(Map args) {
-    def client = new YellClient(this, args.yellUrl ?: _defaultYellUrl, args.token ?: _defaultToken)
+    def client = new YellClient(this, args.yellUrl, args.token)
     return client.sendWithTemplate(args)
 }
