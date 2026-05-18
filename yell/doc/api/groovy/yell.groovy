@@ -168,18 +168,10 @@ class YellClient implements Serializable {
         }
 
         // 回退: 使用 curl 命令
-        def tempFile = "${steps.env.WORKSPACE ?: '/tmp'}/.yell_payload_${System.currentTimeMillis()}.json"
-        steps.writeFile(file: tempFile, text: json)
-
-        def curlCmd = """
-            curl -s -w "\\n%{http_code}" -X POST "${url}" \
-                -H "Authorization: ${token}" \
-                -H "Content-Type: application/json" \
-                -d @"${tempFile}"
-        """.stripIndent().trim()
+        def escapedJson = json.replace("'", "'\\''")
+        def curlCmd = "curl -s -w '\\n%{http_code}' -X POST '${url}' -H 'Authorization: ${token}' -H 'Content-Type: application/json' -d '${escapedJson}'"
 
         def output = steps.sh(script: curlCmd, returnStdout: true).trim()
-        steps.sh("rm -f ${tempFile}", returnStatus: true)
 
         def lines = output.split('\n')
         def httpCode = lines[-1].trim()
