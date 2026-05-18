@@ -17,18 +17,38 @@
  *          ]
  *      )
  *
- *   2. 使用模板发送:
+ *   2. 通过 alias 发送（无需指定渠道细节）:
+ *      yell.sendNotification(
+ *          yellUrl: 'http://yell-host:9005',
+ *          token: 'uuid 550e8400-e29b-41d4-a716-446655440000',
+ *          title: '系统告警',
+ *          body: 'CPU 使用率超过 90%',
+ *          recipients: 'ops-team'
+ *      )
+ *
+ *   3. 使用模板发送:
  *      yell.sendWithTemplate(
  *          yellUrl: 'http://yell-host:9005',
  *          token: 'uuid 550e8400-e29b-41d4-a716-446655440000',
- *          templateName: 'alert_template',
- *          variables: [level: '严重', service: 'CMDB', message: '连接超时'],
+ *          templateName: 'bark_urgent_alert',
+ *          variables: [level: '严重', service: 'CMDB', message: '连接超时', group: 'cmdb-alerts', url: 'https://monitor.example.com/alert/1'],
  *          recipients: [
- *              [channelType: 'smtp', instance: 'smtp-main', recipient: 'ops@example.com']
+ *              [channelType: 'bark', instance: 'bark-main', recipient: 'DEVICE_KEY']
  *          ]
  *      )
  *
- *   3. 全局配置（避免每次传 url/token）:
+ *   4. 使用 Gotify 模板发送:
+ *      yell.sendWithTemplate(
+ *          yellUrl: 'http://yell-host:9005',
+ *          token: 'uuid 550e8400-e29b-41d4-a716-446655440000',
+ *          templateName: 'gotify_urgent',
+ *          variables: [level: '严重', service: 'CMDB', message: '连接超时', url: 'https://monitor.example.com/alert/1'],
+ *          recipients: [
+ *              [channelType: 'gotify', instance: 'gotify-main', recipient: 'APP_TOKEN']
+ *          ]
+ *      )
+ *
+ *   5. 全局配置（避免每次传 url/token）:
  *      yell.setConfig(yellUrl: 'http://yell-host:9005', token: 'uuid xxx')
  *      yell.sendNotification(title: '...', body: '...', recipients: [...])
  */
