@@ -65,14 +65,6 @@ class YellClient implements Serializable {
     }
 
     /**
-     * 更新客户端配置
-     */
-    def setConfig(Map config) {
-        if (config.yellUrl) this.yellUrl = config.yellUrl
-        if (config.token) this.token = config.token
-    }
-
-    /**
      * 直接发送通知
      *
      * @param args 参数 Map
@@ -210,33 +202,30 @@ class YellClient implements Serializable {
 //   yell.sendNotification(...)
 //   yell.sendWithTemplate(...)
 
-/** 模块级 YellClient 实例 */
-@Field def _client = null
-
-def _getClient(Map args = [:]) {
-    if (!_client) {
-        _client = new YellClient(this, args.yellUrl, args.token)
-    }
-    return _client
-}
+/** 默认配置 */
+def _defaultYellUrl = null
+def _defaultToken = null
 
 /**
  * 配置全局 Yell 参数
  */
 def setConfig(Map config) {
-    _getClient(config).setConfig(config)
+    if (config.yellUrl) _defaultYellUrl = config.yellUrl
+    if (config.token) _defaultToken = config.token
 }
 
 /**
  * 直接发送通知
  */
 def sendNotification(Map args) {
-    return _getClient(args).sendNotification(args)
+    def client = new YellClient(this, args.yellUrl ?: _defaultYellUrl, args.token ?: _defaultToken)
+    return client.sendNotification(args)
 }
 
 /**
  * 使用模板发送通知
  */
 def sendWithTemplate(Map args) {
-    return _getClient(args).sendWithTemplate(args)
+    def client = new YellClient(this, args.yellUrl ?: _defaultYellUrl, args.token ?: _defaultToken)
+    return client.sendWithTemplate(args)
 }
