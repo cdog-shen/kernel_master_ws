@@ -100,7 +100,7 @@ class YellClient implements Serializable {
         if (args.url) payload.url = args.url
         if (args.mentions) payload.mentions = args.mentions
 
-        return doPost("${url}/api/notify/send", authToken, payload)
+        return doPost("${url}/notify/send", authToken, payload)
     }
 
     /**
@@ -124,7 +124,7 @@ class YellClient implements Serializable {
             recipients   : parseRecipients(args.recipients)
         ]
 
-        return doPost("${url}/api/notify/template", authToken, payload)
+        return doPost("${url}/notify/template", authToken, payload)
     }
 
     /**
