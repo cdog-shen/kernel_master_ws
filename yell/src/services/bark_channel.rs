@@ -30,6 +30,15 @@ impl Channel for BarkChannel {
         Ok(request.body.clone())
     }
 
+    /// Bark 不支持 HTML，对非 text 格式降级为简介
+    fn prepare_request(&self, mut request: NotificationRequest) -> NotificationRequest {
+        if request.format != "text" {
+            request.body = "请查看详情".to_string();
+            request.format = "text".to_string();
+        }
+        request
+    }
+
     async fn send(
         &self,
         recipient: &str,

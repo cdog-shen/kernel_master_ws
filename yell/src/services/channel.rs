@@ -51,6 +51,12 @@ pub trait Channel: Send + Sync {
     /// 构建渠道特定的消息体
     fn build_message(&self, request: &NotificationRequest) -> Result<String, String>;
 
+    /// 发送前适配请求内容（默认不修改）
+    /// 简单推送渠道（Bark/Gotify 等）可覆写此方法，对 HTML 等不适配格式做降级处理
+    fn prepare_request(&self, request: NotificationRequest) -> NotificationRequest {
+        request
+    }
+
     /// 发送消息
     async fn send(
         &self,

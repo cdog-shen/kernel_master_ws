@@ -92,6 +92,7 @@ impl NotificationRouter {
                 }
 
                 let task = tokio::spawn(async move {
+                    let request = channel.prepare_request(request);
                     channel.send(&recipient, &instance, &request, &pool).await
                 });
 
