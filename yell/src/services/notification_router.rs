@@ -13,10 +13,11 @@ use crate::model::{
     channel_config::ChannelConfig,
     notification_template::NotificationTemplate,
 };
-use crate::services::bark_channel::BarkChannel;
+use crate::services::bark::service::BarkChannel;
 use crate::services::channel::{Channel, ChannelResult, NotificationRequest};
-use crate::services::gotify_channel::GotifyChannel;
-use crate::services::smtp_channel::SmtpChannel;
+use crate::services::gotify::service::GotifyChannel;
+use crate::services::mail::service::SmtpChannel;
+use crate::services::teams::service::TeamsChannel;
 
 /// 通知路由分发器
 pub struct NotificationRouter {
@@ -31,6 +32,7 @@ impl NotificationRouter {
         channels.insert("smtp".to_string(), Arc::new(SmtpChannel::new()));
         channels.insert("bark".to_string(), Arc::new(BarkChannel::new()));
         channels.insert("gotify".to_string(), Arc::new(GotifyChannel::new()));
+        channels.insert("teams".to_string(), Arc::new(TeamsChannel::new()));
 
         // TODO: 注册更多渠道
         // channels.insert("wecom".to_string(), Arc::new(WeComChannel::new()));

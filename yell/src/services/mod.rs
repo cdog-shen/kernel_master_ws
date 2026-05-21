@@ -1,5 +1,6 @@
-pub mod bark_channel;
+pub mod bark;
 pub mod channel;
-pub mod gotify_channel;
+pub mod gotify;
+pub mod mail;
 pub mod notification_router;
-pub mod smtp_channel;
+pub mod teams;

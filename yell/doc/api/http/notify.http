@@ -214,3 +214,54 @@ Content-Type: application/json
         {"channel_type": "gotify", "instance": "gotify-main", "recipient": "YOUR_APP_TOKEN"}
     ]
 }
+
+### send Teams notification (direct)
+POST {{baseurl}}/send HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "title": "Teams 测试",
+    "body": "这是一条来自 Yell 的 Teams 推送",
+    "format": "text",
+    "priority": "normal",
+    "url": "https://example.com",
+    "recipients": [
+        {"channel_type": "teams", "instance": "teams-main", "recipient": ""}
+    ]
+}
+
+### send Teams urgent alert (预置模板 teams_urgent)
+POST {{baseurl}}/template HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "template_name": "teams_urgent",
+    "variables": {
+        "level": "严重",
+        "service": "CMDB",
+        "message": "生产环境 CPU 使用率超过 95%，请立即处理",
+        "url": "https://monitor.example.com/alert/123"
+    },
+    "recipients": [
+        {"channel_type": "teams", "instance": "teams-main", "recipient": ""}
+    ]
+}
+
+### send Teams normal notification (预置模板 teams_normal)
+POST {{baseurl}}/template HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "template_name": "teams_normal",
+    "variables": {
+        "title": "系统通知",
+        "message": "数据库备份已完成",
+        "url": "https://example.com"
+    },
+    "recipients": [
+        {"channel_type": "teams", "instance": "teams-main", "recipient": ""}
+    ]
+}

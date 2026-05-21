@@ -62,6 +62,12 @@ pub struct GotifyConfig {
     pub app_token: String,
 }
 
+/// Teams 配置结构
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TeamsConfig {
+    pub webhook_url: String,
+}
+
 impl ChannelConfig {
     /// 根据通道类型 + 实例名获取配置
     pub fn get_by_name(channel: &str, instance_name: &str, conn: &mut PgConnection) -> Result<Option<Self>, (u8, String)> {
@@ -190,6 +196,20 @@ impl ChannelConfig {
             Some(config) => match serde_json::from_value::<GotifyConfig>(config.config_json) {
                 Ok(gotify_config) => Ok(Some(gotify_config)),
                 Err(e) => Err((BAD_REQUEST_CODE, format!("Invalid Gotify config: {}", e))),
+            },
+            None => Ok(None),
+        }
+    }
+
+    /// 获取指定实例的 Teams 配置
+    pub fn get_teams_config_by_name(
+        instance_name: &str,
+        conn: &mut PgConnection,
+    ) -> Result<Option<TeamsConfig>, (u8, String)> {
+        match Self::get_by_name("teams", instance_name, conn)? {
+            Some(config) => match serde_json::from_value::<TeamsConfig>(config.config_json) {
+                Ok(teams_config) => Ok(Some(teams_config)),
+                Err(e) => Err((BAD_REQUEST_CODE, format!("Invalid Teams config: {}", e))),
             },
             None => Ok(None),
         }

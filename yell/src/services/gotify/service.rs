@@ -46,7 +46,6 @@ impl Channel for GotifyChannel {
         request: &NotificationRequest,
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<ChannelResult, String> {
-        // 从数据库获取 Gotify 配置（按实例名）
         let gotify_config = web::block({
             let pool = pool.clone();
             let name = instance_name.to_string();
@@ -61,17 +60,14 @@ impl Channel for GotifyChannel {
 
         let config = gotify_config.ok_or("Gotify config not found")?;
 
-        // app_token: 优先使用 recipient，否则使用配置中的默认值
         let app_token = if !recipient.is_empty() {
             recipient.to_string()
         } else {
             config.app_token.clone()
         };
 
-        // 创建通知记录
         let record_id = create_record("gotify", recipient, request, pool).await?;
 
-        // 优先级映射: params 中的 priority 可覆盖
         let priority = request
             .params
             .get("priority")
@@ -85,14 +81,12 @@ impl Channel for GotifyChannel {
                 _ => 5,
             });
 
-        // 构建 payload
         let mut payload = json!({
             "title": request.title,
             "message": request.body,
             "priority": priority,
         });
 
-        // 支持 extras 中的 click URL
         if let Some(url) = request.params.get("url").and_then(|v| v.as_str()) {
             if !url.is_empty() {
                 payload["extras"] = json!({
@@ -109,7 +103,6 @@ impl Channel for GotifyChannel {
             });
         }
 
-        // 构建 form body
         let mut form_body = format!(
             "title={}&message={}&priority={}",
             payload["title"], payload["message"], priority
@@ -118,7 +111,6 @@ impl Channel for GotifyChannel {
             form_body.push_str(&format!("&extras={}", extras));
         }
 
-        // 发送请求
         let push_url = format!(
             "{}/message?token={}",
             config.server_url.trim_end_matches('/'),
