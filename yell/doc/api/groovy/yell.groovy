@@ -48,7 +48,18 @@
  *          ]
  *      )
  *
- *   5. 全局配置（通过 environment 块设置环境变量）:
+ *   5. 使用 Teams 模板发送:
+ *      yell.sendWithTemplate(
+ *          yellUrl: 'http://yell-host:9005',
+ *          token: 'uuid 550e8400-e29b-41d4-a716-446655440000',
+ *          templateName: 'teams_urgent',
+ *          variables: [level: '严重', service: 'CMDB', message: '连接超时', url: 'https://monitor.example.com/alert/1'],
+ *          recipients: [
+ *              [channelType: 'teams', instance: 'teams-main', recipient: '']
+ *          ]
+ *      )
+ *
+ *   6. 全局配置（通过 environment 块设置环境变量）:
  *      environment {
  *          YELL_URL = 'http://yell-host:9005'
  *          YELL_TOKEN = 'uuid xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'

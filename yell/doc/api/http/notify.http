@@ -265,3 +265,20 @@ Content-Type: application/json
         {"channel_type": "teams", "instance": "teams-main", "recipient": ""}
     ]
 }
+
+### send Teams custom JSON (content_format=json, params_template 整体作为 payload)
+POST {{baseurl}}/template HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "template_name": "teams_custom_json",
+    "variables": {
+        "id": "12345",
+        "title": "告警通知",
+        "body": "CPU 使用率过高"
+    },
+    "recipients": [
+        {"channel_type": "teams", "instance": "teams-main", "recipient": ""}
+    ]
+}

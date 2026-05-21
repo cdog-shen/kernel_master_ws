@@ -59,35 +59,45 @@ impl Channel for TeamsChannel {
 
         let record_id = create_record("teams", recipient, request, pool).await?;
 
-        let mut payload = json!({
-            "@type": "MessageCard",
-            "@context": "http://schema.org/extensions",
-            "summary": request.title,
-            "themeColor": match request.priority.as_str() {
-                "urgent" => "FF0000",
-                "high" => "FF8C00",
-                "low" => "808080",
-                _ => "0076D7",
-            },
-            "title": request.title,
-            "text": request.body,
-        });
+        // content_format=json 时，params_template 整体作为 payload
+        let payload = if request.format == "json" {
+            if request.params.is_null() || request.params.as_object().map_or(true, |m| m.is_empty()) {
+                return Err("content_format=json requires params_template to be set".to_string());
+            }
+            request.params.clone()
+        } else {
+            // 默认 MessageCard 格式
+            let mut card = json!({
+                "@type": "MessageCard",
+                "@context": "http://schema.org/extensions",
+                "summary": request.title,
+                "themeColor": match request.priority.as_str() {
+                    "urgent" => "FF0000",
+                    "high" => "FF8C00",
+                    "low" => "808080",
+                    _ => "0076D7",
+                },
+                "title": request.title,
+                "text": request.body,
+            });
 
-        if let Some(url) = request.params.get("url").and_then(|v| v.as_str()) {
-            if !url.is_empty() {
-                payload["potentialAction"] = json!([{
+            if let Some(url) = request.params.get("url").and_then(|v| v.as_str()) {
+                if !url.is_empty() {
+                    card["potentialAction"] = json!([{
+                        "@type": "OpenUri",
+                        "name": "查看详情",
+                        "targets": [{ "os": "default", "uri": url }]
+                    }]);
+                }
+            } else if let Some(url) = &request.url {
+                card["potentialAction"] = json!([{
                     "@type": "OpenUri",
                     "name": "查看详情",
                     "targets": [{ "os": "default", "uri": url }]
                 }]);
             }
-        } else if let Some(url) = &request.url {
-            payload["potentialAction"] = json!([{
-                "@type": "OpenUri",
-                "name": "查看详情",
-                "targets": [{ "os": "default", "uri": url }]
-            }]);
-        }
+            card
+        };
 
         let result = web::block(move || {
             ureq::post(&webhook_url)

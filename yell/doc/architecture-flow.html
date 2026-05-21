@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yell — 渠道数据流转图</title>
+<style>
+:root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --cyan: #39d2c0;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    padding: 2rem;
+}
+h1 { color: var(--accent); font-size: 1.8rem; margin-bottom: 0.5rem; }
+h2 { color: var(--green); font-size: 1.3rem; margin: 2.5rem 0 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+h3 { color: var(--orange); font-size: 1.05rem; margin: 1.5rem 0 0.6rem; }
+.subtitle { color: var(--text-dim); margin-bottom: 2rem; }
+
+/* Flow diagram */
+.flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+.flow-row { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; justify-content: center; }
+.box {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    text-align: center;
+    min-width: 120px;
+    background: var(--card);
+    position: relative;
+}
+.box.api { border-color: var(--accent); background: rgba(88,166,255,0.08); }
+.box.router { border-color: var(--green); background: rgba(63,185,80,0.08); }
+.box.channel { border-color: var(--orange); background: rgba(210,153,34,0.08); }
+.box.db { border-color: var(--purple); background: rgba(188,140,255,0.08); }
+.box.ext { border-color: var(--cyan); background: rgba(57,210,192,0.08); }
+.box.warn { border-color: var(--red); background: rgba(248,81,73,0.08); }
+.box small { display: block; color: var(--text-dim); font-size: 0.75rem; margin-top: 2px; }
+
+.arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    padding: 0.3rem 0;
+}
+.arrow-down {
+    display: flex;
+    justify-content: center;
+    padding: 0.2rem 0;
+}
+.arrow-down::after {
+    content: '▼';
+    color: var(--text-dim);
+    font-size: 0.7rem;
+}
+.arrow-right { padding: 0 0.3rem; color: var(--text-dim); }
+.arrow-split { color: var(--text-dim); font-size: 0.8rem; padding: 0.4rem 0; text-align: center; }
+
+/* Branch layout */
+.branch { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; margin: 1rem 0; }
+.branch-item {
+    flex: 1;
+    min-width: 260px;
+    max-width: 340px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    background: var(--card);
+}
+.branch-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--border);
+}
+.branch-label.smtp { color: var(--accent); }
+.branch-label.bark { color: var(--green); }
+.branch-label.gotify { color: var(--orange); }
+.branch-label.teams { color: var(--cyan); }
+
+.step { font-size: 0.82rem; margin: 0.5rem 0; padding-left: 0.8rem; position: relative; }
+.step::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--text-dim);
+}
+.step code {
+    background: rgba(110,118,129,0.15);
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    color: var(--cyan);
+}
+.tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    margin: 0 0.15rem;
+}
+.tag.text { background: rgba(63,185,80,0.2); color: var(--green); }
+.tag.html { background: rgba(88,166,255,0.2); color: var(--accent); }
+.tag.json { background: rgba(188,140,255,0.2); color: var(--purple); }
+
+.note {
+    background: rgba(210,153,34,0.08);
+    border-left: 3px solid var(--orange);
+    padding: 0.6rem 1rem;
+    font-size: 0.82rem;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+}
+.note strong { color: var(--orange); }
+
+/* Table */
+table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.82rem; }
+th, td { border: 1px solid var(--border); padding: 0.5rem 0.8rem; text-align: left; }
+th { background: var(--card); color: var(--accent); font-weight: 600; }
+td { background: rgba(13,17,23,0.5); }
+
+/* Two-column overview */
+.overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+@media (max-width: 800px) { .overview-grid { grid-template-columns: 1fr; } }
+.overview-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    background: var(--card);
+}
+.overview-card h4 { color: var(--accent); margin-bottom: 0.6rem; font-size: 0.95rem; }
+</style>
+</head>
+<body>
+
+<h1>Yell — 渠道数据流转图</h1>
+<p class="subtitle">从接收请求到最终推送，覆盖所有渠道与格式</p>
+
+<!-- ==================== 总览 ==================== -->
+<h2>1. 请求入口总览</h2>
+<div class="overview-grid">
+    <div class="overview-card">
+        <h4>直接发送 — POST /api/notify/send</h4>
+        <div class="step">客户端构造 <code>NotificationRequest</code>（title, body, format, priority, tags, url, params=null）</div>
+        <div class="step"><code>resolve_recipients()</code> 解析 recipients（数组 或 alias 字符串）</div>
+        <div class="step">进入 <code>send_to_channels()</code> → 按 channel_type 并发分发</div>
+    </div>
+    <div class="overview-card">
+        <h4>模板发送 — POST /api/notify/template</h4>
+        <div class="step">按 <code>template_name</code> 从 DB 加载模板</div>
+        <div class="step"><code>template.render(variables)</code> → (subject, content, params)</div>
+        <div class="step">构造 <code>NotificationRequest</code>（format = content_format）</div>
+        <div class="step">进入 <code>send_to_channels()</code> → 按 channel_type 并发分发</div>
+    </div>
+</div>
+
+<!-- ==================== Router ==================== -->
+<h2>2. NotificationRouter 分发流程</h2>
+<div class="flow">
+    <div class="flow-row">
+        <div class="box api">NotificationRequest<small>title, body, format, params…</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box router">load_channel_configs<small>从 DB 加载各渠道配置</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box router">遍历 recipients<small>每个 (channel_type, recipient, instance)</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box router">channel.prepare_request(request)<small>渠道自适应（Bark/Gotify 降级 HTML）</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box router">tokio::spawn → channel.send()<small>并发发送到各渠道</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box api">Vec&lt;ChannelResult&gt;<small>success / record_id / error_msg</small></div>
+    </div>
+</div>
+
+<!-- ==================== prepare_request ==================== -->
+<h2>3. prepare_request — 内容自适应</h2>
+<div class="note">
+    <strong>为什么需要？</strong>同一请求可能发往多个渠道（如 SMTP + Bark）。HTML 内容对 Bark/Gotify 无意义，需降级处理。
+</div>
+<table>
+    <tr><th>渠道</th><th>format == text</th><th>format == html / markdown / json</th></tr>
+    <tr>
+        <td><span style="color:var(--accent)">SMTP</span></td>
+        <td>原样传递</td>
+        <td>原样传递（支持 HTML 邮件）</td>
+    </tr>
+    <tr>
+        <td><span style="color:var(--green)">Bark</span></td>
+        <td>原样传递</td>
+        <td>body → <code>"请查看详情"</code>，format → <code>"text"</code></td>
+    </tr>
+    <tr>
+        <td><span style="color:var(--orange)">Gotify</span></td>
+        <td>原样传递</td>
+        <td>body → <code>"请查看详情"</code>，format → <code>"text"</code></td>
+    </tr>
+    <tr>
+        <td><span style="color:var(--cyan)">Teams</span></td>
+        <td colspan="2">不覆写 prepare_request（由 send() 内部按 format 分支处理）</td>
+    </tr>
+</table>
+
+<!-- ==================== SMTP ==================== -->
+<h2>4. SMTP 渠道</h2>
+<div class="flow">
+    <div class="flow-row">
+        <div class="box channel">NotificationRequest<small>title, body, format</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box db">init_transport<small>从 DB 加载 SMTP 配置 → 构建 lettre transport</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box db">create_record<small>创建 notification_record (status=pending)</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">解析 recipient<small>逗号/分号分隔 → 多收件人</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">构建 Message<small>from(配置) + to(收件人) + subject(title)</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">Content-Type 分支</div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow">
+        <div class="flow-row">
+            <div class="box" style="border-color:var(--accent)">format==html → TEXT_HTML<small>HTML 邮件正文</small></div>
+            <div class="arrow-right">|</div>
+            <div class="box" style="border-color:var(--accent)">其他 → TEXT_PLAIN<small>纯文本邮件正文</small></div>
+        </div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box ext">transport.send(email)<small>lettre 异步发送</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box db">update_record<small>status → sent / failed</small></div>
+    </div>
+</div>
+
+<!-- ==================== Bark ==================== -->
+<h2>5. Bark 渠道</h2>
+<div class="flow">
+    <div class="flow-row">
+        <div class="box channel">NotificationRequest<small>title, body, format, params</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box warn">prepare_request<small>format≠text → body="请查看详情", format="text"</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box db">加载 BarkConfig<small>server_url, device_key</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">确定 device_key<small>recipient 优先 → 否则用配置默认值</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box db">create_record</div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">构建 payload<small>{device_key, title, body}</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">读取 params 扩展字段</div>
+    </div>
+    <div class="flow">
+        <div class="flow-row" style="gap:0.4rem; flex-wrap:wrap; justify-content:center;">
+            <div class="box" style="min-width:80px; font-size:0.78rem;">level<small>active/passive…</small></div>
+            <div class="box" style="min-width:80px; font-size:0.78rem;">sound<small>alarm/…</small></div>
+            <div class="box" style="min-width:80px; font-size:0.78rem;">icon<small>URL</small></div>
+            <div class="box" style="min-width:80px; font-size:0.78rem;">copy<small>复制内容</small></div>
+            <div class="box" style="min-width:80px; font-size:0.78rem;">isArchive<small>0/1</small></div>
+        </div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">url 优先级<small>params.url → request.url</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">group 优先级<small>params.group → tags.join(",")</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box ext">POST {server_url}/push<small>send_json(payload)</small></div>
+    </div>
+</div>
+
+<!-- ==================== Gotify ==================== -->
+<h2>6. Gotify 渠道</h2>
+<div class="flow">
+    <div class="flow-row">
+        <div class="box channel">NotificationRequest<small>title, body, format, priority, params</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box warn">prepare_request<small>format≠text → body="请查看详情", format="text"</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box db">加载 GotifyConfig<small>server_url, app_token</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">确定 app_token<small>recipient 优先 → 否则用配置默认值</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box db">create_record</div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">priority 映射</div>
+    </div>
+    <div class="flow">
+        <table>
+            <tr><th>来源</th><th>映射</th></tr>
+            <tr><td>params.priority</td><td>直接使用数字 (0-10)</td></tr>
+            <tr><td>low</td><td>→ 2</td></tr>
+            <tr><td>normal</td><td>→ 5</td></tr>
+            <tr><td>high</td><td>→ 7</td></tr>
+            <tr><td>urgent</td><td>→ 10</td></tr>
+        </table>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">构建 payload<small>{title, message, priority}</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">extras (click URL)<small>params.url → request.url</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">构建 form body<small>title=…&message=…&priority=…&extras=…</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box ext">POST {server_url}/message?token={token}<small>Content-Type: application/x-www-form-urlencoded</small></div>
+    </div>
+</div>
+
+<!-- ==================== Teams ==================== -->
+<h2>7. Teams 渠道</h2>
+<div class="flow">
+    <div class="flow-row">
+        <div class="box channel">NotificationRequest<small>title, body, format, priority, params</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box db">加载 TeamsConfig<small>webhook_url</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">确定 webhook_url<small>recipient 优先 → 否则用配置默认值</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box db">create_record</div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box channel">format 分支</div>
+    </div>
+    <div class="flow">
+        <div class="branch">
+            <div class="branch-item">
+                <div class="branch-label teams">format == json</div>
+                <div class="step"><code>params_template</code> 整体作为 payload</div>
+                <div class="step">支持完全自定义 JSON 结构</div>
+                <div class="step">例: <code>{"id":"{{id}}","title":"{{title}}"}</code></div>
+                <div class="step" style="color:var(--red)">params 为空时返回错误</div>
+            </div>
+            <div class="branch-item">
+                <div class="branch-label teams">format != json (默认)</div>
+                <div class="step">构建 <code>MessageCard</code></div>
+                <div class="step">@type, @context, summary, title, text</div>
+                <div class="step">themeColor 按 priority 着色</div>
+                <div class="step" style="font-size:0.75rem; color:var(--text-dim)">urgent=红 #FF0000 | high=橙 #FF8C00 | normal=蓝 #0076D7 | low=灰 #808080</div>
+                <div class="step">potentialAction (OpenUri) — 如有 url</div>
+            </div>
+        </div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box ext">POST {webhook_url}<small>send_json(payload)</small></div>
+    </div>
+</div>
+
+<!-- ==================== 全局表格 ==================== -->
+<h2>8. 渠道能力对比</h2>
+<table>
+    <tr>
+        <th>渠道</th>
+        <th>配置 (config_json)</th>
+        <th>recipient 含义</th>
+        <th>支持 format</th>
+        <th>params 字段</th>
+        <th>prepare_request</th>
+    </tr>
+    <tr>
+        <td><span style="color:var(--accent)">SMTP</span></td>
+        <td>host, port, username, password, from, use_tls</td>
+        <td>邮箱地址（逗号/分号分隔多收件人）</td>
+        <td><span class="tag text">text</span> <span class="tag html">html</span></td>
+        <td>—</td>
+        <td>无（原样传递）</td>
+    </tr>
+    <tr>
+        <td><span style="color:var(--green)">Bark</span></td>
+        <td>server_url, device_key?</td>
+        <td>device_key（可选，覆盖配置默认值）</td>
+        <td><span class="tag text">text</span></td>
+        <td>level, sound, icon, copy, isArchive, url, group</td>
+        <td>HTML → "请查看详情"</td>
+    </tr>
+    <tr>
+        <td><span style="color:var(--orange)">Gotify</span></td>
+        <td>server_url, app_token</td>
+        <td>app_token（可选，覆盖配置默认值）</td>
+        <td><span class="tag text">text</span></td>
+        <td>priority(0-10), url</td>
+        <td>HTML → "请查看详情"</td>
+    </tr>
+    <tr>
+        <td><span style="color:var(--cyan)">Teams</span></td>
+        <td>webhook_url</td>
+        <td>webhook_url（可选，覆盖配置默认值）</td>
+        <td><span class="tag text">text</span> <span class="tag json">json</span></td>
+        <td>url | json 模式: 整体作为 payload</td>
+        <td>无（send 内部按 format 分支）</td>
+    </tr>
+</table>
+
+<!-- ==================== 模板渲染 ==================== -->
+<h2>9. 模板渲染流程</h2>
+<div class="flow">
+    <div class="flow-row">
+        <div class="box db">DB: notification_templates<small>name, subject_template, content_template, content_format, params_template</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box api">template.render(variables)<small>{{var}} → 变量值</small></div>
+    </div>
+    <div class="flow">
+        <div class="flow-row" style="gap:1rem;">
+            <div class="box" style="border-color:var(--accent)">subject_template<small>→ title</small></div>
+            <div class="box" style="border-color:var(--green)">content_template<small>→ body</small></div>
+            <div class="box" style="border-color:var(--purple)">params_template<small>→ params (递归渲染 JSON)</small></div>
+        </div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box router">NotificationRequest<small>title=subject, body=content, format=content_format, params=rendered_params</small></div>
+    </div>
+</div>
+
+<div class="note">
+    <strong>递归渲染：</strong><code>params_template</code> 中的 <code>{{var}}</code> 会递归替换到嵌套 JSON 对象和数组中。
+    例: <code>{"level":"{{level}}","url":"{{url}}"}</code> + variables → <code>{"level":"严重","url":"https://…"}</code>
+</div>
+
+<!-- ==================== 跨渠道发送 ==================== -->
+<h2>10. 跨渠道发送示例</h2>
+<div class="note">
+    <strong>场景：</strong>用 SMTP HTML 模板同时发给 SMTP + Bark + Teams 三个渠道。
+</div>
+<div class="flow">
+    <div class="flow-row">
+        <div class="box db">模板: smtp_html_alert<small>content_format=html, content_template="&lt;h1&gt;{{msg}}&lt;/h1&gt;"</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box router">render → NotificationRequest<small>format="html", body="&lt;h1&gt;CPU过高&lt;/h1&gt;"</small></div>
+    </div>
+    <div class="arrow-down"></div>
+    <div class="flow-row">
+        <div class="box router">并发分发到 3 个渠道</div>
+    </div>
+    <div class="flow">
+        <div class="branch">
+            <div class="branch-item">
+                <div class="branch-label smtp">SMTP</div>
+                <div class="step">prepare_request → 无修改</div>
+                <div class="step">Content-Type: <code>TEXT_HTML</code></div>
+                <div class="step">邮件正文: <code>&lt;h1&gt;CPU过高&lt;/h1&gt;</code></div>
+                <div class="step" style="color:var(--green)">✓ 正常渲染 HTML</div>
+            </div>
+            <div class="branch-item">
+                <div class="branch-label bark">Bark</div>
+                <div class="step">prepare_request → <strong>降级</strong></div>
+                <div class="step">body → <code>"请查看详情"</code></div>
+                <div class="step">format → <code>"text"</code></div>
+                <div class="step" style="color:var(--orange)">⚠ 显示简介，无 HTML 标签</div>
+            </div>
+            <div class="branch-item">
+                <div class="branch-label teams">Teams</div>
+                <div class="step">prepare_request → 无修改</div>
+                <div class="step">format="html" ≠ "json"</div>
+                <div class="step">构建 MessageCard</div>
+                <div class="step">text: <code>&lt;h1&gt;CPU过高&lt;/h1&gt;</code></div>
+                <div class="step" style="color:var(--orange)">⚠ 原始 HTML 标签显示</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== Footer ==================== -->
+<div style="margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border); color:var(--text-dim); font-size:0.78rem; text-align:center;">
+    Yell Notification System — Architecture Flow Diagram<br>
+    Generated from source code analysis
+</div>
+
+</body>
+</html>

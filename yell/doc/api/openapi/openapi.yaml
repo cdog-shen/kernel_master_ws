@@ -251,7 +251,7 @@ paths:
                   description: 内容模板 (支持 {{var}} 变量)
                 content_format:
                   type: string
-                  enum: [text, html, markdown]
+                  enum: [text, html, markdown, json]
                 params_template:
                   type: object
                   description: "渠道扩展参数模板 (JSON, 支持 {{var}} 变量). Bark: level/sound/group/url/icon 等. Gotify: priority(0-10)/url"
@@ -303,6 +303,7 @@ paths:
                   type: string
                 content_format:
                   type: string
+                  enum: [text, html, markdown, json]
                 params_template:
                   type: object
                   description: "渠道扩展参数模板 (JSON, 支持 {{var}} 变量)"
@@ -723,7 +724,8 @@ components:
           description: "SMTP: 邮件正文 | Bark: 通知正文 (支持 {{var}} 变量)"
         content_format:
           type: string
-          enum: [text, html, markdown]
+          enum: [text, html, markdown, json]
+          description: "json 时 Teams 渠道直接使用 params_template 作为 payload"
         params_template:
           type: object
           nullable: true
@@ -731,7 +733,7 @@ components:
             渠道扩展参数模板 (JSON, 支持 {{var}} 变量)。
             Bark 支持: level(active/timeSensitive/passive/critical), sound, group, url, icon, copy, isArchive, volume
             Gotify 支持: priority(0-10), url
-            Teams 支持: url
+            Teams 支持: url | content_format=json 时整体作为 webhook payload
           example:
             level: "active"
             sound: "alarm"
@@ -875,6 +877,9 @@ components:
         teams_normal:
           type: string
           description: "普通通知 — 蓝色主题 MessageCard"
+        teams_custom_json:
+          type: string
+          description: "自定义 JSON — content_format=json，params_template 整体作为 webhook payload"
 
     NotificationAlias:
       type: object
