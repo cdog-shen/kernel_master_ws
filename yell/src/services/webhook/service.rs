@@ -167,18 +167,8 @@ impl Channel for WebhookChannel {
             params: serde_json::Value::Null,
         }, pool).await?;
 
-        // Webhook 固定使用 JSON 格式，用 payload 中的字段构造
-        let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or("");
-        let body = payload.get("body").and_then(|v| v.as_str()).unwrap_or("");
-        let mut webhook_payload = json!({
-            "title": title,
-            "body": body,
-        });
-        if let Some(url) = payload.get("url").and_then(|v| v.as_str()) {
-            if !url.is_empty() {
-                webhook_payload["url"] = json!(url);
-            }
-        }
+        // Webhook 固定使用 JSON 格式，渲染后的 payload 原样发送
+        let webhook_payload = payload.clone();
 
         let result = web::block(move || {
             ureq::post(&webhook_url)
