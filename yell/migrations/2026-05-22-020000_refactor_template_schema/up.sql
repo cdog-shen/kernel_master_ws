@@ -37,7 +37,7 @@ VALUES (
     '紧急告警 — Bark/Gotify/Teams 三渠道联动',
     '{"title": "[{{level}}] {{service}} 告警", "body": "{{message}}", "level": "timeSensitive", "sound": "alarm", "group": "{{group}}", "url": "{{url}}"}',
     '{"title": "[{{level}}] {{service}} 告警", "message": "{{message}}", "priority": 8, "url": "{{url}}"}',
-    '{"@type": "MessageCard", "@context": "http://schema.org/extensions", "summary": "{{service}} 告警", "themeColor": "FF0000", "title": "[{{level}}] {{service}} 告警", "text": "{{message}}", "potentialAction": [{"@type": "OpenUri", "name": "查看详情", "targets": [{"os": "default", "uri": "{{url}}"}]}]}',
+    '{"title": "[{{level}}] {{service}} 告警", "text": "{{message}}", "url": "{{url}}"}',
     NULL,
     true
 );
@@ -49,7 +49,7 @@ VALUES (
     '普通通知 — Bark/Gotify/Teams 三渠道联动',
     '{"title": "{{title}}", "body": "{{message}}", "level": "active", "sound": "healthnotification", "group": "{{group}}", "url": "{{url}}"}',
     '{"title": "{{title}}", "message": "{{message}}", "priority": 5, "url": "{{url}}"}',
-    '{"@type": "MessageCard", "@context": "http://schema.org/extensions", "summary": "{{title}}", "themeColor": "0076D7", "title": "{{title}}", "text": "{{message}}", "potentialAction": [{"@type": "OpenUri", "name": "查看详情", "targets": [{"os": "default", "uri": "{{url}}"}]}]}',
+    '{"title": "{{title}}", "text": "{{message}}", "url": "{{url}}"}',
     NULL,
     true
 );
@@ -102,8 +102,8 @@ VALUES (
     '{"subject": "[{{level}}] {{service}} 告警", "content_type": "html", "body": "<h2>{{level}} — {{service}}</h2><p>{{message}}</p>"}',
     '{"title": "[{{level}}] {{service}} 告警", "body": "{{message}}", "level": "timeSensitive", "sound": "alarm", "group": "{{group}}", "url": "{{url}}"}',
     '{"title": "[{{level}}] {{service}} 告警", "message": "{{message}}", "priority": 8, "url": "{{url}}"}',
-    '{"@type": "MessageCard", "summary": "{{service}} 告警", "themeColor": "FF0000", "title": "[{{level}}] {{service}} 告警", "text": "{{message}}"}',
-    '{"title": "{{level}}", "body": "{{message}}", "service": "{{service}}", "level": "{{level}}"}',
+    '{"title": "[{{level}}] {{service}} 告警", "text": "{{message}}", "url": "{{url}}"}',
+    '{"title": "{{level}} — {{service}}", "body": "{{message}}", "url": "{{url}}"}',
     NULL,
     true
 );
