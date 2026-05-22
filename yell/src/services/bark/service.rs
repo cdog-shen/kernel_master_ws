@@ -61,13 +61,11 @@ impl Channel for BarkChannel {
 
         let config = bark_config.ok_or("Bark config not found")?;
 
-        // device_key: 优先使用 recipient，否则使用配置中的默认值
+        // device_key: 优先使用 recipient，否则使用配置中的默认值，都为空则发送给全体
         let device_key = if !recipient.is_empty() {
-            recipient.to_string()
+            Some(recipient.to_string())
         } else {
-            config
-                .device_key
-                .ok_or("No device_key provided (neither in recipient nor config)")?
+            config.device_key
         };
 
         // 创建通知记录
@@ -75,10 +73,14 @@ impl Channel for BarkChannel {
 
         // 构建 Bark 请求体
         let mut payload = json!({
-            "device_key": device_key,
             "title": request.title,
             "body": request.body,
         });
+
+        // 有 device_key 时指定设备，否则发送给连接到此 server 的全体用户
+        if let Some(ref key) = device_key {
+            payload["device_key"] = json!(key);
+        }
 
         // 从 params 中读取 Bark 扩展参数
         if let Some(level) = request.params.get("level").and_then(|v| v.as_str()) {
