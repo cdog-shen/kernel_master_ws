@@ -4,7 +4,7 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
     PgConnection,
 };
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::model::channel_config::ChannelConfig;
 use crate::services::channel::{
@@ -178,7 +178,10 @@ impl Channel for TeamsChannel {
             params: serde_json::Value::Null,
         }, pool).await?;
 
-        // Teams 固定使用 MessageCard 格式，用 payload 中的字段构造
+        // Teams 固定使用 MessageCard 格式
+        // 已知字段：title, text/body, url
+        // 其余字段自动放入 facts 数组
+        let known_keys: &[&str] = &["title", "text", "body", "url"];
         let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or("");
         let body = payload.get("text").or_else(|| payload.get("body")).and_then(|v| v.as_str()).unwrap_or("");
         let mut teams_payload = json!({
@@ -189,6 +192,27 @@ impl Channel for TeamsChannel {
             "title": title,
             "text": body,
         });
+
+        // 收集额外字段作为 facts
+        if let Some(obj) = payload.as_object() {
+            let facts: Vec<Value> = obj.iter()
+                .filter(|(k, _)| !known_keys.contains(&k.as_str()))
+                .filter_map(|(k, v)| {
+                    let val = v.as_str().map(|s| s.to_string()).or_else(|| {
+                        if v.is_number() || v.is_boolean() {
+                            Some(v.to_string())
+                        } else {
+                            None
+                        }
+                    })?;
+                    Some(json!({"name": k, "value": val}))
+                })
+                .collect();
+            if !facts.is_empty() {
+                teams_payload["sections"] = json!([{ "facts": facts }]);
+            }
+        }
+
         if let Some(url) = payload.get("url").and_then(|v| v.as_str()) {
             if !url.is_empty() {
                 teams_payload["potentialAction"] = json!([{
