@@ -178,39 +178,30 @@ impl Channel for TeamsChannel {
             params: serde_json::Value::Null,
         }, pool).await?;
 
-        // content_format=json 时 payload 整体作为原始 JSON 发送
-        // 否则用 payload 中的字段构造 MessageCard
-        let teams_payload = if payload.get("content_format").and_then(|v| v.as_str()) == Some("json") {
-            let mut raw = payload.clone();
-            raw.as_object_mut().map(|m| m.remove("content_format"));
-            raw
-        } else {
-            let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or("");
-            let body = payload.get("text").or_else(|| payload.get("body")).and_then(|v| v.as_str()).unwrap_or("");
-            let mut card = json!({
-                "@type": "MessageCard",
-                "@context": "http://schema.org/extensions",
-                "summary": title,
-                "themeColor": "0076D7",
-                "title": title,
-                "text": body,
-            });
-            if let Some(url) = payload.get("url").and_then(|v| v.as_str()) {
-                if !url.is_empty() {
-                    card["potentialAction"] = json!([{
-                        "@type": "OpenUri",
-                        "name": "查看详情",
-                        "targets": [{ "os": "default", "uri": url }]
-                    }]);
-                }
+        // Teams 固定使用 MessageCard 格式，用 payload 中的字段构造
+        let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or("");
+        let body = payload.get("text").or_else(|| payload.get("body")).and_then(|v| v.as_str()).unwrap_or("");
+        let mut teams_payload = json!({
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "summary": title,
+            "themeColor": "0076D7",
+            "title": title,
+            "text": body,
+        });
+        if let Some(url) = payload.get("url").and_then(|v| v.as_str()) {
+            if !url.is_empty() {
+                teams_payload["potentialAction"] = json!([{
+                    "@type": "OpenUri",
+                    "name": "查看详情",
+                    "targets": [{ "os": "default", "uri": url }]
+                }]);
             }
-            card
-        };
+        }
 
-        let payload_owned = teams_payload;
         let result = web::block(move || {
             ureq::post(&webhook_url)
-                .send_json(&payload_owned)
+                .send_json(&teams_payload)
                 .map_err(|e| format!("Teams request error: {}", e))
         })
         .await;
