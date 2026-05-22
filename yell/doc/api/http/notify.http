@@ -83,20 +83,24 @@ Content-Type: application/json
     ]
 }
 
-### send with template
+### send with template (统一模板 — 自动按渠道分发)
 POST {{baseurl}}/template HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "template_name": "alert_template",
+    "template_name": "urgent_alert",
     "variables": {
         "level": "严重",
         "service": "CMDB",
-        "message": "数据库连接超时"
+        "message": "数据库连接超时",
+        "group": "cmdb-alerts",
+        "url": "https://monitor.example.com/alert/1"
     },
     "recipients": [
-        {"channel_type": "smtp", "instance": "smtp-main", "recipient": "devops@example.com"}
+        {"channel_type": "bark", "instance": "bark-main", "recipient": "YOUR_DEVICE_KEY"},
+        {"channel_type": "gotify", "instance": "gotify-main", "recipient": "YOUR_APP_TOKEN"},
+        {"channel_type": "teams", "instance": "teams-main", "recipient": ""}
     ]
 }
 
@@ -119,22 +123,24 @@ Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "template_name": "alert_template",
+    "template_name": "urgent_alert",
     "variables": {
         "level": "严重",
         "service": "CMDB",
-        "message": "数据库连接超时"
+        "message": "数据库连接超时",
+        "group": "cmdb-alerts",
+        "url": "https://monitor.example.com/alert/1"
     },
     "recipients": "ops-team"
 }
 
-### send Bark urgent alert (预置模板 bark_urgent_alert)
+### send Bark urgent alert (预置统一模板 urgent_alert)
 POST {{baseurl}}/template HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "template_name": "bark_urgent_alert",
+    "template_name": "urgent_alert",
     "variables": {
         "level": "严重",
         "service": "CMDB",
@@ -180,13 +186,13 @@ Content-Type: application/json
     ]
 }
 
-### send Gotify urgent alert (预置模板 gotify_urgent)
+### send Gotify urgent alert (预置统一模板 urgent_alert)
 POST {{baseurl}}/template HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "template_name": "gotify_urgent",
+    "template_name": "urgent_alert",
     "variables": {
         "level": "严重",
         "service": "CMDB",
@@ -198,13 +204,13 @@ Content-Type: application/json
     ]
 }
 
-### send Gotify normal notification (预置模板 gotify_normal)
+### send Gotify normal notification (预置统一模板 normal_notify)
 POST {{baseurl}}/template HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "template_name": "gotify_normal",
+    "template_name": "normal_notify",
     "variables": {
         "title": "系统通知",
         "message": "数据库备份已完成",
@@ -231,13 +237,13 @@ Content-Type: application/json
     ]
 }
 
-### send Teams urgent alert (预置模板 teams_urgent)
+### send Teams urgent alert (预置统一模板 urgent_alert)
 POST {{baseurl}}/template HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "template_name": "teams_urgent",
+    "template_name": "urgent_alert",
     "variables": {
         "level": "严重",
         "service": "CMDB",
@@ -249,13 +255,13 @@ Content-Type: application/json
     ]
 }
 
-### send Teams normal notification (预置模板 teams_normal)
+### send Teams normal notification (预置统一模板 normal_notify)
 POST {{baseurl}}/template HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "template_name": "teams_normal",
+    "template_name": "normal_notify",
     "variables": {
         "title": "系统通知",
         "message": "数据库备份已完成",
@@ -266,24 +272,24 @@ Content-Type: application/json
     ]
 }
 
-### send Teams custom JSON (content_format=json, params_template 整体作为 payload)
+### send Webhook custom JSON (预置模板 webhook_json)
 POST {{baseurl}}/template HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "template_name": "teams_custom_json",
+    "template_name": "webhook_json",
     "variables": {
-        "id": "12345",
         "title": "告警通知",
-        "body": "CPU 使用率过高"
+        "body": "CPU 使用率过高",
+        "level": "critical"
     },
     "recipients": [
-        {"channel_type": "teams", "instance": "teams-main", "recipient": ""}
+        {"channel_type": "webhook", "instance": "webhook-main", "recipient": ""}
     ]
 }
 
-### send Webhook notification (default JSON format)
+### send Webhook notification (direct)
 POST {{baseurl}}/send HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
@@ -300,19 +306,43 @@ Content-Type: application/json
     ]
 }
 
-### send Webhook custom JSON (content_format=json)
+### send SMTP HTML alert (预置模板 smtp_html_alert)
 POST {{baseurl}}/template HTTP/1.1
 Authorization: {{token}}
 Content-Type: application/json
 
 {
-    "template_name": "webhook_json",
+    "template_name": "smtp_html_alert",
     "variables": {
-        "title": "告警通知",
-        "body": "CPU 使用率过高",
-        "level": "critical"
+        "level": "严重",
+        "service": "CMDB",
+        "message": "生产环境 CPU 使用率超过 95%",
+        "url": "https://monitor.example.com/alert/123"
     },
     "recipients": [
+        {"channel_type": "smtp", "instance": "smtp-main", "recipient": "ops@example.com"}
+    ]
+}
+
+### send all channels alert (全渠道模板)
+POST {{baseurl}}/template HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "template_name": "all_channels_alert",
+    "variables": {
+        "level": "严重",
+        "service": "CMDB",
+        "message": "生产环境数据库连接超时",
+        "group": "cmdb-alerts",
+        "url": "https://monitor.example.com/alert/456"
+    },
+    "recipients": [
+        {"channel_type": "smtp", "instance": "smtp-main", "recipient": "ops@example.com"},
+        {"channel_type": "bark", "instance": "bark-main", "recipient": "YOUR_DEVICE_KEY"},
+        {"channel_type": "gotify", "instance": "gotify-main", "recipient": "YOUR_APP_TOKEN"},
+        {"channel_type": "teams", "instance": "teams-main", "recipient": ""},
         {"channel_type": "webhook", "instance": "webhook-main", "recipient": ""}
     ]
 }

@@ -26,46 +26,41 @@
  *          recipients: 'ops-team'
  *      )
  *
- *   3. 使用模板发送:
+ *   3. 使用统一模板发送（一个模板覆盖多渠道）:
  *      yell.sendWithTemplate(
  *          yellUrl: 'http://yell-host:9005',
  *          token: 'uuid 550e8400-e29b-41d4-a716-446655440000',
- *          templateName: 'bark_urgent_alert',
+ *          templateName: 'urgent_alert',
  *          variables: [level: '严重', service: 'CMDB', message: '连接超时', group: 'cmdb-alerts', url: 'https://monitor.example.com/alert/1'],
+ *          recipients: [
+ *              [channelType: 'bark', instance: 'bark-main', recipient: 'DEVICE_KEY'],
+ *              [channelType: 'gotify', instance: 'gotify-main', recipient: 'APP_TOKEN'],
+ *              [channelType: 'teams', instance: 'teams-main', recipient: '']
+ *          ]
+ *      )
+ *
+ *   4. 使用 Bark 静默模板发送:
+ *      yell.sendWithTemplate(
+ *          yellUrl: 'http://yell-host:9005',
+ *          token: 'uuid 550e8400-e29b-41d4-a716-446655440000',
+ *          templateName: 'bark_silent',
+ *          variables: [title: '日报提醒', message: '今日日报尚未提交', group: 'daily-report'],
  *          recipients: [
  *              [channelType: 'bark', instance: 'bark-main', recipient: 'DEVICE_KEY']
  *          ]
  *      )
  *
- *   4. 使用 Gotify 模板发送:
+ *   5. 使用全渠道模板发送:
  *      yell.sendWithTemplate(
  *          yellUrl: 'http://yell-host:9005',
  *          token: 'uuid 550e8400-e29b-41d4-a716-446655440000',
- *          templateName: 'gotify_urgent',
- *          variables: [level: '严重', service: 'CMDB', message: '连接超时', url: 'https://monitor.example.com/alert/1'],
+ *          templateName: 'all_channels_alert',
+ *          variables: [level: '严重', service: 'CMDB', message: '连接超时', group: 'cmdb-alerts', url: 'https://monitor.example.com/alert/1'],
  *          recipients: [
- *              [channelType: 'gotify', instance: 'gotify-main', recipient: 'APP_TOKEN']
- *          ]
- *      )
- *
- *   5. 使用 Teams 模板发送:
- *      yell.sendWithTemplate(
- *          yellUrl: 'http://yell-host:9005',
- *          token: 'uuid 550e8400-e29b-41d4-a716-446655440000',
- *          templateName: 'teams_urgent',
- *          variables: [level: '严重', service: 'CMDB', message: '连接超时', url: 'https://monitor.example.com/alert/1'],
- *          recipients: [
- *              [channelType: 'teams', instance: 'teams-main', recipient: '']
- *          ]
- *      )
- *
- *   6. 使用通用 Webhook 发送:
- *      yell.sendWithTemplate(
- *          yellUrl: 'http://yell-host:9005',
- *          token: 'uuid 550e8400-e29b-41d4-a716-446655440000',
- *          templateName: 'webhook_json',
- *          variables: [title: '告警', body: 'CPU过高', level: 'critical'],
- *          recipients: [
+ *              [channelType: 'smtp', instance: 'smtp-main', recipient: 'ops@example.com'],
+ *              [channelType: 'bark', instance: 'bark-main', recipient: 'DEVICE_KEY'],
+ *              [channelType: 'gotify', instance: 'gotify-main', recipient: 'APP_TOKEN'],
+ *              [channelType: 'teams', instance: 'teams-main', recipient: ''],
  *              [channelType: 'webhook', instance: 'webhook-main', recipient: '']
  *          ]
  *      )

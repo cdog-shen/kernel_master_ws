@@ -134,7 +134,7 @@ impl NotificationRouter {
         ))
     }
 
-    /// 使用模板发送
+    /// 使用模板发送 — 渲染各渠道 JSON，只向模板中有对应字段的渠道发送
     pub async fn send_with_template<'a>(
         &self,
         template_name: &str,
@@ -181,21 +181,57 @@ impl NotificationRouter {
             }
         };
 
-        let (subject, content, params) = template.render(&variables);
+        // 渲染各渠道 JSON: HashMap<channel_type, rendered_payload>
+        let rendered = template.render(&variables);
+        let template_id = template.id;
 
-        let request = NotificationRequest {
-            title: subject,
-            body: content,
-            format: template.content_format.unwrap_or_else(|| "text".to_string()),
-            priority: "normal".to_string(),
-            tags: Vec::new(),
-            url: None,
-            mentions: Vec::new(),
-            template_id: Some(template.id),
-            params,
-        };
+        let mut tasks = Vec::new();
 
-        self.send_to_channels(request, recipients, pool).await
+        for (channel_type, recipient, instance) in recipients {
+            // 只向模板中配置了对应字段的渠道发送
+            if let Some(payload) = rendered.get(&channel_type) {
+                if let Some(channel) = self.channels.get(&channel_type) {
+                    let channel = Arc::clone(channel);
+                    let payload = payload.clone();
+                    let pool = pool.clone();
+
+                    let task = tokio::spawn(async move {
+                        channel.send_template(&recipient, &instance, &payload, Some(template_id), &pool).await
+                    });
+
+                    tasks.push(task);
+                }
+            }
+        }
+
+        let mut results = Vec::new();
+        for task in tasks {
+            match task.await {
+                Ok(Ok(result)) => results.push(result),
+                Ok(Err(e)) => {
+                    results.push(ChannelResult {
+                        channel_type: "unknown".to_string(),
+                        success: false,
+                        record_id: -1,
+                        error_msg: Some(e),
+                    });
+                }
+                Err(e) => {
+                    results.push(ChannelResult {
+                        channel_type: "unknown".to_string(),
+                        success: false,
+                        record_id: -1,
+                        error_msg: Some(format!("Task join error: {}", e)),
+                    });
+                }
+            }
+        }
+
+        Ok(MailManOk::new(
+            200,
+            "Template notification processed",
+            Some(results),
+        ))
     }
 
     /// 加载所有渠道配置

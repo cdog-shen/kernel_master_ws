@@ -279,33 +279,17 @@ pub async fn create_template(
         ))
     })?;
 
-    let channel_type = req
-        .get("channel_type")
-        .and_then(|v| v.as_str())
-        .unwrap_or("smtp")
-        .to_string();
-
-    let content_template = req
-        .get("content_template")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| {
-            MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
-                400,
-                "Bad Request",
-                Some("Missing 'content_template' field".to_string()),
-                1,
-            ))
-        })?;
-
     let new_template = NewNotificationTemplate {
         name: name.to_string(),
         description: req.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        channel_type,
-        subject_template: req.get("subject_template").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        content_template: content_template.to_string(),
-        content_format: req.get("content_format").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        params_template: req.get("params_template").cloned(),
         is_enabled: req.get("is_enabled").and_then(|v| v.as_bool()),
+        params_template: req.get("params_template").cloned(),
+        smtp: req.get("smtp").cloned(),
+        bark: req.get("bark").cloned(),
+        gotify: req.get("gotify").cloned(),
+        ntfy: req.get("ntfy").cloned(),
+        teams: req.get("teams").cloned(),
+        webhook: req.get("webhook").cloned(),
     };
 
     match web::block({
@@ -348,12 +332,14 @@ pub async fn update_template(
     let update = UpdateNotificationTemplate {
         name: req.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()),
         description: req.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        channel_type: req.get("channel_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        subject_template: req.get("subject_template").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        content_template: req.get("content_template").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        content_format: req.get("content_format").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        params_template: req.get("params_template").cloned(),
         is_enabled: req.get("is_enabled").and_then(|v| v.as_bool()),
+        params_template: req.get("params_template").cloned(),
+        smtp: req.get("smtp").cloned(),
+        bark: req.get("bark").cloned(),
+        gotify: req.get("gotify").cloned(),
+        ntfy: req.get("ntfy").cloned(),
+        teams: req.get("teams").cloned(),
+        webhook: req.get("webhook").cloned(),
         updated_at: Some(chrono::Local::now().naive_local()),
     };
 

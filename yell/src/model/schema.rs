@@ -82,17 +82,16 @@ diesel::table! {
         name -> Varchar,
         #[max_length = 512]
         description -> Nullable<Varchar>,
-        #[max_length = 32]
-        channel_type -> Varchar,
-        #[max_length = 512]
-        subject_template -> Nullable<Varchar>,
-        content_template -> Text,
-        #[max_length = 16]
-        content_format -> Nullable<Varchar>,
         is_enabled -> Nullable<Bool>,
         created_at -> Nullable<Timestamp>,
         updated_at -> Nullable<Timestamp>,
         params_template -> Nullable<Jsonb>,
+        smtp -> Nullable<Jsonb>,
+        bark -> Nullable<Jsonb>,
+        gotify -> Nullable<Jsonb>,
+        ntfy -> Nullable<Jsonb>,
+        teams -> Nullable<Jsonb>,
+        webhook -> Nullable<Jsonb>,
     }
 }
 

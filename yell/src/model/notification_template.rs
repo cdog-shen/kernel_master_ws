@@ -2,11 +2,15 @@ use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
+use std::collections::HashMap;
 
 use crate::model::schema::notification_templates::{self, dsl::*};
 
 static UNKNOWN_ERROR_CODE: u8 = 0;
 static BAD_REQUEST_CODE: u8 = 1;
+
+/// 渠道 JSONB 字段名列表
+const CHANNEL_COLUMNS: &[&str] = &["smtp", "bark", "gotify", "ntfy", "teams", "webhook"];
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Clone)]
 #[diesel(table_name = notification_templates, check_for_backend(diesel::pg::Pg))]
@@ -14,14 +18,16 @@ pub struct NotificationTemplate {
     pub id: i32,
     pub name: String,
     pub description: Option<String>,
-    pub channel_type: String,
-    pub subject_template: Option<String>,
-    pub content_template: String,
-    pub content_format: Option<String>,
-    pub params_template: Option<Value>,
     pub is_enabled: Option<bool>,
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
+    pub params_template: Option<Value>,
+    pub smtp: Option<Value>,
+    pub bark: Option<Value>,
+    pub gotify: Option<Value>,
+    pub ntfy: Option<Value>,
+    pub teams: Option<Value>,
+    pub webhook: Option<Value>,
 }
 
 #[derive(Insertable, Debug, Serialize, Deserialize)]
@@ -29,12 +35,14 @@ pub struct NotificationTemplate {
 pub struct NewNotificationTemplate {
     pub name: String,
     pub description: Option<String>,
-    pub channel_type: String,
-    pub subject_template: Option<String>,
-    pub content_template: String,
-    pub content_format: Option<String>,
-    pub params_template: Option<Value>,
     pub is_enabled: Option<bool>,
+    pub params_template: Option<Value>,
+    pub smtp: Option<Value>,
+    pub bark: Option<Value>,
+    pub gotify: Option<Value>,
+    pub ntfy: Option<Value>,
+    pub teams: Option<Value>,
+    pub webhook: Option<Value>,
 }
 
 #[derive(AsChangeset, Debug, Serialize, Deserialize)]
@@ -42,12 +50,14 @@ pub struct NewNotificationTemplate {
 pub struct UpdateNotificationTemplate {
     pub name: Option<String>,
     pub description: Option<String>,
-    pub channel_type: Option<String>,
-    pub subject_template: Option<String>,
-    pub content_template: Option<String>,
-    pub content_format: Option<String>,
-    pub params_template: Option<Value>,
     pub is_enabled: Option<bool>,
+    pub params_template: Option<Value>,
+    pub smtp: Option<Value>,
+    pub bark: Option<Value>,
+    pub gotify: Option<Value>,
+    pub ntfy: Option<Value>,
+    pub teams: Option<Value>,
+    pub webhook: Option<Value>,
     pub updated_at: Option<NaiveDateTime>,
 }
 
@@ -91,11 +101,6 @@ impl NotificationTemplate {
 
         for (q_k, q_v) in filter.iter() {
             match q_k.as_str() {
-                "channel_type" => {
-                    if let Some(value) = q_v.as_str() {
-                        query = query.filter(channel_type.eq(value));
-                    }
-                }
                 "is_enabled" => {
                     if let Some(value) = q_v.as_bool() {
                         query = query.filter(is_enabled.eq(value));
@@ -163,12 +168,30 @@ impl NotificationTemplate {
         }
     }
 
-    /// 渲染模板，返回 (subject, content, params)
-    pub fn render(&self, variables: &Map<String, Value>) -> (String, String, Value) {
-        let subject = self.subject_template.as_ref().map(|s| self.replace_vars(s, variables));
-        let content = self.replace_vars(&self.content_template, variables);
-        let params = self.params_template.as_ref().map(|p| self.render_value(p, variables)).unwrap_or(Value::Null);
-        (subject.unwrap_or_default(), content, params)
+    /// 渲染模板，返回 HashMap<channel_type, rendered_payload_json>
+    /// 只渲染模板中已配置的渠道字段
+    pub fn render(&self, variables: &Map<String, Value>) -> HashMap<String, Value> {
+        let mut result = HashMap::new();
+        for col in CHANNEL_COLUMNS {
+            if let Some(json_val) = self.get_channel_json(col) {
+                let rendered = self.render_value(json_val, variables);
+                result.insert(col.to_string(), rendered);
+            }
+        }
+        result
+    }
+
+    /// 获取指定渠道的 JSONB 字段
+    fn get_channel_json(&self, col: &str) -> Option<&Value> {
+        match col {
+            "smtp" => self.smtp.as_ref(),
+            "bark" => self.bark.as_ref(),
+            "gotify" => self.gotify.as_ref(),
+            "ntfy" => self.ntfy.as_ref(),
+            "teams" => self.teams.as_ref(),
+            "webhook" => self.webhook.as_ref(),
+            _ => None,
+        }
     }
 
     fn replace_vars(&self, template: &str, variables: &Map<String, Value>) -> String {

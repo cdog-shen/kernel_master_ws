@@ -175,4 +175,106 @@ impl Channel for SmtpChannel {
             }
         }
     }
+
+    async fn send_template(
+        &self,
+        recipient: &str,
+        instance_name: &str,
+        payload: &Value,
+        _template_id: Option<i32>,
+        pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
+    ) -> Result<ChannelResult, String> {
+        self.init_transport(instance_name, pool).await?;
+
+        let record_id = create_record("smtp", recipient, &NotificationRequest {
+            title: payload.get("subject").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            body: payload.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            format: "text".to_string(),
+            priority: "normal".to_string(),
+            tags: vec![],
+            url: None,
+            mentions: vec![],
+            template_id: _template_id,
+            params: Value::Null,
+        }, pool).await?;
+
+        let transport = {
+            let lock = self.transport.lock().await;
+            lock
+                .as_ref()
+                .ok_or("SMTP transport not initialized")?
+                .clone()
+        };
+
+        let from_addr = web::block({
+            let pool = pool.clone();
+            let name = instance_name.to_string();
+            move || {
+                let mut conn = pool.get().map_err(|e| e.to_string())?;
+                let config = ChannelConfig::get_smtp_config_by_name(&name, &mut conn)
+                    .map_err(|(_, msg)| msg)?;
+                config.ok_or("SMTP config not found".to_string())
+                    .map(|c| c.from)
+            }
+        })
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e)?;
+
+        let addresses: Vec<&str> = recipient
+            .split(|c| c == ',' || c == ';')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        if addresses.is_empty() {
+            return Err("No valid recipient addresses provided".to_string());
+        }
+
+        let from_mailbox = Mailbox::from_str(&from_addr)
+            .map_err(|e| format!("Invalid from address: {}", e))?;
+
+        let subject = payload.get("subject").and_then(|v| v.as_str()).unwrap_or("");
+        let body = payload.get("body").and_then(|v| v.as_str()).unwrap_or("");
+        let content_type = if payload.get("content_type").and_then(|v| v.as_str()) == Some("html") {
+            ContentType::TEXT_HTML
+        } else {
+            ContentType::TEXT_PLAIN
+        };
+
+        let mut builder = Message::builder().from(from_mailbox);
+        for addr in &addresses {
+            let mailbox = Mailbox::from_str(addr)
+                .map_err(|e| format!("Invalid recipient address '{}': {}", addr, e))?;
+            builder = builder.to(mailbox);
+        }
+
+        let email = builder
+            .subject(subject.to_string())
+            .header(content_type)
+            .body(body.to_string())
+            .map_err(|e| format!("Failed to build email: {}", e))?;
+
+        match transport.send(email).await {
+            Ok(_) => {
+                update_record(record_id, "sent", None, pool).await?;
+                Ok(ChannelResult {
+                    channel_type: "smtp".to_string(),
+                    success: true,
+                    record_id,
+                    error_msg: None,
+                })
+            }
+            Err(e) => {
+                let error_msg = format!("SMTP send error: {}", e);
+                update_record(record_id, "failed", Some(error_msg.clone()), pool).await?;
+                Ok(ChannelResult {
+                    channel_type: "smtp".to_string(),
+                    success: false,
+                    record_id,
+                    error_msg: Some(error_msg),
+                })
+            }
+        }
+    }
 }

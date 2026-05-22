@@ -57,7 +57,7 @@ pub trait Channel: Send + Sync {
         request
     }
 
-    /// 发送消息
+    /// 直接发送消息
     async fn send(
         &self,
         recipient: &str,
@@ -65,6 +65,35 @@ pub trait Channel: Send + Sync {
         request: &NotificationRequest,
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<ChannelResult, String>;
+
+    /// 通过模板发送 — payload 是渲染后的渠道专属 JSON
+    /// 默认实现：从 payload 提取 title/body/message 构造 NotificationRequest，回退到 send()
+    /// 各渠道可覆写此方法以直接使用 payload JSON 构造请求
+    async fn send_template(
+        &self,
+        recipient: &str,
+        instance_name: &str,
+        payload: &Value,
+        template_id: Option<i32>,
+        pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
+    ) -> Result<ChannelResult, String> {
+        let request = NotificationRequest {
+            title: payload.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            body: payload.get("body")
+                .or_else(|| payload.get("message"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            format: "text".to_string(),
+            priority: "normal".to_string(),
+            tags: vec![],
+            url: payload.get("url").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            mentions: vec![],
+            template_id,
+            params: payload.clone(),
+        };
+        self.send(recipient, instance_name, &request, pool).await
+    }
 }
 
 /// 创建通知记录
