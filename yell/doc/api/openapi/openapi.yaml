@@ -1,7 +1,7 @@
 openapi: "3.0.3"
 info:
   title: Yell Notification API
-  description: 统一通知服务 — 支持多渠道(SMTP/企业微信/Bark/Gotify/Teams等)消息推送、模板管理和发送记录追踪
+  description: 统一通知服务 — 支持多渠道(SMTP/企业微信/Bark/Gotify/Teams/Webhook等)消息推送、模板管理和发送记录追踪
   version: "0.1.0"
 servers:
   - url: http://localhost:9005/api
@@ -80,7 +80,7 @@ paths:
                         properties:
                           channel_type:
                             type: string
-                            description: 渠道类型 (smtp/wecom/bark/gotify/teams/lark/dingtalk...)
+                            description: 渠道类型 (smtp/wecom/bark/gotify/teams/webhook/lark/dingtalk...)
                           recipient:
                             type: string
                             description: 接收者标识。SMTP 支持逗号/分号分隔多个邮箱，其他渠道按各自格式填写
@@ -446,7 +446,7 @@ paths:
               properties:
                 channel_type:
                   type: string
-                  description: 渠道类型 (smtp/wecom/bark/gotify/teams/lark/dingtalk...)
+                  description: 渠道类型 (smtp/wecom/bark/gotify/teams/webhook/lark/dingtalk...)
                 name:
                   type: string
                   description: 配置实例名（必填，对应 channel_configs.name）
@@ -880,6 +880,26 @@ components:
         teams_custom_json:
           type: string
           description: "自定义 JSON — content_format=json，params_template 整体作为 webhook payload"
+
+    WebhookConfig:
+      type: object
+      description: 通用 Webhook 配置 (config_json 结构)
+      properties:
+        webhook_url:
+          type: string
+          description: Webhook URL
+          example: https://example.com/webhook
+
+    WebhookTemplatePreset:
+      type: object
+      description: "Webhook 预置模板说明"
+      properties:
+        webhook_json:
+          type: string
+          description: "自定义 JSON — content_format=json，params_template 整体作为 payload"
+        webhook_default:
+          type: string
+          description: "默认格式 — title/body/priority/tags/url"
 
     NotificationAlias:
       type: object

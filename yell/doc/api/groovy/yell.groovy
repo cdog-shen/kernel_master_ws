@@ -59,7 +59,18 @@
  *          ]
  *      )
  *
- *   6. 全局配置（通过 environment 块设置环境变量）:
+ *   6. 使用通用 Webhook 发送:
+ *      yell.sendWithTemplate(
+ *          yellUrl: 'http://yell-host:9005',
+ *          token: 'uuid 550e8400-e29b-41d4-a716-446655440000',
+ *          templateName: 'webhook_json',
+ *          variables: [title: '告警', body: 'CPU过高', level: 'critical'],
+ *          recipients: [
+ *              [channelType: 'webhook', instance: 'webhook-main', recipient: '']
+ *          ]
+ *      )
+ *
+ *   7. 全局配置（通过 environment 块设置环境变量）:
  *      environment {
  *          YELL_URL = 'http://yell-host:9005'
  *          YELL_TOKEN = 'uuid xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'

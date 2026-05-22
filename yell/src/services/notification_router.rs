@@ -18,6 +18,7 @@ use crate::services::channel::{Channel, ChannelResult, NotificationRequest};
 use crate::services::gotify::service::GotifyChannel;
 use crate::services::mail::service::SmtpChannel;
 use crate::services::teams::service::TeamsChannel;
+use crate::services::webhook::service::WebhookChannel;
 
 /// 通知路由分发器
 pub struct NotificationRouter {
@@ -33,6 +34,7 @@ impl NotificationRouter {
         channels.insert("bark".to_string(), Arc::new(BarkChannel::new()));
         channels.insert("gotify".to_string(), Arc::new(GotifyChannel::new()));
         channels.insert("teams".to_string(), Arc::new(TeamsChannel::new()));
+        channels.insert("webhook".to_string(), Arc::new(WebhookChannel::new()));
 
         // TODO: 注册更多渠道
         // channels.insert("wecom".to_string(), Arc::new(WeComChannel::new()));
