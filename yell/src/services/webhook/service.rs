@@ -167,7 +167,28 @@ impl Channel for WebhookChannel {
             params: serde_json::Value::Null,
         }, pool).await?;
 
-        let payload_owned = payload.clone();
+        // content_format=json 时 payload 整体作为原始 JSON 发送
+        // 否则用 payload 中的字段构造标准 JSON 对象
+        let webhook_payload = if payload.get("content_format").and_then(|v| v.as_str()) == Some("json") {
+            let mut raw = payload.clone();
+            raw.as_object_mut().map(|m| m.remove("content_format"));
+            raw
+        } else {
+            let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or("");
+            let body = payload.get("body").and_then(|v| v.as_str()).unwrap_or("");
+            let mut obj = json!({
+                "title": title,
+                "body": body,
+            });
+            if let Some(url) = payload.get("url").and_then(|v| v.as_str()) {
+                if !url.is_empty() {
+                    obj["url"] = json!(url);
+                }
+            }
+            obj
+        };
+
+        let payload_owned = webhook_payload;
         let result = web::block(move || {
             ureq::post(&webhook_url)
                 .send_json(&payload_owned)
