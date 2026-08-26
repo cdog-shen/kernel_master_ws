@@ -8,7 +8,6 @@ authors.workspace = true
 # std dependencies
 once_cell.workspace = true
 log.workspace = true
-crossbeam.workspace = true
 tokio = { workspace = true, features = ["fs"] }
 chrono.workspace = true
 sanitize-filename.workspace = true
