@@ -4,7 +4,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 
 use crate::config::worker;
 
-pub fn update_log<'a>(
+pub async fn update_log<'a>(
     auth: String,
     uuid: String,
     status: u8,

@@ -93,7 +93,7 @@ pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailMa
         }
     };
 
-    match update_log(auth, uuid.to_string(), status, result) {
+    match update_log(auth, uuid.to_string(), status, result).await {
         Ok(MailManOk {
             code: _,
             key: _,
