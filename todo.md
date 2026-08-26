@@ -124,9 +124,9 @@
 
 ## P2 —— 规范文档同步
 
-- [ ] 分层整改完成后，回写 `doc/project_skeleton-*.md`：补充非 DB 原子操作层、
+- [x] 分层整改完成后，回写 `doc/project_skeleton-*.md`：补充非 DB 原子操作层、
   清洗层定位、scheduler/middleware 等横切组件的职责约定
-- [ ] `analysis.md` 中"现状与例外"类内容随整改进度更新
+- [x] `analysis.md` 中"现状与例外"类内容随整改进度更新
 
 ---
 

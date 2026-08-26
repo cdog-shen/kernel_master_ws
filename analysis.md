@@ -211,7 +211,7 @@ main.rs:182-198 消费循环（MQ 原子操作全部内联在 main，无封装�
 - **jc-commander**：MQ 调用收敛至 `mq_client`；编排逻辑下沉 service；cron 组装从 handler 下沉。
 - **jc-worker**：新增 TaskPayload 清洗层；MQ 消费循环独立为 `mq_consumer` 模块；`log_update` 归位 `util/`。
 - **file-agent**：文件系统原语收敛为 `util/file_op.rs` 原子层；multipart 上传逻辑下沉 service；请求参数改为校验式清洗。
-- **yell**：新增 `manage_service` / `notify_service` 编排层；`NotificationRouter` 纯化为注册与分发；`Channel` trait 收敛为单一 `dispatch` 职责；消息渲染移出渠道实现；`wecom` 渠道删除。
+- **yell**：新增 `manage_service` / `notify_service` 编排层；`NotificationRouter` 纯化为注册与分发；`Channel` trait 收敛为单一 `dispatch` 职责；模板渲染逻辑移出 model；`wecom` 渠道删除。
 - **cloud-api**：进程派生收敛至 `process_runner`；裸 `unwrap` 取参改为校验式清洗。
 - **watchman**：删除 legacy `Authentication` 中间件及引用它的死代码。
 - **cmdb**：改为校验式清洗；删除空文件。
