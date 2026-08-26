@@ -183,7 +183,7 @@ pub async fn call_async(
     let new_log_value = serde_json::json!({
             "id": uuid.to_string().clone(),
             "script": req["script"],
-            "exec_type": "sync",
+            "exec_type": "async",
             "commander": self_id,
             "worker": "None",
             "status": 1,
