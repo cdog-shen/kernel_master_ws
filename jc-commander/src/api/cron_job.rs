@@ -9,10 +9,7 @@ use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
 use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{
-    model::{cron_job::CronJobInfo, job_log::JobLogInfo},
-    service::cron_job,
-};
+use crate::{model::cron_job::CronJobInfo, service::cron_job};
 
 // POST /api/cron_job/get
 pub async fn get_all(
@@ -33,99 +30,33 @@ pub async fn new(
     let info = CronJobInfo::from_map(map.0).map_err(|e| {
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
-    let _id = uuid::Uuid::new_v4().to_string();
 
-    let _corn = CronJobInfo {
-        id: Some(_id.clone()),
-        script: Some(
-            info.script
-                .clone()
-                .ok_or(MailManErrResponser::mapping_from_mme(MailManErr::new(
-                    400,
-                    "Bad Request",
-                    Some("Missing `script` field.".to_string()),
-                    1,
-                )))?,
-        ),
-        frequency: Some(info.frequency.ok_or(MailManErrResponser::mapping_from_mme(
-            MailManErr::new(
-                400,
-                "Bad Request",
-                Some("Missing `frequency` field.".to_string()),
-                1,
-            ),
-        ))?),
-        times: Some(
-            info.times
-                .ok_or(MailManErrResponser::mapping_from_mme(MailManErr::new(
-                    400,
-                    "Bad Request",
-                    Some("Missing `times` field.".to_string()),
-                    1,
-                )))?,
-        ),
-        params: Some(
-            info.params
-                .clone()
-                .ok_or(MailManErrResponser::mapping_from_mme(MailManErr::new(
-                    400,
-                    "Bad Request",
-                    Some("Missing `params` field.".to_string()),
-                    1,
-                )))?,
-        ),
-        comment: Some(info.comment.clone().unwrap_or(String::new())),
-        is_enable: Some(info.is_enable.unwrap_or(false)),
-        launch_at: Some(info.launch_at.ok_or(MailManErrResponser::mapping_from_mme(
-            MailManErr::new(
-                400,
-                "Bad Request",
-                Some("Missing `launch_at` field.".to_string()),
-                1,
-            ),
-        ))?),
-        update_time: info.update_time,
+    // 必填字段清洗：缺失返回 400；uuid/commander/双实体组装在 service 层完成
+    let miss = |field: &str| {
+        MailManErrResponser::mapping_from_mme(MailManErr::new(
+            400,
+            "Bad Request",
+            Some(format!("Missing `{field}` field.")),
+            1,
+        ))
     };
+    if info.script.is_none() {
+        return Err(miss("script"));
+    }
+    if info.frequency.is_none() {
+        return Err(miss("frequency"));
+    }
+    if info.times.is_none() {
+        return Err(miss("times"));
+    }
+    if info.params.is_none() {
+        return Err(miss("params"));
+    }
+    if info.launch_at.is_none() {
+        return Err(miss("launch_at"));
+    }
 
-    let _log = JobLogInfo {
-        id: Some(_id.clone()),
-        script: Some(
-            info.script
-                .clone()
-                .ok_or(MailManErrResponser::mapping_from_mme(MailManErr::new(
-                    400,
-                    "Bad Request",
-                    Some("Missing `script` field.".to_string()),
-                    1,
-                )))?,
-        ),
-        exec_type: Some("cron".to_string()),
-        commander: Some(
-            crate::server::GLOBAL_CONFIG
-                .read()
-                .unwrap()
-                .subsys_uuid
-                .clone(),
-        ),
-        worker: Some(String::new()),
-        status: Some(0),
-        params: Some(
-            info.params
-                .clone()
-                .ok_or(MailManErrResponser::mapping_from_mme(MailManErr::new(
-                    400,
-                    "Bad Request",
-                    Some("Missing `params` field.".to_string()),
-                    1,
-                )))?,
-        ),
-        result: Some("{}".to_string()),
-        finish_time: Some(String::new()),
-        update_time: info.update_time,
-        comment: Some(info.comment.clone().unwrap_or(String::new())),
-    };
-
-    match cron_job::new(_corn, _log, &pool).await {
+    match cron_job::new(info, &pool).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

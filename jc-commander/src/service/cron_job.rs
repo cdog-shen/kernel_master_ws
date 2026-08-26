@@ -30,12 +30,48 @@ pub async fn get_all<'a>(
 
 // new cron job
 //
+// 接收清洗后的请求数据（必填字段已由 handler 校验），本层负责实体组装：
+// 生成任务 uuid、固定 exec_type="cron"、从 GLOBAL_CONFIG 取 commander，
+// 组装 CronJobInfo / JobLogInfo 双实体；
 // cron_job 与 job_log 双表写入包在同一事务中，任一失败即整体回滚
 pub async fn new<'a>(
-    cron: CronJobInfo,
-    log: JobLogInfo,
+    info: CronJobInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
+    let id = uuid::Uuid::new_v4().to_string();
+
+    let cron = CronJobInfo {
+        id: Some(id.clone()),
+        script: info.script.clone(),
+        frequency: info.frequency,
+        times: info.times,
+        params: info.params.clone(),
+        comment: Some(info.comment.clone().unwrap_or(String::new())),
+        is_enable: Some(info.is_enable.unwrap_or(false)),
+        launch_at: info.launch_at,
+        update_time: info.update_time,
+    };
+
+    let log = JobLogInfo {
+        id: Some(id.clone()),
+        script: info.script.clone(),
+        exec_type: Some("cron".to_string()),
+        commander: Some(
+            crate::config::server::GLOBAL_CONFIG
+                .read()
+                .unwrap()
+                .subsys_uuid
+                .clone(),
+        ),
+        worker: Some(String::new()),
+        status: Some(0),
+        params: info.params.clone(),
+        result: Some("{}".to_string()),
+        finish_time: Some(String::new()),
+        update_time: info.update_time,
+        comment: Some(info.comment.clone().unwrap_or(String::new())),
+    };
+
     let mut conn = pool.get().unwrap();
 
     // model 层错误是 (u8, String)，事务闭包内用 RollbackTransaction 携带回滚信号，
