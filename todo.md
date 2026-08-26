@@ -93,13 +93,13 @@
 
 ## P2 —— 疑似 bug 修复（均来自 analysis.md，修复前先确认）
 
-- [ ] watchman signup 清洗把 `username` 赋给 `passwd` 字段（api/account_manage.rs:69-76）
-- [ ] cmdb `from_map` 读取 `"plantform"` 拼写错误，platform 字段永远为 None
+- [x] watchman signup 清洗把 `username` 赋给 `passwd` 字段（api/account_manage.rs:69-76）
+- [x] cmdb `from_map` 读取 `"plantform"` 拼写错误，platform 字段永远为 None
   （model/cloudserver/instance.rs:68）
-- [ ] jc-commander `times` 字段误读 `map.get("frequency")`（model/cron_job.rs:53）
-- [ ] jc-commander `call_async` 的 exec_type 硬编码为 `"sync"`（api/script_caller.rs:186）
-- [ ] jc-worker `output` 二次 unwrap，stdout/stderr 皆空时 panic（service/task.rs:53-94）
-- [ ] jc-commander cron 双表写入无事务（service/cron_job.rs:37-71）
+- [x] jc-commander `times` 字段误读 `map.get("frequency")`（model/cron_job.rs:53）
+- [x] jc-commander `call_async` 的 exec_type 硬编码为 `"sync"`（api/script_caller.rs:186）
+- [x] jc-worker `output` 二次 unwrap，stdout/stderr 皆空时 panic（service/task.rs:53-94）
+- [x] jc-commander cron 双表写入无事务（service/cron_job.rs:37-71）
 
 ## P2 —— 工程遗留
 
