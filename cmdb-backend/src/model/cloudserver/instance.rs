@@ -65,7 +65,7 @@ impl CloudserverInstanceInfo {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
-            platform: match map.get("plantform") {
+            platform: match map.get("platform") {
                 Some(value) => value.as_str().map(|s| s.to_string()),
                 None => None,
             },
