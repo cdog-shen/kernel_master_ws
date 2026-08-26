@@ -1,11 +1,9 @@
 use actix_web::web;
-use crossbeam::queue::SegQueue;
 use diesel::{
     PgConnection,
     r2d2::{ConnectionManager, Pool},
 };
 use serde_json::{Map, Value};
-use uuid::Uuid;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
@@ -58,14 +56,16 @@ pub async fn new<'a>(
 }
 
 // update job log
+//
+// worker 回报任务结果：更新日志后向 DONE_TASK_LIST push 任务 id，
+// 通知 service::script_caller::call_sync 的等待方
 pub async fn update<'a>(
     data: JobLogInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-    done_task_list: &web::Data<SegQueue<Uuid>>,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {
     match JobLogModel::update_log(&data, &mut pool.get().unwrap()) {
         Ok(msg) => {
-            done_task_list.push(
+            crate::service::script_caller::DONE_TASK_LIST.push(
                 data.id
                     .clone()
                     .expect("TaskID missing")

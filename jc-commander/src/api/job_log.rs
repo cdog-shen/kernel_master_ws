@@ -1,5 +1,4 @@
 use actix_web::{HttpResponse, web};
-use crossbeam::queue::SegQueue;
 use diesel::{
     PgConnection,
     r2d2::{ConnectionManager, Pool},
@@ -7,7 +6,6 @@ use diesel::{
 use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
 use share_lib::err_mapping::MailManErrResponser;
-use uuid::Uuid;
 
 use crate::{model::job_log::JobLogInfo, service::job_log};
 
@@ -41,13 +39,12 @@ pub async fn get_all(
 pub async fn update(
     map: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
-    done_task_list: web::Data<SegQueue<Uuid>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     let info = JobLogInfo::from_map(map.0).map_err(|e| {
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
-    match job_log::update(info, &pool, &done_task_list).await {
+    match job_log::update(info, &pool).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

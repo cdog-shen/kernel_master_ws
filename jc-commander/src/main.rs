@@ -1,8 +1,6 @@
 // std import
-use crossbeam::queue::SegQueue;
 use log::info;
 use std::sync::{Arc, Mutex};
-use uuid::Uuid;
 // rt import
 use actix_cors::Cors;
 use actix_web::dev::Service;
@@ -69,9 +67,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to connect to MQ");
     let mq_pool: Arc<Connection> = Arc::new(mq_manager);
 
-    // init DoneTaskList
-    log_info!("Creating DoneTaskList...");
-    let done_task_list: Arc<SegQueue<Uuid>> = Arc::new(SegQueue::new());
+    // DoneTaskList 已随编排归位：service::script_caller::DONE_TASK_LIST 全局队列
 
     // initialize the scheduled task scheduler and start Ticking
     log_info!("TimeWheel init...");
@@ -132,7 +128,6 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(db_pool.clone()))
             .app_data(web::Data::new(mq_pool.clone()))
             .app_data(web::Data::from(flush_flag.clone()))
-            .app_data(web::Data::from(done_task_list.clone()))
             // wrap default logger
             .wrap(actix_web::middleware::Logger::default())
             // Comment this line if you want to integrate with yew-address-book-frontend
