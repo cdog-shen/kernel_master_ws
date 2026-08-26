@@ -10,7 +10,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 use crate::model::cloud_account::*;
 
 // get all cloud account info
-pub fn get_all<'a>(
+pub async fn get_all<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<Value>>, MailManErr<'a, String>> {
@@ -34,7 +34,7 @@ pub fn get_all<'a>(
 }
 
 // create new cloud account
-pub fn new<'a>(
+pub async fn new<'a>(
     data: CloudAccountInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -62,7 +62,7 @@ pub fn new<'a>(
 }
 
 // update cloud account info
-pub fn update<'a>(
+pub async fn update<'a>(
     data: CloudAccountInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -90,7 +90,7 @@ pub fn update<'a>(
 }
 
 // delete cloud account info
-pub fn delete<'a>(
+pub async fn delete<'a>(
     id: i32,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {

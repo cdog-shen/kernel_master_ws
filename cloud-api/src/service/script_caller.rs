@@ -9,7 +9,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 
 use crate::{config::server::GLOBAL_CONFIG, model::cloud_account::CloudAccountModel};
 
-pub fn run<'a>(
+pub async fn run<'a>(
     api_name: &str,
     cloud_user: &str,
     region: &str,
@@ -104,7 +104,7 @@ pub fn run<'a>(
     }
 }
 
-pub fn get_scripts<'a>(
+pub async fn get_scripts<'a>(
     provider_name: &str,
     product_name: &str,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {

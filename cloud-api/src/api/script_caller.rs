@@ -18,7 +18,7 @@ pub async fn run(
     let region = req["region"].as_str().unwrap();
     let params = req["params"].as_str().unwrap();
 
-    match script_caller::run(api_name, cloud_user, region, params, &pool) {
+    match script_caller::run(api_name, cloud_user, region, params, &pool).await {
         Ok(res_data) => Ok(HttpResponse::Ok().json(res_data)),
         Err(err_data) => Err(MailManErrResponser::mapping_from_mme(err_data)),
     }
@@ -29,7 +29,7 @@ pub async fn get(req: web::Json<Value>) -> Result<HttpResponse, MailManErrRespon
     let provider_name = req["provider_name"].as_str().unwrap();
     let product_name = req["product_name"].as_str().unwrap();
 
-    match script_caller::get_scripts(provider_name, product_name) {
+    match script_caller::get_scripts(provider_name, product_name).await {
         Ok(res_data) => Ok(HttpResponse::Ok().json(res_data)),
         Err(err_data) => Err(MailManErrResponser::mapping_from_mme(err_data)),
     }
