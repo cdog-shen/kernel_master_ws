@@ -125,6 +125,14 @@ pub static GLOBAL_CONFIG: Lazy<RwLock<AllConfigs>> = Lazy::new(|| RwLock::new(Al
 
 所有原子操作的错误一律走 MailMan 体系（`MailManErr::new`，500 系 code，level 按语义取 0/1），由编排层继续上抛或转换。
 
+## 横切组件（middleware / scheduler）
+
+middleware、调度器等组件横切在 `api` → `service` → `model` 三层之外，不占用任何一层，但必须遵守相同的职责与 IO 收敛约束：
+
+- **鉴权 middleware**：属三层之外的横切层，允许直接调用 model 做鉴权查询（JWT 解析、权限校验），但不得承载业务编排。各 crate 的 `auth_middleware.rs` 已因依赖自身 model/配置而分化，属有意的非公共代码，暂不抽取进 share-lib；修改时必须逐 crate 同步评估（见上文「middleware/auth_middleware.rs」一节）。
+- **调度器**：`jc-commander` 的 `util/scheduler.rs`（时间轮调度器）定位为独立的调度器组件，不属于三层中的任何一层。其约束与编排层一致：DB 调用必须走 `model/`，MQ 调用必须走 `share_lib::infrastructure::mq_client` 原子模块，禁止在调度器内直接内联 diesel 或 lapin 代码。
+- **其余 crate 特有的横切组件**（如 file-agent 的 SegQueue 内存队列）参照同一原则：IO 一律走原子层（model 或 share-lib infrastructure），禁止在组件内内联实现。
+
 ## 固定件
 
 以下两个端点每个 HTTP 服务 crate 都必须具备：

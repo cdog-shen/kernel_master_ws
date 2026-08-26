@@ -120,6 +120,14 @@ Atomic operations invoked by the orchestration layer (`service/`) are owned by t
 
 All atomic operations report errors through the MailMan system (`MailManErr::new`, 500-series codes, level 0/1 per semantics), to be propagated or converted by the orchestration layer.
 
+## Cross-Cutting Components (middleware / scheduler)
+
+Components such as middleware and schedulers cut across the `api` → `service` → `model` layers without belonging to any of them, but they must obey the same responsibility and IO-consolidation constraints:
+
+- **Auth middleware**: a cross-cutting layer outside the three layers. It may call model directly for authentication queries (JWT parsing, permission checks), but must not carry business orchestration. Each crate's `auth_middleware.rs` has diverged because it depends on its own model/config; this is intentional non-shared code and is not moved into share-lib. Any change must be evaluated crate by crate (see the "middleware/auth_middleware.rs" section above).
+- **Scheduler**: `jc-commander`'s `util/scheduler.rs` (a timing-wheel scheduler) is positioned as a standalone scheduler component that belongs to none of the three layers. Its constraints match the orchestration layer's: DB calls must go through `model/`, and MQ calls must go through the `share_lib::infrastructure::mq_client` atomic module — inlining diesel or lapin code inside the scheduler is forbidden.
+- **Other crate-specific cross-cutting components** (e.g. file-agent's SegQueue in-memory queue) follow the same principle: all IO goes through the atomic layer (model or share-lib infrastructure) and must not be inlined inside the component.
+
 ## Fixed Components
 
 Every HTTP service crate must provide the following two endpoints:
