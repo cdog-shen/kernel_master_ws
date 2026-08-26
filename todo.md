@@ -105,19 +105,22 @@
 
 - [ ] 在有 OpenSSL 的环境跑一次 `build/check_all_ws.sh` + `build/clippy_all_ws.sh`，
   验证 5 个 diesel crate（本机 Windows 缺 OpenSSL 未验证）
-- [ ] yell 补登记进 `docker-compose.yaml`（端口 9005）
-- [ ] yell 补双语 README（`Readme.md` + `Readme_ZH-CN.md`）
-- [ ] yell 迁移 `2026-05-22-010000_add_webhook_presets` 补 down.sql
-- [ ] 迁移自动化评估：`diesel_migrations` 依赖声明了但全仓库未使用，
+  （**GitHub Actions `check.yml` 已建，首次运行即完成此验证**）
+- [x] yell 补登记进 `docker-compose.yaml`（端口 9005）
+- [x] yell 补双语 README（`Readme.md` + `Readme_ZH-CN.md`）
+- [x] yell 迁移 `2026-05-22-010000_add_webhook_presets` 补 down.sql
+- [x] 迁移自动化评估：`diesel_migrations` 依赖声明了但全仓库未使用，
   决定 embed_migrations 自动执行还是继续手工 CLI（并写入骨架规范）
-- [ ] CI 增强：`.gitea/workflows/build.yaml` 增加 `cargo fmt --check` / `clippy` 步骤
-- [ ] GitHub Actions 自动 `cargo check`：远程仓库托管在 GitHub，但 CI 目前只有
+- [x] CI 增强：`.gitea/workflows/build.yaml` 增加 `cargo fmt --check` / `clippy` 步骤
+- [x] GitHub Actions 自动 `cargo check`：远程仓库托管在 GitHub，但 CI 目前只有
   Gitea Actions。新建 `.github/workflows/check.yml`：push/PR 触发，`ubuntu-latest`
   runner 上跑 `cargo check --workspace`（runner 需预装 libpq/openssl 开发包，
   pq-sys bundled 依赖链需要；可顺带把 `cargo fmt --all -- --check` 一并纳入），
-  与 Gitea CI 的关系（并存还是迁移）一并决策
+  与 Gitea CI 的关系（并存还是迁移）一并决策（决策：并存，Gitea 负责构建发布、
+  GitHub 负责检查门禁）
 - [ ] clippy 基线收敛后开启 `-D warnings`
-- [ ] file-agent 清理无使用方的残留依赖 `crossbeam`、`uuid`（分层整改后已无人使用）
+- [x] file-agent 清理无使用方的残留依赖（实际仅 `crossbeam` 无使用已移除；
+  `uuid` 在 config/server.rs 生成 subsys_uuid 仍在使用，保留）
 
 ## P2 —— 规范文档同步
 
