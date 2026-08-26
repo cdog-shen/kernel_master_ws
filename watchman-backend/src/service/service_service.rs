@@ -11,7 +11,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 use crate::model::{access::*, service::*};
 
 /// all_service api logic
-pub fn all_service<'a>(
+pub async fn all_service<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<ServiceModel>>, MailManErr<'a, String>> {
@@ -25,7 +25,7 @@ pub fn all_service<'a>(
 }
 
 /// new_service api logic
-pub fn new_service<'a>(
+pub async fn new_service<'a>(
     service_info: ServiceInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -53,7 +53,7 @@ pub fn new_service<'a>(
 }
 
 /// update_service api logic
-pub fn update_service<'a>(
+pub async fn update_service<'a>(
     service_info: ServiceInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -81,7 +81,7 @@ pub fn update_service<'a>(
 }
 
 /// delete_service api logic
-pub fn delete_service<'a>(
+pub async fn delete_service<'a>(
     id: i32,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {

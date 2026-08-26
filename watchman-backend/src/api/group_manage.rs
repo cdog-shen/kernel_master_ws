@@ -14,7 +14,7 @@ pub async fn all_group(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match group_service::all_group(query.0, &pool) {
+    match group_service::all_group(query.0, &pool).await {
         Ok(group_data) => Ok(HttpResponse::Ok().json(group_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -44,7 +44,7 @@ pub async fn new_group(
         user_ids: Some(group_info.user_ids.clone().unwrap_or(serde_json::json!([]))),
     };
 
-    match group_service::new_group(group_info, &pool) {
+    match group_service::new_group(group_info, &pool).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -59,7 +59,7 @@ pub async fn update_group(
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
-    match group_service::update_group(group_info, &pool) {
+    match group_service::update_group(group_info, &pool).await {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -91,7 +91,7 @@ pub async fn delete_group(
             ))
         })? as i32;
 
-    match group_service::delete_group(id, &pool) {
+    match group_service::delete_group(id, &pool).await {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

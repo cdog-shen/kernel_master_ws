@@ -24,7 +24,7 @@ pub struct TokenBodyResponse {
 /// 2. generate token and json
 /// 3. update user's last login time
 /// 4. save token to DB
-pub fn login<'a>(
+pub async fn login<'a>(
     user: UserInputStream,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, TokenBodyResponse>, MailManErr<'a, String>> {
@@ -130,7 +130,7 @@ pub fn login<'a>(
 }
 
 /// logout api logic
-pub fn logout<'a>(
+pub async fn logout<'a>(
     user_info: UserInputStream,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<String>> {
@@ -144,7 +144,7 @@ pub fn logout<'a>(
 }
 
 /// signup api logic
-pub fn new_user<'a>(
+pub async fn new_user<'a>(
     user_to_creat: UserInputStream,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<String>> {
@@ -158,7 +158,7 @@ pub fn new_user<'a>(
 }
 
 /// user_update api logic
-pub fn user_update<'a>(
+pub async fn user_update<'a>(
     user_info: UserInputStream,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<String>> {
@@ -176,7 +176,7 @@ pub fn user_update<'a>(
 }
 
 /// get all user info
-pub fn get_all<'a>(
+pub async fn get_all<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<UserOutputStream>>, MailManErr<'a, String>> {
@@ -190,7 +190,7 @@ pub fn get_all<'a>(
 }
 
 /// get user's all info
-pub fn get_me(
+pub async fn get_me(
     id: i32,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<serde_json::Value, MailManErr<'_, String>> {

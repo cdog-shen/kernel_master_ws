@@ -10,7 +10,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 use crate::model::group::*;
 
 /// all_group api logic
-pub fn all_group<'a>(
+pub async fn all_group<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<GroupModel>>, MailManErr<'a, String>> {
@@ -24,7 +24,7 @@ pub fn all_group<'a>(
 }
 
 /// new_group api logic
-pub fn new_group<'a>(
+pub async fn new_group<'a>(
     group_info: GroupInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -52,7 +52,7 @@ pub fn new_group<'a>(
 }
 
 /// update_group api logic
-pub fn update_group<'a>(
+pub async fn update_group<'a>(
     group_info: GroupInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -80,7 +80,7 @@ pub fn update_group<'a>(
 }
 
 /// delete_group api logic
-pub fn delete_group<'a>(
+pub async fn delete_group<'a>(
     id: i32,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {

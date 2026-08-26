@@ -12,7 +12,7 @@ use share_lib::infrastructure::http_client;
 use crate::model::{access::*, service::*, subsys::*};
 
 /// all_subsys api logic
-pub fn all_subsys<'a>(
+pub async fn all_subsys<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<SubsysModel>>, MailManErr<'a, String>> {
@@ -31,7 +31,7 @@ pub fn all_subsys<'a>(
 }
 
 /// new_subsys api logic
-pub fn new_subsys<'a>(
+pub async fn new_subsys<'a>(
     subsys: SubsysInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -103,7 +103,7 @@ pub fn new_subsys<'a>(
 }
 
 /// update_subsys api logic
-pub fn update_subsys<'a>(
+pub async fn update_subsys<'a>(
     subsys: SubsysInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -131,7 +131,7 @@ pub fn update_subsys<'a>(
 }
 
 /// delete_subsys api logic
-pub fn delete_subsys<'a>(
+pub async fn delete_subsys<'a>(
     id: i32,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -272,7 +272,7 @@ pub fn delete_subsys<'a>(
     }
 }
 
-pub fn call<'a>(
+pub async fn call<'a>(
     subsys_name: String,
     subsys_params: serde_json::Map<String, serde_json::Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,

@@ -11,7 +11,7 @@ use share_lib::infrastructure::http_client;
 use crate::model::webhook::*;
 
 /// all_webhook api logic
-pub fn all_webhook<'a>(
+pub async fn all_webhook<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<WebhookModel>>, MailManErr<'a, String>> {
@@ -30,7 +30,7 @@ pub fn all_webhook<'a>(
 }
 
 /// new_webhook api logic
-pub fn new_webhook<'a>(
+pub async fn new_webhook<'a>(
     webhook: WebhookInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -58,7 +58,7 @@ pub fn new_webhook<'a>(
 }
 
 /// update_webhook api logic
-pub fn update_webhook<'a>(
+pub async fn update_webhook<'a>(
     webhook: WebhookInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -86,7 +86,7 @@ pub fn update_webhook<'a>(
 }
 
 /// delete_webhook api logic
-pub fn delete_webhook<'a>(
+pub async fn delete_webhook<'a>(
     id: i32,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -114,7 +114,7 @@ pub fn delete_webhook<'a>(
 }
 
 /// post_webhook api logic
-pub fn post_webhook<'a>(
+pub async fn post_webhook<'a>(
     hook_name: String,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, serde_json::Value>, MailManErr<'a, String>> {
@@ -208,7 +208,7 @@ pub fn post_webhook<'a>(
 }
 
 /// get_webhook api logic (用于测试或获取webhook信息)
-pub fn get_webhook<'a>(
+pub async fn get_webhook<'a>(
     hook_name: String,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<WebhookModel>>, MailManErr<'a, String>> {

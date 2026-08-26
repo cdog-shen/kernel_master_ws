@@ -14,7 +14,7 @@ pub async fn all_subsys(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match subsys_service::all_subsys(query.0, &pool) {
+    match subsys_service::all_subsys(query.0, &pool).await {
         Ok(subsys_data) => Ok(HttpResponse::Ok().json(subsys_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -66,7 +66,7 @@ pub async fn new_subsys(
         update_time: subsys_info.update_time,
     };
 
-    match subsys_service::new_subsys(subsys_info, &pool) {
+    match subsys_service::new_subsys(subsys_info, &pool).await {
         Ok(subsys_data) => Ok(HttpResponse::Ok().json(subsys_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -81,7 +81,7 @@ pub async fn update_subsys(
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
-    match subsys_service::update_subsys(subsys_info, &pool) {
+    match subsys_service::update_subsys(subsys_info, &pool).await {
         Ok(subsys_data) => Ok(HttpResponse::Ok().json(subsys_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -113,7 +113,7 @@ pub async fn delete_subsys(
             ))
         })? as i32;
 
-    match subsys_service::delete_subsys(id, &pool) {
+    match subsys_service::delete_subsys(id, &pool).await {
         Ok(subsys_data) => Ok(HttpResponse::Ok().json(subsys_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -125,7 +125,7 @@ pub async fn call_subsys(
     subsys_params: web::Json<serde_json::Map<String, serde_json::Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match subsys_service::call((*subsys_name.clone()).to_string(), subsys_params.0, &pool) {
+    match subsys_service::call((*subsys_name.clone()).to_string(), subsys_params.0, &pool).await {
         Ok(subsys_data) => Ok(HttpResponse::Ok().json(subsys_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

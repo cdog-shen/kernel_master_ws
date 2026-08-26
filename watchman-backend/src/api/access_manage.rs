@@ -14,7 +14,7 @@ pub async fn all_access(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match access_service::all_access(query.0, &pool) {
+    match access_service::all_access(query.0, &pool).await {
         Ok(access_data) => Ok(HttpResponse::Ok().json(access_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -56,7 +56,7 @@ pub async fn new_access(
             update_time: access_info.update_time,
         };
 
-    match access_service::new_access(access_info, &pool) {
+    match access_service::new_access(access_info, &pool).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -71,7 +71,7 @@ pub async fn update_access(
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
-    match access_service::update_access(access_info, &pool) {
+    match access_service::update_access(access_info, &pool).await {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -103,7 +103,7 @@ pub async fn delete_access(
             ))
         })? as i32;
 
-    match access_service::delete_access(id, &pool) {
+    match access_service::delete_access(id, &pool).await {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

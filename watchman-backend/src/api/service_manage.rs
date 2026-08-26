@@ -14,7 +14,7 @@ pub async fn all_service(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match service_service::all_service(query.0, &pool) {
+    match service_service::all_service(query.0, &pool).await {
         Ok(group_data) => Ok(HttpResponse::Ok().json(group_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -45,7 +45,7 @@ pub async fn new_service(
         update_time: service_info.update_time,
     };
 
-    match service_service::new_service(service_info, &pool) {
+    match service_service::new_service(service_info, &pool).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -60,7 +60,7 @@ pub async fn update_service(
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
-    match service_service::update_service(service_info, &pool) {
+    match service_service::update_service(service_info, &pool).await {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -92,7 +92,7 @@ pub async fn delete_service(
             ))
         })? as i32;
 
-    match service_service::delete_service(id, &pool) {
+    match service_service::delete_service(id, &pool).await {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

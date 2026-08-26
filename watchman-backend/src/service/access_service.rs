@@ -11,7 +11,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 use crate::model::access::*;
 
 /// all_access api logic
-pub fn all_access<'a>(
+pub async fn all_access<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<AccessModel>>, MailManErr<'a, String>> {
@@ -25,7 +25,7 @@ pub fn all_access<'a>(
 }
 
 /// new_access api logic
-pub fn new_access<'a>(
+pub async fn new_access<'a>(
     info: AccessInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -53,7 +53,7 @@ pub fn new_access<'a>(
 }
 
 /// update_access api logic
-pub fn update_access<'a>(
+pub async fn update_access<'a>(
     info: AccessInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -81,7 +81,7 @@ pub fn update_access<'a>(
 }
 
 /// delete_access api logic
-pub fn delete_access<'a>(
+pub async fn delete_access<'a>(
     id: i32,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {

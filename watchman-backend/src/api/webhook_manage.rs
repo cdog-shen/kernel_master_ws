@@ -14,7 +14,7 @@ pub async fn all_webhook(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match webhook_service::all_webhook(query.0, &pool) {
+    match webhook_service::all_webhook(query.0, &pool).await {
         Ok(webhook_data) => Ok(HttpResponse::Ok().json(webhook_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -62,7 +62,7 @@ pub async fn new_webhook(
         update_time: webhook_info.update_time,
     };
 
-    match webhook_service::new_webhook(webhook_info, &pool) {
+    match webhook_service::new_webhook(webhook_info, &pool).await {
         Ok(webhook_data) => Ok(HttpResponse::Ok().json(webhook_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -87,7 +87,7 @@ pub async fn update_webhook(
         )));
     }
 
-    match webhook_service::update_webhook(webhook_info, &pool) {
+    match webhook_service::update_webhook(webhook_info, &pool).await {
         Ok(webhook_data) => Ok(HttpResponse::Ok().json(webhook_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -119,7 +119,7 @@ pub async fn delete_webhook(
             ))
         })? as i32;
 
-    match webhook_service::delete_webhook(id, &pool) {
+    match webhook_service::delete_webhook(id, &pool).await {
         Ok(webhook_data) => Ok(HttpResponse::Ok().json(webhook_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -131,7 +131,7 @@ pub async fn post_webhook(
     _params: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match webhook_service::post_webhook(hook_name.to_string(), &pool) {
+    match webhook_service::post_webhook(hook_name.to_string(), &pool).await {
         Ok(webhook_data) => Ok(HttpResponse::Ok().json(webhook_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -142,7 +142,7 @@ pub async fn get_webhook(
     hook_name: web::Path<String>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match webhook_service::get_webhook(hook_name.to_string(), &pool) {
+    match webhook_service::get_webhook(hook_name.to_string(), &pool).await {
         Ok(webhook_data) => Ok(HttpResponse::Ok().json(webhook_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

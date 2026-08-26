@@ -14,7 +14,7 @@ pub async fn get_me(
     user_id: web::Path<i32>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match account_service::get_me(*user_id, &pool) {
+    match account_service::get_me(*user_id, &pool).await {
         Ok(user_full_info) => Ok(HttpResponse::Ok().json(user_full_info)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -25,7 +25,7 @@ pub async fn all_user(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match account_service::get_all(query.0, &pool) {
+    match account_service::get_all(query.0, &pool).await {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -40,7 +40,7 @@ pub async fn login(
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
-    match account_service::login(user_info, &pool) {
+    match account_service::login(user_info, &pool).await {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -80,7 +80,7 @@ pub async fn signup(
             update_time: user_info.update_time,
         };
 
-    match account_service::new_user(user_info, &pool) {
+    match account_service::new_user(user_info, &pool).await {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -95,7 +95,7 @@ pub async fn logout(
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
-    match account_service::logout(user_info, &pool) {
+    match account_service::logout(user_info, &pool).await {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -110,7 +110,7 @@ pub async fn user_update(
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
-    match account_service::user_update(user_info, &pool) {
+    match account_service::user_update(user_info, &pool).await {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
