@@ -3,15 +3,23 @@
 //! 统一约定：
 //! - 成功返回响应体文本（`String`）；
 //! - 非 2xx 响应视为错误，错误 msg 中携带状态码与目标 URL；
-//! - 网络层失败（连接失败、超时等）同样转为 `MailManErr`。
+//! - 网络层失败（连接失败、超时等）同样转为 `MailManErr`；
+//! - query 参数经由 ureq `.query()` 拼接，自动 percent-encode。
 
 use crate::data_structure::MailManErr;
 
 /// GET 请求，返回响应体文本
-pub fn get(url: &str, headers: &[(String, String)]) -> Result<String, MailManErr<'static, String>> {
+pub fn get(
+    url: &str,
+    headers: &[(String, String)],
+    query: &[(String, String)],
+) -> Result<String, MailManErr<'static, String>> {
     let mut req = ureq::get(url);
     for (key, value) in headers {
         req = req.header(key, value);
+    }
+    for (key, value) in query {
+        req = req.query(key, value);
     }
     handle_response(req.call(), url, "Infrastructure: HTTP GET")
 }
@@ -20,10 +28,14 @@ pub fn get(url: &str, headers: &[(String, String)]) -> Result<String, MailManErr
 pub fn delete(
     url: &str,
     headers: &[(String, String)],
+    query: &[(String, String)],
 ) -> Result<String, MailManErr<'static, String>> {
     let mut req = ureq::delete(url);
     for (key, value) in headers {
         req = req.header(key, value);
+    }
+    for (key, value) in query {
+        req = req.query(key, value);
     }
     handle_response(req.call(), url, "Infrastructure: HTTP DELETE")
 }
@@ -32,11 +44,15 @@ pub fn delete(
 pub fn post_json(
     url: &str,
     headers: &[(String, String)],
+    query: &[(String, String)],
     body: &serde_json::Value,
 ) -> Result<String, MailManErr<'static, String>> {
     let mut req = ureq::post(url);
     for (key, value) in headers {
         req = req.header(key, value);
+    }
+    for (key, value) in query {
+        req = req.query(key, value);
     }
     handle_response(req.send_json(body), url, "Infrastructure: HTTP POST")
 }
@@ -45,11 +61,15 @@ pub fn post_json(
 pub fn put_json(
     url: &str,
     headers: &[(String, String)],
+    query: &[(String, String)],
     body: &serde_json::Value,
 ) -> Result<String, MailManErr<'static, String>> {
     let mut req = ureq::put(url);
     for (key, value) in headers {
         req = req.header(key, value);
+    }
+    for (key, value) in query {
+        req = req.query(key, value);
     }
     handle_response(req.send_json(body), url, "Infrastructure: HTTP PUT")
 }

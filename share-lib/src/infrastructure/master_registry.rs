@@ -25,7 +25,7 @@ pub fn refresh_master_registration(
     // 第一步：按注册名查询自身在 master 侧的 id
     let query_url =
         format!("{master_base_url}/subsystem_control/all_subsystem?subsys_name={subsys_name}");
-    let id_res_body = http_client::get(&query_url, &[])?;
+    let id_res_body = http_client::get(&query_url, &[], &[])?;
 
     let json_value: serde_json::Value = serde_json::from_str(&id_res_body).map_err(|e| {
         MailManErr::new(
@@ -47,6 +47,7 @@ pub fn refresh_master_registration(
     http_client::post_json(
         &format!("{master_base_url}/subsystem_control/update_subsystem"),
         &[("Connection".to_string(), "close".to_string())],
+        &[],
         &req_json,
     )
 }

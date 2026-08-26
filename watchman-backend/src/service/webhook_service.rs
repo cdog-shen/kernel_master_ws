@@ -4,9 +4,9 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
 };
 use serde_json::{Map, Value};
-use ureq;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
+use share_lib::infrastructure::http_client;
 
 use crate::model::webhook::*;
 
@@ -159,54 +159,30 @@ pub fn post_webhook<'a>(
     let method = webhook_config.method_type.to_uppercase();
     let target_url = &webhook_config.target_url;
 
-    // 根据 HTTP 方法分别处理（ureq 3.x GET/POST 返回不同类型）
+    // 提取 header 与 query 参数（仅取字符串值）
+    let mut headers: Vec<(String, String)> = Vec::new();
+    if let Value::Object(header_map) = &webhook_config.header_json {
+        for (key, value) in header_map {
+            if let Some(val_str) = value.as_str() {
+                headers.push((key.clone(), val_str.to_string()));
+            }
+        }
+    }
+    let mut query: Vec<(String, String)> = Vec::new();
+    if let Value::Object(query_map) = &webhook_config.query_json {
+        for (key, value) in query_map {
+            if let Some(val_str) = value.as_str() {
+                query.push((key.clone(), val_str.to_string()));
+            }
+        }
+    }
+
+    // 根据 HTTP 方法分别处理
     let result: Result<String, MailManErr<'_, String>> = match method.as_str() {
-        "GET" | "DELETE" => {
-            let mut req = match method.as_str() {
-                "GET" => ureq::get(target_url),
-                _ => ureq::delete(target_url),
-            };
-            if let Value::Object(header_map) = &webhook_config.header_json {
-                for (key, value) in header_map {
-                    if let Some(val_str) = value.as_str() {
-                        req = req.header(key, val_str);
-                    }
-                }
-            }
-            if let Value::Object(query_map) = &webhook_config.query_json {
-                for (key, value) in query_map {
-                    if let Some(val_str) = value.as_str() {
-                        req = req.query(key, val_str);
-                    }
-                }
-            }
-            req.call()
-                .and_then(|mut r| r.body_mut().read_to_string())
-                .map_err(|e| MailManErr::new(500, "Service: Post webhook", Some(e.to_string()), 1))
-        }
-        "POST" | "PUT" => {
-            let mut req = match method.as_str() {
-                "POST" => ureq::post(target_url),
-                _ => ureq::put(target_url),
-            };
-            if let Value::Object(header_map) = &webhook_config.header_json {
-                for (key, value) in header_map {
-                    if let Some(val_str) = value.as_str() {
-                        req = req.header(key, val_str);
-                    }
-                }
-            }
-            if let Value::Object(query_map) = &webhook_config.query_json {
-                for (key, value) in query_map {
-                    if let Some(val_str) = value.as_str() {
-                        req = req.query(key, val_str);
-                    }
-                }
-            }
-            req.send_json(&webhook_config.body_json)
-                .and_then(|mut r| r.body_mut().read_to_string())
-                .map_err(|e| MailManErr::new(500, "Service: Post webhook", Some(e.to_string()), 1))
-        }
+        "GET" => http_client::get(target_url, &headers, &query),
+        "DELETE" => http_client::delete(target_url, &headers, &query),
+        "POST" => http_client::post_json(target_url, &headers, &query, &webhook_config.body_json),
+        "PUT" => http_client::put_json(target_url, &headers, &query, &webhook_config.body_json),
         _ => {
             return Err(MailManErr::new(
                 400,
@@ -215,7 +191,8 @@ pub fn post_webhook<'a>(
                 1,
             ));
         }
-    };
+    }
+    .map_err(|e| MailManErr::new(500, "Service: Post webhook", e.msg, 1));
 
     match result {
         Ok(body) => {

@@ -12,7 +12,7 @@
 - [x] **确立"非 DB 原子操作"的归属层**：目前 HTTP(ureq) / MQ(lapin) / 进程派生(Command)
   散落各处。方案：统一约定 `infrastructure/`（或沿用 `util/`）作为非 DB 原子操作层，
   封装 `http_client`、`mq_client`、`process_runner` 三个原子模块骨架，写入骨架规范
-- [ ] **HTTP 外呼原子模块**：抽离 ureq 调用（URL/header/body/响应解析），
+- [x] **HTTP 外呼原子模块**：抽离 ureq 调用（URL/header/body/响应解析），
   首批迁移 watchman 的 `subsys_service.rs:295-307`、`webhook_service.rs:163-218`
 - [ ] **编排层函数统一 async 化**（编码规范已立规，见 `doc/coding_rules-*.md`
   「编排层函数统一为 async」）：存量同步 service 函数全量迁移为 `async fn`，

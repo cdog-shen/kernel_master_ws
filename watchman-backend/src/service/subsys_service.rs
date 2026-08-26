@@ -4,9 +4,9 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
 };
 use serde_json::{Map, Value};
-use ureq;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
+use share_lib::infrastructure::http_client;
 
 // use crate::model::service::ServiceInfo;
 use crate::model::{access::*, service::*, subsys::*};
@@ -292,30 +292,54 @@ pub fn call<'a>(
         },
     };
 
-    let req = ureq::post(
-        format!(
-            "{}/{}/{}",
-            &target.url,
-            &subsys_params["target"].as_str().unwrap(),
-            &subsys_params["operation"].as_str().unwrap(),
-        )
-        .as_str(),
-    )
-    .header("Content-Type", "application/json")
-    .header("Authorization", &format!("uuid {}", &target.token))
-    .header("Connection", "close")
-    .send(serde_json::to_string(&subsys_params["data"]).unwrap());
+    // 校验式清洗：target / operation 必须是字符串，否则返回 400
+    let target_path = match subsys_params["target"].as_str() {
+        Some(path) => path,
+        None => {
+            return Err(MailManErr::new(
+                400,
+                "Service: Call Subsystem",
+                Some("Missing or invalid 'target' in subsys_params".to_string()),
+                1,
+            ));
+        }
+    };
+    let operation = match subsys_params["operation"].as_str() {
+        Some(op) => op,
+        None => {
+            return Err(MailManErr::new(
+                400,
+                "Service: Call Subsystem",
+                Some("Missing or invalid 'operation' in subsys_params".to_string()),
+                1,
+            ));
+        }
+    };
 
-    match req {
-        Ok(resp) => Ok(MailManOk::new(
+    let url = format!("{}/{}/{}", &target.url, target_path, operation);
+    let headers = [
+        ("Content-Type".to_string(), "application/json".to_string()),
+        (
+            "Authorization".to_string(),
+            format!("uuid {}", &target.token),
+        ),
+        ("Connection".to_string(), "close".to_string()),
+    ];
+
+    match http_client::post_json(&url, &headers, &[], &subsys_params["data"]) {
+        Ok(resp_body) => Ok(MailManOk::new(
             200,
             "Service: Call Subsystem",
-            Some(serde_json::from_str(&resp.into_body().read_to_string().unwrap()).unwrap()),
+            Some(serde_json::from_str(&resp_body).unwrap()),
         )),
         Err(msg) => Err(MailManErr::new(
             500,
             "Service: Call Subsystem",
-            Some(format!("Subsystem: {}. Error: {}", &subsys_name, msg)),
+            Some(format!(
+                "Subsystem: {}. Error: {}",
+                &subsys_name,
+                msg.msg.unwrap_or_default()
+            )),
             1,
         )),
     }
