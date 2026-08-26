@@ -2,6 +2,7 @@
 //!
 //! 编排层（service）需要的非数据库原子操作统一收敛在本模块：
 //! - `http_client`：HTTP 外呼（feature `http`，基于 ureq）
+//! - `master_registry`：子系统向 master 刷新注册信息的两步编排（feature `http`，复用 `http_client`）
 //! - `mq_client`：消息队列操作（feature `mq`，基于 lapin）
 //! - `process_runner`：本地进程派生（常驻，基于 std::process）
 //!
@@ -9,6 +10,8 @@
 
 #[cfg(feature = "http")]
 pub mod http_client;
+#[cfg(feature = "http")]
+pub mod master_registry;
 #[cfg(feature = "mq")]
 pub mod mq_client;
 pub mod process_runner;
