@@ -194,3 +194,37 @@ main.rs:182-198 消费循环（MQ 原子操作全部内联在 main，无封装�
   `call_async` 的 exec_type 硬编码为 `"sync"`（api/script_caller.rs:186）
 - jc-worker `output` 被借用后二次 `unwrap`，stdout/stderr 皆空时会 panic
   （service/task.rs:53-94）
+
+## 整改记录（2026-08-26）
+
+本报告上文的各 crate「不满足点」清单为整改前快照，保留作历史对照。本轮整改已按下述主题完成。
+
+### P0 共性收敛
+
+- `share-lib` 新增 `infrastructure/` 原子操作层：`http_client`（ureq）、`mq_client`（lapin）、`process_runner`（std::process）、`master_registry`（向 watchman 注册/刷新），统一承接非 DB 原子操作。
+- cmdb、cloud-api、jc-commander、file-agent 四个 crate 的 `refresh_master` 收敛到 `master_registry`，消除 handler 内复制粘贴的 HTTP 外呼 + 两步编排。
+- watchman 的 ureq 外呼迁移至 `http_client`。
+- 编排层全量 async 化，统一 tokio 异步形态（yell 本就合规，未改动）。
+
+### P1 分层整改
+
+- **jc-commander**：MQ 调用收敛至 `mq_client`；编排逻辑下沉 service；cron 组装从 handler 下沉。
+- **jc-worker**：新增 TaskPayload 清洗层；MQ 消费循环独立为 `mq_consumer` 模块；`log_update` 归位 `util/`。
+- **file-agent**：文件系统原语收敛为 `util/file_op.rs` 原子层；multipart 上传逻辑下沉 service；请求参数改为校验式清洗。
+- **yell**：新增 `manage_service` / `notify_service` 编排层；`NotificationRouter` 纯化为注册与分发；`Channel` trait 收敛为单一 `dispatch` 职责；消息渲染移出渠道实现；`wecom` 渠道删除。
+- **cloud-api**：进程派生收敛至 `process_runner`；裸 `unwrap` 取参改为校验式清洗。
+- **watchman**：删除 legacy `Authentication` 中间件及引用它的死代码。
+- **cmdb**：改为校验式清洗；删除空文件。
+
+### 清洗层统一
+
+- 各 crate 新增 `api/filter.rs`，按表白名单校验 GET filter 的 key 与值类型，脏输入剔除而非 panic。
+- yell send 链路改为结构化清洗，取代裸 `unwrap`。
+- `from_map` 清洗函数留在 model 文件，确立为正式惯例（见 `doc/project_skeleton-CN.md`「清洗层的职责划分」）。
+
+### 遗留与保留项
+
+- 本机 Windows 环境缺 OpenSSL（`pq-sys` bundled 依赖链），5 个 diesel crate 的编译验证交由 `.github/workflows/check.yml` 执行，首次 push 即触发。
+- clippy 基线警告未清零，暂不开启 `-D warnings`。
+- middleware 与 `get_me` 的鉴权查询重复经评估不值得收敛，维持现状。
+- AK/SK 通过 argv 传递凭据存在泄露风险，已记录，待后续协议变更解决。
