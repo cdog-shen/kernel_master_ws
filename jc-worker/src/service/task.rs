@@ -82,8 +82,8 @@ pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailMa
         Err(ref e) => Err(format!("Error: {e}")),
     };
 
-    let (result, status) = match output.unwrap().status {
-        code if code.success() => (res.unwrap(), 2),
+    let (result, status) = match &output {
+        Ok(o) if o.status.success() => (res.clone().unwrap_or_else(|e| e), 2),
         _ => {
             MailManErr::new(500, "task execute Error", Some(res.clone()), 1);
             (
