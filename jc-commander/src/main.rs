@@ -13,7 +13,8 @@ use futures::FutureExt;
 use diesel::PgConnection;
 use diesel::r2d2::ConnectionManager;
 // mq utils import
-use lapin::{Connection, ConnectionProperties};
+use lapin::Connection;
+use share_lib::infrastructure::mq_client;
 // db models
 
 // share-lib import
@@ -63,7 +64,7 @@ async fn main() -> std::io::Result<()> {
     // init MQ connection pool
     log_info!("MQ Pool init");
     let mq_str = server::GLOBAL_CONFIG.read().unwrap().mq_str.clone();
-    let mq_manager = Connection::connect(&mq_str, ConnectionProperties::default())
+    let mq_manager = mq_client::connect(&mq_str)
         .await
         .expect("Failed to connect to MQ");
     let mq_pool: Arc<Connection> = Arc::new(mq_manager);

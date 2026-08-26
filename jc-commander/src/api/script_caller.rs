@@ -12,8 +12,10 @@ use uuid::Uuid;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 use share_lib::err_mapping::MailManErrResponser;
+use share_lib::infrastructure::mq_client;
 
 use crate::service::job_log;
+use crate::util::{mq_async_queue, mq_sync_queue};
 use crate::{config::server, model::job_log::JobLogInfo};
 
 // send sync task to message queue
@@ -24,20 +26,14 @@ pub async fn call_sync(
     done_task_list: web::Data<SegQueue<Uuid>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     let channel = mq_pool.create_channel().await.unwrap();
-    let queue_prefix = server::GLOBAL_CONFIG
-        .read()
-        .unwrap()
-        .mq_queue_prefix
-        .clone();
     let self_id = server::GLOBAL_CONFIG.read().unwrap().subsys_uuid.clone();
-    let queue = format!("{queue_prefix}_sync");
+    let queue = mq_sync_queue();
 
     let uuid = Uuid::new_v4();
     let mut req = req.into_inner();
     let timeout = req["timeout"].as_u64().unwrap_or(30);
     req["id"] = serde_json::Value::String(uuid.to_string().clone());
     req["commander"] = serde_json::Value::String(self_id.clone());
-    let payload = serde_json::to_vec(&req).unwrap();
     let new_log_value = serde_json::json!({
             "id": uuid.to_string().clone(),
             "script": req["script"],
@@ -68,30 +64,17 @@ pub async fn call_sync(
         Err(e) => return Err(MailManErrResponser::mapping_from_mme(e)),
     }
 
-    match channel
-        .basic_publish(
-            "",
-            &queue,
-            lapin::options::BasicPublishOptions::default(),
-            &payload,
-            lapin::BasicProperties::default()
-                .with_content_type("application/json".into())
-                .with_delivery_mode(2),
-        )
+    mq_client::publish_json(&channel, &queue, &req)
         .await
-    {
-        Ok(res_data) => {
-            MailManOk::new(200, "Sync task send success", Some(format!("{res_data:?}")));
-        }
-        Err(e) => {
-            return Err(MailManErrResponser::mapping_from_mme(MailManErr::new(
+        .map_err(|e| {
+            MailManErrResponser::mapping_from_mme(MailManErr::new(
                 500,
                 "Task sending Failed",
-                Some(e.to_string()),
+                e.msg,
                 1,
-            )));
-        }
-    }
+            ))
+        })?;
+    MailManOk::new(200, "Sync task send success", None::<&str>);
 
     let start = std::time::Instant::now();
     loop {
@@ -167,19 +150,13 @@ pub async fn call_async(
     mq_pool: web::Data<Arc<lapin::Connection>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     let channel = mq_pool.create_channel().await.unwrap();
-    let queue_prefix = server::GLOBAL_CONFIG
-        .read()
-        .unwrap()
-        .mq_queue_prefix
-        .clone();
     let self_id = server::GLOBAL_CONFIG.read().unwrap().subsys_uuid.clone();
-    let queue = format!("{queue_prefix}_async");
+    let queue = mq_async_queue();
 
     let uuid = Uuid::new_v4().to_string();
     let mut req = req.into_inner();
     req["id"] = serde_json::Value::String(uuid.clone());
     req["commander"] = serde_json::Value::String(self_id.clone());
-    let payload = serde_json::to_vec(&req).unwrap();
     let new_log_value = serde_json::json!({
             "id": uuid.to_string().clone(),
             "script": req["script"],
@@ -210,23 +187,14 @@ pub async fn call_async(
         Err(e) => return Err(MailManErrResponser::mapping_from_mme(e)),
     }
 
-    match channel
-        .basic_publish(
-            "",
-            &queue,
-            lapin::options::BasicPublishOptions::default(),
-            &payload,
-            lapin::BasicProperties::default(),
-        )
-        .await
-    {
+    match mq_client::publish_json(&channel, &queue, &req).await {
         Ok(_) => {
             Ok(HttpResponse::Ok().json(MailManOk::new(200, "Async task send success", Some(uuid))))
         }
         Err(e) => Err(MailManErrResponser::mapping_from_mme(MailManErr::new(
             500,
             "Task sending Failed",
-            Some(e.to_string()),
+            e.msg,
             1,
         ))),
     }

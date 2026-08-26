@@ -28,4 +28,4 @@ uuid.workspace = true
 # MQ dependencies
 lapin.workspace = true
 # share-lib utils
-share-lib = { workspace = true, features = ["web", "http"] }
+share-lib = { workspace = true, features = ["web", "http", "mq"] }

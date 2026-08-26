@@ -10,9 +10,11 @@ use std::{
 };
 
 use share_lib::data_structure::{MailManErr, MailManOk};
+use share_lib::infrastructure::mq_client;
 
 use crate::config::server;
 use crate::model::cron_job::CronJobModel;
+use crate::util::mq_async_queue;
 
 // 分轮任务容器
 #[derive(Clone)]
@@ -221,17 +223,18 @@ impl TimeWheel {
         Ok(())
     }
 
-    async fn send_job_async(&self, job: &CronJobModel) -> Result<(), lapin::Error> {
-        let channel = self.mq_pool.create_channel().await?;
+    async fn send_job_async(&self, job: &CronJobModel) -> Result<(), MailManErr<'static, String>> {
+        // 长连接复用 mq_pool，仅每次新建 channel；声明+投递原子操作走 mq_client
+        let channel = self.mq_pool.create_channel().await.map_err(|e| {
+            MailManErr::new(
+                500,
+                "Infrastructure: MQ channel",
+                Some(format!("创建 MQ channel 失败: {e}")),
+                1,
+            )
+        })?;
         let subsys_uuid = { server::GLOBAL_CONFIG.read().unwrap().subsys_uuid.clone() };
-        let queue = {
-            let prefix = server::GLOBAL_CONFIG
-                .read()
-                .unwrap()
-                .mq_queue_prefix
-                .clone();
-            format!("{prefix}_async")
-        };
+        let queue = mq_async_queue();
         let payload = serde_json::json!({
             "commander": subsys_uuid,
             "host": "any",
@@ -240,19 +243,7 @@ impl TimeWheel {
             "script": job.script
         });
 
-        channel
-            .basic_publish(
-                "",
-                &queue,
-                lapin::options::BasicPublishOptions::default(),
-                serde_json::to_vec(&payload)
-                    .expect("params encode Error")
-                    .as_slice(),
-                lapin::BasicProperties::default(),
-            )
-            .await?;
-
-        Ok(())
+        mq_client::publish_json(&channel, &queue, &payload).await
     }
 
     fn send_job(
@@ -272,7 +263,7 @@ impl TimeWheel {
                 MailManErr::new(
                     500,
                     "Task sending Failed",
-                    Some(format!("MQ error: {e}")),
+                    Some(format!("MQ error: {e:?}")),
                     1,
                 )
             })
