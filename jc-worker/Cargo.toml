@@ -15,9 +15,7 @@ serde.workspace = true
 serde_derive.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
-# RPC dependencies
-ureq.workspace = true
 # MQ dependencies
 lapin.workspace = true
 # share-lib utils
-share-lib = { workspace = true, features = ["mq"] }
+share-lib = { workspace = true, features = ["mq", "http"] }

@@ -7,6 +7,7 @@ use config::worker;
 mod config;
 mod mq_consumer;
 mod service;
+mod util;
 
 #[tokio::main]
 async fn main() {

@@ -5,7 +5,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 use share_lib::infrastructure::process_runner;
 
 use crate::config::worker;
-use crate::service::json_rpc::update_log;
+use crate::util::log_update::update_log;
 
 /// MQ 任务消息（清洗层强类型输入）
 ///
@@ -110,17 +110,8 @@ pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailMa
         }
     };
 
-    match update_log(auth, uuid.to_string(), status, result).await {
-        Ok(MailManOk {
-            code: _,
-            key: _,
-            data: resu,
-        }) => Ok(MailManOk::new(200, "task Finish with OK", resu)),
-        Err(MailManErr {
-            code: _,
-            key: _,
-            msg: e,
-            level: _,
-        }) => Err(MailManErr::new(500, "task Finish with Error", e, 1)),
+    match update_log(&auth, &uuid, status, &result) {
+        Ok(resu) => Ok(MailManOk::new(200, "task Finish with OK", Some(resu))),
+        Err(e) => Err(MailManErr::new(500, "task Finish with Error", e.msg, 1)),
     }
 }
