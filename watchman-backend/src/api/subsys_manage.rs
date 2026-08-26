@@ -7,14 +7,14 @@ use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
 use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model::subsys, service::subsys_service};
+use crate::{api::filter, model::subsys, service::subsys_service};
 
 // GET api/subsystem_control/all_subsystem
 pub async fn all_subsys(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match subsys_service::all_subsys(query.0, &pool).await {
+    match subsys_service::all_subsys(filter::clean_subsys_filter(query.0), &pool).await {
         Ok(subsys_data) => Ok(HttpResponse::Ok().json(subsys_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

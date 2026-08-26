@@ -7,14 +7,14 @@ use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
 use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model::access, service::access_service};
+use crate::{api::filter, model::access, service::access_service};
 
 // GET api/access_control/all_access
 pub async fn all_access(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match access_service::all_access(query.0, &pool).await {
+    match access_service::all_access(filter::clean_access_filter(query.0), &pool).await {
         Ok(access_data) => Ok(HttpResponse::Ok().json(access_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

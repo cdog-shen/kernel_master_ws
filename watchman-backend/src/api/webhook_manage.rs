@@ -7,14 +7,14 @@ use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
 use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model::webhook, service::webhook_service};
+use crate::{api::filter, model::webhook, service::webhook_service};
 
 // GET api/webhook
 pub async fn all_webhook(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match webhook_service::all_webhook(query.0, &pool).await {
+    match webhook_service::all_webhook(filter::clean_webhook_filter(query.0), &pool).await {
         Ok(webhook_data) => Ok(HttpResponse::Ok().json(webhook_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

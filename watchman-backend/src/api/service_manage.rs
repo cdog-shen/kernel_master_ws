@@ -7,14 +7,14 @@ use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
 use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model::service, service::service_service};
+use crate::{api::filter, model::service, service::service_service};
 
 // GET api/service_control/all_service
 pub async fn all_service(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match service_service::all_service(query.0, &pool).await {
+    match service_service::all_service(filter::clean_service_filter(query.0), &pool).await {
         Ok(group_data) => Ok(HttpResponse::Ok().json(group_data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

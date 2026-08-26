@@ -7,7 +7,7 @@ use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
 use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model::user, service::account_service};
+use crate::{api::filter, model::user, service::account_service};
 
 // GET api/auth/me/{id}
 pub async fn get_me(
@@ -25,7 +25,7 @@ pub async fn all_user(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match account_service::get_all(query.0, &pool).await {
+    match account_service::get_all(filter::clean_user_filter(query.0), &pool).await {
         Ok(token_res) => Ok(HttpResponse::Ok().json(token_res)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
