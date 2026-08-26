@@ -6,6 +6,8 @@ use std::fs;
 use std::io;
 use std::path::Path;
 use std::time::SystemTime;
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
 
 /// 判断路径是否存在且为普通文件
 pub fn is_file(path: &Path) -> bool {
@@ -30,6 +32,16 @@ pub fn remove_file(path: &Path) -> io::Result<()> {
 /// 递归创建目录（已存在则视为成功）
 pub fn create_dir_all(path: &Path) -> io::Result<()> {
     fs::create_dir_all(path)
+}
+
+/// 创建（或截断）文件，返回异步写句柄
+pub async fn create_file(path: &Path) -> io::Result<File> {
+    File::create(path).await
+}
+
+/// 向文件异步写入一个数据块
+pub async fn write_chunk(file: &mut File, chunk: &[u8]) -> io::Result<()> {
+    file.write_all(chunk).await
 }
 
 /// 目录条目信息
