@@ -6,6 +6,7 @@ use diesel::{
 };
 use serde_json::{Map, Value};
 use share_lib::err_mapping::MailManErrResponser;
+use std::collections::HashMap;
 
 use crate::{
     model::{
@@ -93,9 +94,22 @@ pub async fn send(
         Err(err) => return Err(MailManErrResponser::mapping_from_mme(err)),
     };
 
+    // recipients 为空时 router 直接返回，保持不查渠道配置的原行为
+    let channel_configs = if recipients.is_empty() {
+        HashMap::new()
+    } else {
+        match notify_service::load_channel_configs(&pool).await {
+            Ok(configs) => configs,
+            Err(err) => return Err(MailManErrResponser::mapping_from_mme(err)),
+        }
+    };
+
     let router = NotificationRouter::new();
 
-    match router.send_to_channels(request, recipients, &pool).await {
+    match router
+        .send_to_channels(request, recipients, channel_configs, &pool)
+        .await
+    {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
@@ -129,10 +143,15 @@ pub async fn send_with_template(
         Err(err) => return Err(MailManErrResponser::mapping_from_mme(err)),
     };
 
+    let template = match notify_service::get_template_by_name(template_name, &pool).await {
+        Ok(template) => template,
+        Err(err) => return Err(MailManErrResponser::mapping_from_mme(err)),
+    };
+
     let router = NotificationRouter::new();
 
     match router
-        .send_with_template(template_name, variables, recipients, &pool)
+        .send_with_template(template, variables, recipients, &pool)
         .await
     {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),

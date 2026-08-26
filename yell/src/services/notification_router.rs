@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::model::{channel_config::ChannelConfig, notification_template::NotificationTemplate};
+use crate::model::notification_template::NotificationTemplate;
 use crate::services::bark::service::BarkChannel;
 use crate::services::channel::{Channel, ChannelResult, NotificationRequest};
 use crate::services::gotify::service::GotifyChannel;
@@ -46,10 +46,13 @@ impl NotificationRouter {
     /// recipients: Vec<(channel_type, recipient, instance)>
     /// 各 channel_type 自行解释 recipient 的含义（邮件地址/用户ID/群组ID/openID/token等）
     /// instance 为配置实例名，必填
+    /// channel_configs: 由编排层注入的渠道配置（HashMap<channel_type, config_json>），
+    /// 预留给渠道初始化使用；当前各渠道按 instance 自行查库加载配置
     pub async fn send_to_channels<'a>(
         &self,
         request: NotificationRequest,
         recipients: Vec<(String, String, String)>,
+        channel_configs: HashMap<String, Value>,
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<MailManOk<'a, Vec<ChannelResult>>, MailManErr<'a, String>> {
         if recipients.is_empty() {
@@ -60,17 +63,8 @@ impl NotificationRouter {
             ));
         }
 
-        let channel_configs = match Self::load_channel_configs(pool).await {
-            Ok(configs) => configs,
-            Err(e) => {
-                return Err(MailManErr::new(
-                    500,
-                    "Failed to load channel configs",
-                    Some(e),
-                    0,
-                ));
-            }
-        };
+        // 配置已注入但暂不消费（原 init_channel 为空实现，已移除）
+        let _ = &channel_configs;
 
         let mut tasks = Vec::new();
 
@@ -79,18 +73,6 @@ impl NotificationRouter {
                 let channel = Arc::clone(channel);
                 let request = request.clone();
                 let pool = pool.clone();
-                let config = channel_configs.get(&channel_type).cloned();
-
-                if let Some(config) = config {
-                    if let Err(e) = Self::init_channel(&channel, &config).await {
-                        return Err(MailManErr::new(
-                            500,
-                            "Failed to init channel",
-                            Some(format!("{}: {}", channel_type, e)),
-                            0,
-                        ));
-                    }
-                }
 
                 let task = tokio::spawn(async move {
                     let request = channel.prepare_request(request);
@@ -128,46 +110,15 @@ impl NotificationRouter {
     }
 
     /// 使用模板发送 — 渲染各渠道 JSON，只向模板中有对应字段的渠道发送
+    ///
+    /// template: 由编排层按名称查询后注入的模板对象
     pub async fn send_with_template<'a>(
         &self,
-        template_name: &str,
+        template: NotificationTemplate,
         variables: serde_json::Map<String, Value>,
         recipients: Vec<(String, String, String)>,
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<MailManOk<'a, Vec<ChannelResult>>, MailManErr<'a, String>> {
-        let template = web::block({
-            let pool = pool.clone();
-            let name = template_name.to_string();
-            move || {
-                let mut conn = pool.get().map_err(|e| e.to_string())?;
-                NotificationTemplate::get_by_name(&name, &mut conn).map_err(|(_, msg)| msg)
-            }
-        })
-        .await;
-
-        let template = match template {
-            Ok(Ok(Some(t))) => t,
-            Ok(Ok(None)) => {
-                return Err(MailManErr::new(
-                    404,
-                    "Template not found",
-                    Some(format!("Template '{}' does not exist", template_name)),
-                    1,
-                ));
-            }
-            Ok(Err(msg)) => {
-                return Err(MailManErr::new(500, "Failed to get template", Some(msg), 0));
-            }
-            Err(e) => {
-                return Err(MailManErr::new(
-                    500,
-                    "Failed to get template",
-                    Some(e.to_string()),
-                    0,
-                ));
-            }
-        };
-
         // 渲染各渠道 JSON: HashMap<channel_type, rendered_payload>
         let rendered = template.render(&variables);
         let template_id = template.id;
@@ -227,43 +178,6 @@ impl NotificationRouter {
             "Template notification processed",
             Some(results),
         ))
-    }
-
-    /// 加载所有渠道配置
-    async fn load_channel_configs(
-        pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-    ) -> Result<HashMap<String, Value>, String> {
-        let result = web::block({
-            let pool = pool.clone();
-            move || {
-                let mut conn = pool.get().map_err(|e| e.to_string())?;
-                ChannelConfig::get_all(&mut conn).map_err(|(_, msg)| msg)
-            }
-        })
-        .await;
-
-        match result {
-            Ok(Ok(configs)) => {
-                let mut map = HashMap::new();
-                for config in configs {
-                    if let Ok(channel_type) = serde_json::from_value::<String>(
-                        config.get("channel_type").cloned().unwrap_or(Value::Null),
-                    ) {
-                        map.insert(channel_type, config);
-                    }
-                }
-                Ok(map)
-            }
-            Ok(Err(msg)) => Err(msg),
-            Err(e) => Err(e.to_string()),
-        }
-    }
-
-    /// 初始化渠道
-    async fn init_channel(_channel: &Arc<dyn Channel>, _config: &Value) -> Result<(), String> {
-        // TODO: 根据配置初始化渠道客户端
-        // 例如：SMTP 可以在这里创建连接池
-        Ok(())
     }
 }
 

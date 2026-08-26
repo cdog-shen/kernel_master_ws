@@ -10,8 +10,11 @@ use diesel::{
 };
 use serde_json::Value;
 use share_lib::data_structure::MailManErr;
+use std::collections::HashMap;
 
+use crate::model::channel_config::ChannelConfig;
 use crate::model::notification_alias::NotificationAlias;
+use crate::model::notification_template::NotificationTemplate;
 
 /// 解析 recipients 字段，支持 String（alias）和 Array 两种格式
 pub async fn resolve_recipients<'a>(
@@ -123,4 +126,81 @@ fn parse_recipients_array(
         ));
     }
     Ok(recipients)
+}
+
+/// 加载所有渠道配置，返回 HashMap<channel_type, config_json>
+pub async fn load_channel_configs<'a>(
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<HashMap<String, Value>, MailManErr<'a, String>> {
+    let result = web::block({
+        let pool = pool.clone();
+        move || {
+            let mut conn = pool.get().map_err(|e| e.to_string())?;
+            ChannelConfig::get_all(&mut conn).map_err(|(_, msg)| msg)
+        }
+    })
+    .await;
+
+    let configs = match result {
+        Ok(Ok(configs)) => configs,
+        Ok(Err(msg)) => {
+            return Err(MailManErr::new(
+                500,
+                "Failed to load channel configs",
+                Some(msg),
+                0,
+            ));
+        }
+        Err(e) => {
+            return Err(MailManErr::new(
+                500,
+                "Failed to load channel configs",
+                Some(e.to_string()),
+                0,
+            ));
+        }
+    };
+
+    let mut map = HashMap::new();
+    for config in configs {
+        if let Ok(channel_type) = serde_json::from_value::<String>(
+            config.get("channel_type").cloned().unwrap_or(Value::Null),
+        ) {
+            map.insert(channel_type, config);
+        }
+    }
+    Ok(map)
+}
+
+/// 根据名称获取启用的模板；不存在时返回 404
+pub async fn get_template_by_name<'a>(
+    template_name: &str,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<NotificationTemplate, MailManErr<'a, String>> {
+    let result = web::block({
+        let pool = pool.clone();
+        let name = template_name.to_string();
+        move || {
+            let mut conn = pool.get().map_err(|e| e.to_string())?;
+            NotificationTemplate::get_by_name(&name, &mut conn).map_err(|(_, msg)| msg)
+        }
+    })
+    .await;
+
+    match result {
+        Ok(Ok(Some(template))) => Ok(template),
+        Ok(Ok(None)) => Err(MailManErr::new(
+            404,
+            "Template not found",
+            Some(format!("Template '{}' does not exist", template_name)),
+            1,
+        )),
+        Ok(Err(msg)) => Err(MailManErr::new(500, "Failed to get template", Some(msg), 0)),
+        Err(e) => Err(MailManErr::new(
+            500,
+            "Failed to get template",
+            Some(e.to_string()),
+            0,
+        )),
+    }
 }
