@@ -50,7 +50,7 @@ impl CronJobInfo {
 
             frequency: map.get("frequency").and_then(|v| v.as_i64()),
 
-            times: map.get("frequency").and_then(|v| v.as_i64()),
+            times: map.get("times").and_then(|v| v.as_i64()),
 
             params: map.get("params").cloned(),
 
