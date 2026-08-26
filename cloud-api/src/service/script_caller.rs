@@ -6,6 +6,7 @@ use diesel::{
 use serde_json::Value;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
+use share_lib::infrastructure::process_runner;
 
 use crate::{config::server::GLOBAL_CONFIG, model::cloud_account::CloudAccountModel};
 
@@ -59,26 +60,30 @@ pub async fn run<'a>(
             },
         };
 
-    let output = std::process::Command::new(GLOBAL_CONFIG.read().unwrap().python_path.clone())
-        .arg(script_path)
-        .arg(cloud_user[0]["ak"].as_str().unwrap())
-        .arg(cloud_user[0]["sk"].as_str().unwrap())
-        .arg(region)
-        .arg(params)
-        .output();
+    let output = process_runner::run(
+        &GLOBAL_CONFIG.read().unwrap().python_path,
+        &[
+            script_path.as_str(),
+            cloud_user[0]["ak"].as_str().unwrap(),
+            cloud_user[0]["sk"].as_str().unwrap(),
+            region,
+            params,
+        ],
+        None,
+    );
 
     let res = match output {
         Ok(output) => {
             // 标准输出
             if !output.stdout.is_empty() {
-                Ok(String::from_utf8(output.stdout).expect("Error: stdout is not utf8"))
+                Ok(output.stdout)
             } else if !output.stderr.is_empty() {
-                Ok(String::from_utf8(output.stderr).expect("Error: stdout is not utf8"))
+                Ok(output.stderr)
             } else {
                 Err("Nothing in stdout".to_string())
             }
         }
-        Err(e) => Err(format!("Error: {e}")),
+        Err(e) => Err(format!("Error: {e:?}")),
     };
 
     match res {
@@ -111,17 +116,29 @@ pub async fn get_scripts<'a>(
     let script_path =
         GLOBAL_CONFIG.read().unwrap().script_dir.clone() + "/" + provider_name + "/" + product_name;
 
-    let output = std::process::Command::new("ls").arg(script_path).output();
-
-    let res = match output {
-        Ok(output) => {
-            // 标准输出
-            if !output.stdout.is_empty() {
-                Ok(String::from_utf8(output.stdout).expect("Error: stdout is not utf8"))
-            } else if !output.stderr.is_empty() {
-                Ok(String::from_utf8(output.stderr).expect("Error: stdout is not utf8"))
-            } else {
+    let res = match std::fs::read_dir(&script_path) {
+        Ok(entries) => {
+            let mut names = Vec::new();
+            for entry in entries {
+                let entry = match entry {
+                    Ok(entry) => entry,
+                    Err(e) => {
+                        return Err(MailManErr::new(
+                            500,
+                            "Service: get Product script",
+                            Some(format!("Error: {e}")),
+                            1,
+                        ));
+                    }
+                };
+                names.push(entry.file_name().to_string_lossy().into_owned());
+            }
+            // 与 `ls <dir>` 输出等价：按文件名排序，逐行换行
+            names.sort_unstable();
+            if names.is_empty() {
                 Err("Nothing in stdout".to_string())
+            } else {
+                Ok(names.join("\n") + "\n")
             }
         }
         Err(e) => Err(format!("Error: {e}")),
