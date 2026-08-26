@@ -66,14 +66,17 @@ pub async fn signup(
                     1,
                 )),
             )?),
-            passwd: Some(user_info.passwd.clone().ok_or(
-                MailManErrResponser::mapping_from_mme(MailManErr::new(
-                    400,
-                    "Bad Request",
-                    Some("Missing `passwd` field.".to_string()),
-                    1,
-                )),
-            )?),
+            passwd: Some(
+                user_info
+                    .passwd
+                    .clone()
+                    .ok_or(MailManErrResponser::mapping_from_mme(MailManErr::new(
+                        400,
+                        "Bad Request",
+                        Some("Missing `passwd` field.".to_string()),
+                        1,
+                    )))?,
+            ),
             full_name: Some(user_info.full_name.clone().unwrap_or(String::new())),
             contact: Some(user_info.contact.clone().unwrap_or(serde_json::json!({}))),
             is_enable: Some(user_info.is_enable.unwrap_or(false)),
