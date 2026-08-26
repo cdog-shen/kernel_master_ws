@@ -7,14 +7,14 @@ use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
 use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model::job_log::JobLogInfo, service::job_log};
+use crate::{api::filter, model::job_log::JobLogInfo, service::job_log};
 
 // POST /api/job_log/get
 pub async fn get_all(
     query: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match job_log::get_all(query.into_inner(), &pool).await {
+    match job_log::get_all(filter::clean_job_log_filter(query.into_inner()), &pool).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

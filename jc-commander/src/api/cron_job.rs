@@ -9,14 +9,14 @@ use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
 use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model::cron_job::CronJobInfo, service::cron_job};
+use crate::{api::filter, model::cron_job::CronJobInfo, service::cron_job};
 
 // POST /api/cron_job/get
 pub async fn get_all(
     query: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match cron_job::get_all(query.into_inner(), &pool).await {
+    match cron_job::get_all(filter::clean_cron_job_filter(query.into_inner()), &pool).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
