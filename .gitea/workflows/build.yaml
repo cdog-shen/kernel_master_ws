@@ -17,6 +17,16 @@ jobs:
           cd ~/kmws/kernel_master_ws
           git pull --prune
 
+      - name: fmt check
+        run: |
+          cd ~/kmws/kernel_master_ws
+          cargo fmt --all -- --check
+
+      - name: clippy
+        run: |
+          cd ~/kmws/kernel_master_ws
+          cargo clippy --workspace --all-targets
+
       - name: build
         run: |
           cd ~/kmws/kernel_master_ws
