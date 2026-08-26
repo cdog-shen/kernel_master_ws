@@ -94,6 +94,19 @@ pub static GLOBAL_CONFIG: Lazy<RwLock<AllConfigs>> = Lazy::new(|| RwLock::new(Al
 
 提供 `JwtAuth` 与 `PermissionCheck` 两个 actix Transform，在 `config/app.rs` 中按需 wrap。该文件各 crate 因依赖自身 model 已分化，修改时必须逐 crate 同步评估。
 
+## 非 DB 原子操作层
+
+编排层（`service/`）调用的原子操作按类型归属如下，禁止在 `service/` 内直接散落实现：
+
+- **DB 原子操作**：归各 crate 的 `model/`（见上一节），每张表一个文件，承接 diesel 查询/更新。
+- **非 DB 原子操作**（HTTP 外呼、消息队列、进程派生等）：统一收敛在 `share-lib` 的 `infrastructure` 模块（`share-lib/src/infrastructure/`），各 crate 按需通过 feature 引入：
+  - `share_lib::infrastructure::http_client` — 基于 ureq 的同步 HTTP 原子操作（`get` / `delete` / `post_json` / `put_json`），feature `http`；
+  - `share_lib::infrastructure::mq_client` — 基于 lapin 的异步 MQ 原子操作（`connect` / `declare_quorum_queue` / `publish_json`），feature `mq`；消费端的消费循环与业务强相关，继续留在各 crate；
+  - `share_lib::infrastructure::process_runner` — 基于 std::process 的同步进程执行（`run` 返回 `ProcessOutput { stdout, stderr, exit_code }`），无 feature 门控，常驻可用。
+- **crate 特有的原子操作**：若某原子操作只有一个 crate 使用且与其他 crate 无复用前景，可留在本 crate 的 `util/`（如 `file-agent/src/util/file_op.rs` 的文件系统原语）。
+
+所有原子操作的错误一律走 MailMan 体系（`MailManErr::new`，500 系 code，level 按语义取 0/1），由编排层继续上抛或转换。
+
 ## 固定件
 
 以下两个端点每个 HTTP 服务 crate 都必须具备：

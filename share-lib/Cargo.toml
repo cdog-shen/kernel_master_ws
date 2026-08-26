@@ -7,6 +7,8 @@ authors.workspace = true
 [features]
 default = []
 web = ["dep:actix-web"]
+http = ["dep:ureq"]
+mq = ["dep:lapin"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
@@ -16,3 +18,5 @@ chrono.workspace = true
 log = { workspace = true, features = ["std"] }
 toml.workspace = true
 actix-web = { workspace = true, optional = true }
+ureq = { workspace = true, optional = true }
+lapin = { workspace = true, optional = true }

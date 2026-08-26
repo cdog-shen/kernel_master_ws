@@ -9,7 +9,7 @@
 - [ ] **收敛 `refresh_master` 集体越层**：cmdb / cloud-api / jc-commander / file-agent 四个 crate
   的 `api/system_manage.rs` 在 handler 里直接做两次 ureq 外呼。方案：在 share-lib 新增
   "子系统自注册/心跳" 公共模块（web feature 下），各 crate 调用同一实现
-- [ ] **确立"非 DB 原子操作"的归属层**：目前 HTTP(ureq) / MQ(lapin) / 进程派生(Command)
+- [x] **确立"非 DB 原子操作"的归属层**：目前 HTTP(ureq) / MQ(lapin) / 进程派生(Command)
   散落各处。方案：统一约定 `infrastructure/`（或沿用 `util/`）作为非 DB 原子操作层，
   封装 `http_client`、`mq_client`、`process_runner` 三个原子模块骨架，写入骨架规范
 - [ ] **HTTP 外呼原子模块**：抽离 ureq 调用（URL/header/body/响应解析），
