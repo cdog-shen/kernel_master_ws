@@ -63,9 +63,9 @@
 
 ### cloud-api
 
-- [ ] script 链路的子进程派生/目录列举收敛为原子模块（service/script_caller.rs:62-68, :114）
-- [ ] script handler 伪清洗（`req["api_name"].as_str().unwrap()`）改为校验式清洗
-- [ ] AK/SK 明文上命令行的安全隐患评估（service/script_caller.rs 子进程 argv 传凭据）
+- [x] script 链路的子进程派生/目录列举收敛为原子模块（service/script_caller.rs:62-68, :114）
+- [x] script handler 伪清洗（`req["api_name"].as_str().unwrap()`）改为校验式清洗
+- [x] AK/SK 明文上命令行的安全隐患评估（service/script_caller.rs 子进程 argv 传凭据）
 
 ### watchman-backend
 
