@@ -8,7 +8,6 @@ use serde_json::{Map, Value};
 use share_lib::data_structure::{MailManErr, MailManOk};
 use share_lib::infrastructure::http_client;
 
-// use crate::model::service::ServiceInfo;
 use crate::model::{access::*, service::*, subsys::*};
 
 /// all_subsys api logic
@@ -35,50 +34,6 @@ pub async fn new_subsys<'a>(
     subsys: SubsysInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
-    // let subsys_name = &subsys.subsys_name.clone().ok_or_else(|| {
-    //     MailManErr::new(
-    //         400,
-    //         "Service: Create subsystem",
-    //         Some("Missing subsys_name".to_string()),
-    //         1,
-    //     )
-    // })?;
-
-    // let bind_service_info = ServiceInfo {
-    //     id: None,
-    //     service_name: Some(format!("bind_{subsys_name}")),
-    //     nick_name: Some(format!("bind_{subsys_name}")),
-    //     service_point: Some(format!("/api/subsystem_call/{}", &subsys_name)),
-    //     is_enable: Some(true),
-    //     update_time: Some(chrono::Local::now().naive_local()),
-    // };
-
-    // match ServiceModel::new_service(&bind_service_info, &mut pool.get().unwrap()) {
-    //     Ok(msg) => MailManOk::new(
-    //         200,
-    //         "Service: Create subsystem",
-    //         Some(format!("Line changed: {msg}")),
-    //     ),
-    //     Err(msg) => match msg.0 {
-    //         1 => {
-    //             return Err(MailManErr::new(
-    //                 400,
-    //                 "Service: Create subsystem - bind service",
-    //                 Some(msg.1),
-    //                 1,
-    //             ));
-    //         }
-    //         _ => {
-    //             return Err(MailManErr::new(
-    //                 500,
-    //                 "Service: Create subsystem - bind service",
-    //                 Some(msg.1),
-    //                 1,
-    //             ));
-    //         }
-    //     },
-    // };
-
     match SubsysModel::new_meta(&subsys, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(
             200,
