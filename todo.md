@@ -85,11 +85,11 @@
 
 ## P1 —— 清洗层统一
 
-- [ ] **GET filter 穿透问题**：所有 crate 的 GET 链路把原始 Query map 穿透三层直达 model
+- [x] **GET filter 穿透问题**：所有 crate 的 GET 链路把原始 Query map 穿透三层直达 model
   拼动态查询。方案：清洗层定义各表允许的 filter key 白名单 + 类型，model 只收强类型 filter
-- [ ] **`from_map` 归位**：清洗逻辑目前物理位置在 model 文件里（全仓库统一惯例），
+- [x] **`from_map` 归位**：清洗逻辑目前物理位置在 model 文件里（全仓库统一惯例），
   评估独立为清洗层模块（dto/ 或 api 层内部），并同步命名规范文档
-- [ ] cloud-api / file-agent / yell 的 POST 链路接入 `from_map` 式清洗惯例
+- [x] cloud-api / file-agent / yell 的 POST 链路接入 `from_map` 式清洗惯例
 
 ## P2 —— 疑似 bug 修复（均来自 analysis.md，修复前先确认）
 
