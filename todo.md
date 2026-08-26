@@ -24,13 +24,13 @@
 
 ### jc-commander（当前最不满足）
 
-- [ ] `call_sync`/`call_async` 编排从 handler 下沉到 service 层
+- [x] `call_sync`/`call_async` 编排从 handler 下沉到 service 层
   （api/script_caller.rs:20-161），handler 只留清洗
-- [ ] MQ 投递收敛：`create_channel`/`basic_publish` 封装为原子模块，
+- [x] MQ 投递收敛：`create_channel`/`basic_publish` 封装为原子模块，
   消除 `{prefix}_async` 队列名两处拼装（script_caller.rs:176 vs scheduler.rs:227-234）
-- [ ] `cron_job::new` 的实体组装（uuid 生成、默认值、双表实体）移出 handler
+- [x] `cron_job::new` 的实体组装（uuid 生成、默认值、双表实体）移出 handler
   （api/cron_job.rs:36-126）；顺带评估双表写入是否需要事务
-- [ ] `util/scheduler.rs` 越过 service 直持 db_pool/mq_pool 的问题：
+- [x] `util/scheduler.rs` 越过 service 直持 db_pool/mq_pool 的问题：
   明确 scheduler 在分层中的位置（建议视为独立调度器组件，但其 DB/MQ 调用走原子模块）
 
 ### jc-worker
@@ -69,7 +69,7 @@
 
 ### watchman-backend
 
-- [ ] `subsystem_call` 链路补清洗层：消除 service 里 `subsys_params["target"].as_str().unwrap()`
+- [x] `subsystem_call` 链路补清洗层：消除 service 里 `subsys_params["target"].as_str().unwrap()`
   （subsys_service.rs:298-300）
 - [ ] 删除 legacy `Authentication` 中间件死代码（middleware/auth_middleware.rs:52-246），
   并评估中间件内嵌编排（:487-506）与 `get_me` 查询序列的去重
