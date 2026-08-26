@@ -43,11 +43,11 @@
 
 ### file-agent
 
-- [ ] upload 的 multipart 解析 + 落盘 IO 从 handler 移出
+- [x] upload 的 multipart 解析 + 落盘 IO 从 handler 移出
   （api/file_manage.rs:68-146），handler 只留校验
-- [ ] 文件 IO 收敛为原子层（替代 service 里的直接 `std::fs` 调用）；
+- [x] 文件 IO 收敛为原子层（替代 service 里的直接 `std::fs` 调用）；
   顺带处理名不副实的 `util/file_op.rs`（无 IO、无人消费的烂尾 token 结构，删除或完成）
-- [ ] handler 取参改为校验式清洗，替换裸 `unwrap`
+- [x] handler 取参改为校验式清洗，替换裸 `unwrap`
 
 ### yell
 
@@ -117,6 +117,7 @@
   pq-sys bundled 依赖链需要；可顺带把 `cargo fmt --all -- --check` 一并纳入），
   与 Gitea CI 的关系（并存还是迁移）一并决策
 - [ ] clippy 基线收敛后开启 `-D warnings`
+- [ ] file-agent 清理无使用方的残留依赖 `crossbeam`、`uuid`（分层整改后已无人使用）
 
 ## P2 —— 规范文档同步
 
