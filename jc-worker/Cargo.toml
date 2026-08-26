@@ -20,4 +20,4 @@ ureq.workspace = true
 # MQ dependencies
 lapin.workspace = true
 # share-lib utils
-share-lib.workspace = true
+share-lib = { workspace = true, features = ["mq"] }
