@@ -130,3 +130,17 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  yell:
+    <<: *common
+    container_name: yell
+    depends_on:
+      watchman-backend:
+        condition: service_healthy
+    command: |
+      sh -c './yell'
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -tupln | grep ':9005 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
