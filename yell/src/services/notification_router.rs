@@ -17,6 +17,7 @@ use crate::services::channel::{
 use crate::services::gotify::service::GotifyChannel;
 use crate::services::mail::service::SmtpChannel;
 use crate::services::teams::service::TeamsChannel;
+use crate::services::template_render;
 use crate::services::webhook::service::WebhookChannel;
 
 /// 通知路由分发器
@@ -122,7 +123,7 @@ impl NotificationRouter {
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<MailManOk<'a, Vec<ChannelResult>>, MailManErr<'a, String>> {
         // 渲染各渠道 JSON: HashMap<channel_type, rendered_payload>
-        let rendered = template.render(&variables);
+        let rendered = template_render::render_template(&template, &variables);
         let template_id = template.id;
 
         let mut tasks = Vec::new();
