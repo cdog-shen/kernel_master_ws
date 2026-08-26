@@ -127,4 +127,36 @@
 
 ---
 
+## 评估记录
+
+### cloud-api AK/SK 明文上命令行（2026-08-26 评估，本期只记录不改动）
+
+**现状**：`service/script_caller.rs` 派生 python 子进程时，把云账号 AK/SK 作为
+argv 传入（`<python> <script>.py <AK> <SK> <region> <params>`）；`script/` 下全部
+15 个业务脚本以 `sys.argv[1]` / `sys.argv[2]` 读取凭据，无 env/stdin 读取实现。
+
+**风险描述**：子进程 argv 对同机所有进程可见（`ps -ef`、`/proc/<pid>/cmdline`），
+运行 cloud-api 的主机上任何非特权用户都可在脚本运行窗口内读到云账号凭据；
+进程崩溃时的 core dump、运维采集工具也可能把 argv 带出主机。
+
+**影响面**：只影响部署主机本地的信任边界（同机其他用户/进程），不影响网络传输；
+cloud-api 的调用方与响应协议均不涉及该问题。整改需 Rust 编排层与全部 python
+脚本同步改动，属于两侧协议变更。
+
+**建议方案**（后续实施时）：
+- python 脚本统一改为从环境变量（如 `CLOUD_API_AK` / `CLOUD_API_SK`）或 stdin
+  读取凭据；环境变量在 Linux 上同样可见于 `/proc/<pid>/environ`，但权限约束更严
+  （仅属主可读，需 `ptrace` 权限），stdin 则完全不落进程列表，二者均优于 argv；
+- Rust 侧配合：`process_runner::run` 目前不支持传 env/stdin，需扩展该原子操作
+  （或在本 crate 内用 `Command.env()` / 管道 stdin 派生）；
+- 15 个脚本 + 每个产品目录的 `package_import.py` 入口约定需一并修改，
+  变更面明确但覆盖整个 script/ 目录。
+
+**当前决策**：本期只记录、不改协议。原因：① 属两侧协议变更，超出本期
+"不改变对外行为"的整改范围；② 风险等级受部署形态约束——若 cloud-api 独占
+主机/容器运行，同机无不可信进程，实际暴露面有限；③ `process_runner` 尚无
+env/stdin 能力，改造应先落 share-lib 基础设施再推进。
+
+---
+
 ## 补充区（维护者手写）
