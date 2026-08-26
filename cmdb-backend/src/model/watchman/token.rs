@@ -50,9 +50,7 @@ impl TokenModel {
         filter: &Map<String, Value>,
         conn: &mut PgConnection,
     ) -> Result<Vec<Value>, (u8, String)> {
-        let mut query = token_table
-            .into_boxed()
-            .select(TokenModel::as_select());
+        let mut query = token_table.into_boxed().select(TokenModel::as_select());
 
         for (q_k, q_v) in filter.iter() {
             match q_k.as_str() {
@@ -79,23 +77,14 @@ impl TokenModel {
 }
 
 impl TokenModel {
-    pub fn new(
-        info: &TokenInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
-        match diesel::insert_into(token_table)
-            .values(info)
-            .execute(conn)
-        {
+    pub fn new(info: &TokenInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
+        match diesel::insert_into(token_table).values(info).execute(conn) {
             Ok(num_of_eff) => Ok(num_of_eff),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 
-    pub fn update(
-        info: &TokenInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn update(info: &TokenInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::update(token_table.filter(tokenid.eq(info.tokenid.as_ref().unwrap())))
             .set(info)
             .execute(conn)

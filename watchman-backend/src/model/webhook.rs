@@ -36,7 +36,9 @@ pub struct WebhookModel {
     pub update_time: chrono::NaiveDateTime,
 }
 
-#[derive(Default, Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset)]
+#[derive(
+    Default, Queryable, Selectable, Debug, Serialize, Deserialize, Insertable, AsChangeset,
+)]
 #[diesel(table_name = webhook_table)]
 pub struct WebhookInfo {
     pub id: Option<i32>,

@@ -10,12 +10,8 @@ enum FileOperation {
 impl FileOperation {
     fn from_value(op: serde_json::Value) -> Result<Self, String> {
         match op {
-            serde_json::Value::String(val) if val == "upload" => {
-                Ok(FileOperation::Upload)
-            }
-            serde_json::Value::String(val) if val == "download" => {
-                Ok(FileOperation::Download)
-            }
+            serde_json::Value::String(val) if val == "upload" => Ok(FileOperation::Upload),
+            serde_json::Value::String(val) if val == "download" => Ok(FileOperation::Download),
             _ => Err("Wrong FileOperation".to_string()),
         }
     }

@@ -3,7 +3,9 @@ use serde_json::{Map, Value};
 use std::path::PathBuf;
 // use uuid::Uuid;
 
-use crate::{service::dir_manage, util::err_mapping::MailManErrResponser};
+use share_lib::err_mapping::MailManErrResponser;
+
+use crate::service::dir_manage;
 
 // POST api/directory/check
 pub async fn check(

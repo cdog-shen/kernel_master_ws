@@ -63,9 +63,7 @@ impl ServiceModel {
         filter: &Map<String, Value>,
         conn: &mut PgConnection,
     ) -> Result<Vec<Value>, (u8, String)> {
-        let mut query = service_table
-            .into_boxed()
-            .select(ServiceModel::as_select());
+        let mut query = service_table.into_boxed().select(ServiceModel::as_select());
 
         for (q_k, q_v) in filter.iter() {
             match q_k.as_str() {
@@ -97,10 +95,7 @@ impl ServiceModel {
 }
 
 impl ServiceModel {
-    pub fn new(
-        info: &ServiceInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn new(info: &ServiceInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::insert_into(service_table)
             .values(info)
             .execute(conn)
@@ -110,10 +105,7 @@ impl ServiceModel {
         }
     }
 
-    pub fn update(
-        info: &ServiceInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn update(info: &ServiceInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::update(service_table.filter(id.eq(info.id.unwrap())))
             .set(info)
             .execute(conn)

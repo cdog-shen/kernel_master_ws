@@ -76,7 +76,11 @@ pub struct WebhookConfig {
 
 impl ChannelConfig {
     /// 根据通道类型 + 实例名获取配置
-    pub fn get_by_name(channel: &str, instance_name: &str, conn: &mut PgConnection) -> Result<Option<Self>, (u8, String)> {
+    pub fn get_by_name(
+        channel: &str,
+        instance_name: &str,
+        conn: &mut PgConnection,
+    ) -> Result<Option<Self>, (u8, String)> {
         match channel_configs
             .filter(channel_type.eq(channel))
             .filter(name.eq(instance_name))
@@ -91,13 +95,19 @@ impl ChannelConfig {
     }
 
     /// 获取默认配置（name 为空字符串）
-    pub fn get_default_by_type(channel: &str, conn: &mut PgConnection) -> Result<Option<Self>, (u8, String)> {
+    pub fn get_default_by_type(
+        channel: &str,
+        conn: &mut PgConnection,
+    ) -> Result<Option<Self>, (u8, String)> {
         Self::get_by_name(channel, "", conn)
     }
 
     /// 获取所有配置
     pub fn get_all(conn: &mut PgConnection) -> Result<Vec<Value>, (u8, String)> {
-        match channel_configs.select(ChannelConfig::as_select()).load(conn) {
+        match channel_configs
+            .select(ChannelConfig::as_select())
+            .load(conn)
+        {
             Ok(configs) => Ok(configs
                 .into_iter()
                 .map(|c| serde_json::to_value(&c).unwrap())
@@ -120,10 +130,7 @@ impl ChannelConfig {
                 .filter(channel_type.eq(channel))
                 .filter(name.eq(instance_name)),
         )
-        .set((
-            config_json.eq(config_value),
-            is_enabled.eq(enabled),
-        ))
+        .set((config_json.eq(config_value), is_enabled.eq(enabled)))
         .execute(conn);
 
         match update_result {
@@ -159,12 +166,10 @@ impl ChannelConfig {
         conn: &mut PgConnection,
     ) -> Result<Option<SmtpConfig>, (u8, String)> {
         match Self::get_by_name("smtp", instance_name, conn)? {
-            Some(config) => {
-                match serde_json::from_value::<SmtpConfig>(config.config_json) {
-                    Ok(smtp_config) => Ok(Some(smtp_config)),
-                    Err(e) => Err((BAD_REQUEST_CODE, format!("Invalid SMTP config: {}", e))),
-                }
-            }
+            Some(config) => match serde_json::from_value::<SmtpConfig>(config.config_json) {
+                Ok(smtp_config) => Ok(Some(smtp_config)),
+                Err(e) => Err((BAD_REQUEST_CODE, format!("Invalid SMTP config: {}", e))),
+            },
             None => Ok(None),
         }
     }
@@ -189,7 +194,9 @@ impl ChannelConfig {
     }
 
     /// 获取 Gotify 配置（默认实例）
-    pub fn get_gotify_config(conn: &mut PgConnection) -> Result<Option<GotifyConfig>, (u8, String)> {
+    pub fn get_gotify_config(
+        conn: &mut PgConnection,
+    ) -> Result<Option<GotifyConfig>, (u8, String)> {
         Self::get_gotify_config_by_name("", conn)
     }
 

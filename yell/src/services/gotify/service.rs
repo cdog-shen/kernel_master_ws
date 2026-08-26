@@ -1,14 +1,14 @@
 use actix_web::web;
 use async_trait::async_trait;
 use diesel::{
-    r2d2::{ConnectionManager, Pool},
     PgConnection,
+    r2d2::{ConnectionManager, Pool},
 };
 use serde_json::json;
 
 use crate::model::channel_config::ChannelConfig;
 use crate::services::channel::{
-    create_record, update_record, Channel, ChannelResult, NotificationRequest,
+    Channel, ChannelResult, NotificationRequest, create_record, update_record,
 };
 
 /// Gotify 推送渠道实现
@@ -184,21 +184,41 @@ impl Channel for GotifyChannel {
             config.app_token.clone()
         };
 
-        let record_id = create_record("gotify", recipient, &NotificationRequest {
-            title: payload.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            body: payload.get("message").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            format: "text".to_string(),
-            priority: "normal".to_string(),
-            tags: vec![],
-            url: None,
-            mentions: vec![],
-            template_id: _template_id,
-            params: serde_json::Value::Null,
-        }, pool).await?;
+        let record_id = create_record(
+            "gotify",
+            recipient,
+            &NotificationRequest {
+                title: payload
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                body: payload
+                    .get("message")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                format: "text".to_string(),
+                priority: "normal".to_string(),
+                tags: vec![],
+                url: None,
+                mentions: vec![],
+                template_id: _template_id,
+                params: serde_json::Value::Null,
+            },
+            pool,
+        )
+        .await?;
 
         let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or("");
-        let message = payload.get("message").and_then(|v| v.as_str()).unwrap_or("");
-        let priority = payload.get("priority").and_then(|v| v.as_u64()).unwrap_or(5);
+        let message = payload
+            .get("message")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let priority = payload
+            .get("priority")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(5);
 
         let mut form_body = format!("title={}&message={}&priority={}", title, message, priority);
         if let Some(url) = payload.get("url").and_then(|v| v.as_str()) {

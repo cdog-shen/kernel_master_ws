@@ -5,8 +5,9 @@ use diesel::{
 };
 use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
+use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model::service, service::service_service, util::err_mapping::MailManErrResponser};
+use crate::{model::service, service::service_service};
 
 // GET api/service_control/all_service
 pub async fn all_service(

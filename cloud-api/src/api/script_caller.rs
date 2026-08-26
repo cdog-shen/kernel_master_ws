@@ -4,8 +4,9 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
 };
 use serde_json::Value;
+use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{service::script_caller, util::err_mapping::MailManErrResponser};
+use crate::service::script_caller;
 
 // run cloud api script
 pub async fn run(

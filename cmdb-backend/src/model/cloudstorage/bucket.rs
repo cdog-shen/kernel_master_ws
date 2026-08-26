@@ -119,10 +119,7 @@ impl BucketModel {
 }
 
 impl BucketModel {
-    pub fn new(
-        info: &BucketInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn new(info: &BucketInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::insert_into(cloudstorage_bucket)
             .values(info)
             .execute(conn)
@@ -132,10 +129,7 @@ impl BucketModel {
         }
     }
 
-    pub fn update(
-        info: &BucketInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn update(info: &BucketInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::update(cloudstorage_bucket.filter(id.eq(info.id.unwrap())))
             .set(info)
             .execute(conn)

@@ -41,7 +41,10 @@ pub struct UpdateNotificationAlias {
 
 impl NotificationAlias {
     /// 根据名称获取 alias
-    pub fn get_by_name(alias_name: &str, conn: &mut PgConnection) -> Result<Option<Self>, (u8, String)> {
+    pub fn get_by_name(
+        alias_name: &str,
+        conn: &mut PgConnection,
+    ) -> Result<Option<Self>, (u8, String)> {
         match dsl::notification_aliases
             .filter(dsl::name.eq(alias_name))
             .filter(dsl::is_enabled.eq(Some(true)))
@@ -69,7 +72,10 @@ impl NotificationAlias {
     }
 
     /// 创建新 alias
-    pub fn create(new_alias: &NewNotificationAlias, conn: &mut PgConnection) -> Result<i32, (u8, String)> {
+    pub fn create(
+        new_alias: &NewNotificationAlias,
+        conn: &mut PgConnection,
+    ) -> Result<i32, (u8, String)> {
         match diesel::insert_into(dsl::notification_aliases)
             .values(new_alias)
             .returning(dsl::id)
@@ -81,13 +87,20 @@ impl NotificationAlias {
     }
 
     /// 更新 alias
-    pub fn update(alias_id: i32, update: &UpdateNotificationAlias, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
+    pub fn update(
+        alias_id: i32,
+        update: &UpdateNotificationAlias,
+        conn: &mut PgConnection,
+    ) -> Result<usize, (u8, String)> {
         match diesel::update(dsl::notification_aliases.filter(dsl::id.eq(alias_id)))
             .set(update)
             .execute(conn)
         {
             Ok(num) => match num {
-                0 => Err((BAD_REQUEST_CODE, format!("Alias id: {} not found", alias_id))),
+                0 => Err((
+                    BAD_REQUEST_CODE,
+                    format!("Alias id: {} not found", alias_id),
+                )),
                 _ => Ok(num),
             },
             Err(e) => Err((UNKNOWN_ERROR_CODE, e.to_string())),
@@ -98,7 +111,10 @@ impl NotificationAlias {
     pub fn delete(alias_id: i32, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::delete(dsl::notification_aliases.filter(dsl::id.eq(alias_id))).execute(conn) {
             Ok(num) => match num {
-                0 => Err((BAD_REQUEST_CODE, format!("Alias id: {} not found", alias_id))),
+                0 => Err((
+                    BAD_REQUEST_CODE,
+                    format!("Alias id: {} not found", alias_id),
+                )),
                 _ => Ok(num),
             },
             Err(e) => Err((UNKNOWN_ERROR_CODE, e.to_string())),

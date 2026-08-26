@@ -1,14 +1,14 @@
 use actix_web::web;
 use async_trait::async_trait;
 use diesel::{
-    r2d2::{ConnectionManager, Pool},
     PgConnection,
+    r2d2::{ConnectionManager, Pool},
 };
 use serde_json::json;
 
 use crate::model::channel_config::ChannelConfig;
 use crate::services::channel::{
-    create_record, update_record, Channel, ChannelResult, NotificationRequest,
+    Channel, ChannelResult, NotificationRequest, create_record, update_record,
 };
 
 /// 通用 Webhook 推送渠道实现
@@ -61,7 +61,8 @@ impl Channel for WebhookChannel {
 
         // content_format=json 时，params_template 整体作为 payload
         let payload = if request.format == "json" {
-            if request.params.is_null() || request.params.as_object().map_or(true, |m| m.is_empty()) {
+            if request.params.is_null() || request.params.as_object().map_or(true, |m| m.is_empty())
+            {
                 return Err("content_format=json requires params_template to be set".to_string());
             }
             request.params.clone()
@@ -155,17 +156,31 @@ impl Channel for WebhookChannel {
             config.webhook_url.clone()
         };
 
-        let record_id = create_record("webhook", recipient, &NotificationRequest {
-            title: payload.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            body: payload.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            format: "text".to_string(),
-            priority: "normal".to_string(),
-            tags: vec![],
-            url: None,
-            mentions: vec![],
-            template_id: _template_id,
-            params: serde_json::Value::Null,
-        }, pool).await?;
+        let record_id = create_record(
+            "webhook",
+            recipient,
+            &NotificationRequest {
+                title: payload
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                body: payload
+                    .get("body")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                format: "text".to_string(),
+                priority: "normal".to_string(),
+                tags: vec![],
+                url: None,
+                mentions: vec![],
+                template_id: _template_id,
+                params: serde_json::Value::Null,
+            },
+            pool,
+        )
+        .await?;
 
         // Webhook 固定使用 JSON 格式，渲染后的 payload 原样发送
         let webhook_payload = payload.clone();

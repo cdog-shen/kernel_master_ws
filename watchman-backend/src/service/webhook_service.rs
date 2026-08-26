@@ -123,7 +123,8 @@ pub fn post_webhook<'a>(
     filter.insert("hook_name".to_string(), Value::String(hook_name.clone()));
     filter.insert("is_enable".to_string(), Value::Bool(true));
 
-    let webhook_config = match WebhookModel::get_all_with_filter(&filter, &mut pool.get().unwrap()) {
+    let webhook_config = match WebhookModel::get_all_with_filter(&filter, &mut pool.get().unwrap())
+    {
         Ok(mut webhooks) => {
             if webhooks.is_empty() {
                 return Err(MailManErr::new(
@@ -219,7 +220,11 @@ pub fn post_webhook<'a>(
     match result {
         Ok(body) => {
             let json_body = serde_json::from_str(&body).unwrap_or(serde_json::json!({}));
-            Ok(MailManOk::new(200, "Service: Post webhook", Some(json_body)))
+            Ok(MailManOk::new(
+                200,
+                "Service: Post webhook",
+                Some(json_body),
+            ))
         }
         Err(err) => Err(err),
     }

@@ -1,0 +1,69 @@
+[workspace]
+resolver = "3"
+members = [
+    "cloud-api",
+    "cmdb-backend",
+    "file-agent",
+    "jc-commander",
+    "jc-worker",
+    "share-lib",
+    "watchman-backend",
+    "yell",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["Cdog Shen <shencdog@outlook.com>"]
+
+[workspace.dependencies]
+# share-lib utils
+share-lib = { path = "./share-lib" }
+
+# std dependencies
+once_cell = "1.21.4"
+log = "0.4.29"
+chrono = { version = "0.4.44", features = ["serde"] }
+tokio = "1.47.1"
+futures = "0.3.32"
+crossbeam = "0.8.4"
+# basic web dependencies
+actix-web = "4.13.0"
+actix-rt = "2.11.0"
+actix-service = "2.0.3"
+actix-cors = "0.7.1"
+actix-multipart = "0.7.2"
+# DB dependencies
+diesel_migrations = "2.3.2"
+diesel = { version = "2.3.9", features = [
+    "postgres",
+    "r2d2",
+    "chrono",
+    "serde_json",
+    "uuid",
+] }
+pq-sys = { version = "0.7.5", features = ["bundled"] }
+# serialization dependencies
+serde = "1.0.228"
+serde_derive = "1.0.228"
+serde_json = "1.0.149"
+uuid = { version = "1.23.1", features = ["v4", "serde"] }
+# RPC dependencies
+ureq = { version = "3.3.0", features = ["charset", "json"] }
+# MQ dependencies
+lapin = "3.2.1"
+# auth dependencies
+jsonwebtoken = "9.3.1"
+bcrypt = "0.17.1"
+base64 = "0.22.1"
+# async dependencies
+async-trait = "0.1"
+# email dependencies
+lettre = { version = "0.11.0", features = [
+    "tokio1",
+    "tokio1-native-tls",
+    "builder",
+] }
+# misc dependencies
+sanitize-filename = "0.6.0"
+toml = "0.9.7"

@@ -13,8 +13,15 @@ pub fn get_all<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<Value>>, MailManErr<'a, String>> {
-    match NotificationGroupMemberModel::get_model_info_with_filter(&filter, &mut pool.get().unwrap()) {
-        Ok(msg) => Ok(MailManOk::new(200, "Service: All notification_group_member", Some(msg))),
+    match NotificationGroupMemberModel::get_model_info_with_filter(
+        &filter,
+        &mut pool.get().unwrap(),
+    ) {
+        Ok(msg) => Ok(MailManOk::new(
+            200,
+            "Service: All notification_group_member",
+            Some(msg),
+        )),
         Err(msg) => match msg.0 {
             0 => Err(MailManErr::new(
                 500,

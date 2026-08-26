@@ -1,6 +1,7 @@
 #!/bin/sh
 
-DIRS="cloud-api cmdb-backend jc-commander jc-worker watchman-backend file-agent"
+DIRS="cloud-api cmdb-backend file-agent jc-commander jc-worker share-lib watchman-backend yell"
+BINS="cloud-api cmdb-backend file-agent jc-commander jc-worker watchman-backend yell"
 
 for dir in $DIRS; do
     if [ ! -d "$dir" ]; then
@@ -10,12 +11,12 @@ for dir in $DIRS; do
     fi
 done
 
-mkdir -p ./target
+cargo build --release --workspace --target=x86_64-unknown-linux-musl
 
-for dir in $DIRS; do
-    cd $dir && cargo build --release --target=x86_64-unknown-linux-musl
-    cp target/x86_64-unknown-linux-musl/release/$dir ../target/
-    cd -
+mkdir -p ./dist
+
+for bin in $BINS; do
+    cp -f target/x86_64-unknown-linux-musl/release/$bin ./dist/
 done
 
 exit 0

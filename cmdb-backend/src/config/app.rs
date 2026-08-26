@@ -17,10 +17,16 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
             )
             .service(
                 web::scope("/table")
-                    .service(web::resource("/query").route(web::post().to(table_manage::query_table)))
+                    .service(
+                        web::resource("/query").route(web::post().to(table_manage::query_table)),
+                    )
                     .service(web::resource("/new").route(web::post().to(table_manage::new_table)))
-                    .service(web::resource("/update").route(web::post().to(table_manage::update_table)))
-                    .service(web::resource("/delete").route(web::post().to(table_manage::delete_table)))
+                    .service(
+                        web::resource("/update").route(web::post().to(table_manage::update_table)),
+                    )
+                    .service(
+                        web::resource("/delete").route(web::post().to(table_manage::delete_table)),
+                    ),
             ),
     );
 }

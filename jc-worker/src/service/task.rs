@@ -75,9 +75,7 @@ pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailMa
                 );
                 Ok(err_msg)
             } else {
-                log::error!(
-                    "Task {script_name} with params {auth} Nothing in stdout",
-                );
+                log::error!("Task {script_name} with params {auth} Nothing in stdout",);
                 Err("Nothing in stdout".to_string())
             }
         }

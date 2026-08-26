@@ -6,9 +6,10 @@ use diesel::{
 };
 use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
+use share_lib::err_mapping::MailManErrResponser;
 use uuid::Uuid;
 
-use crate::{model::job_log::JobLogInfo, service::job_log, util::err_mapping::MailManErrResponser};
+use crate::{model::job_log::JobLogInfo, service::job_log};
 
 // POST /api/job_log/get
 pub async fn get_all(

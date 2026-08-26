@@ -11,9 +11,10 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
+use share_lib::err_mapping::MailManErrResponser;
 
+use crate::service::job_log;
 use crate::{config::server, model::job_log::JobLogInfo};
-use crate::{service::job_log, util::err_mapping::MailManErrResponser};
 
 // send sync task to message queue
 pub async fn call_sync(

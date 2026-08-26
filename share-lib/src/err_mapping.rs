@@ -1,11 +1,12 @@
-use actix_web::{
-    http::{header::ContentType, StatusCode},
-    HttpResponse, ResponseError,
-};
-use serde::Serialize;
 use std::fmt;
 
-use share_lib::data_structure::MailManErr;
+use actix_web::{
+    HttpResponse, ResponseError,
+    http::{StatusCode, header::ContentType},
+};
+use serde::Serialize;
+
+use crate::data_structure::MailManErr;
 
 /// a wrapper for MailManErr
 ///

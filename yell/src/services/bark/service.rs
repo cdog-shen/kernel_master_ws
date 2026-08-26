@@ -1,14 +1,14 @@
 use actix_web::web;
 use async_trait::async_trait;
 use diesel::{
-    r2d2::{ConnectionManager, Pool},
     PgConnection,
+    r2d2::{ConnectionManager, Pool},
 };
 use serde_json::json;
 
 use crate::model::channel_config::ChannelConfig;
 use crate::services::channel::{
-    create_record, update_record, Channel, ChannelResult, NotificationRequest,
+    Channel, ChannelResult, NotificationRequest, create_record, update_record,
 };
 
 /// Bark 推送渠道实现
@@ -98,7 +98,11 @@ impl Channel for BarkChannel {
         if let Some(is_archive) = request.params.get("isArchive").and_then(|v| v.as_i64()) {
             payload["isArchive"] = json!(is_archive);
         }
-        if let Some(automatically_copy) = request.params.get("automaticallyCopy").and_then(|v| v.as_i64()) {
+        if let Some(automatically_copy) = request
+            .params
+            .get("automaticallyCopy")
+            .and_then(|v| v.as_i64())
+        {
             payload["automaticallyCopy"] = json!(automatically_copy);
         }
 
@@ -189,17 +193,31 @@ impl Channel for BarkChannel {
             config.device_key
         };
 
-        let record_id = create_record("bark", recipient, &NotificationRequest {
-            title: payload.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            body: payload.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            format: "text".to_string(),
-            priority: "normal".to_string(),
-            tags: vec![],
-            url: None,
-            mentions: vec![],
-            template_id: _template_id,
-            params: serde_json::Value::Null,
-        }, pool).await?;
+        let record_id = create_record(
+            "bark",
+            recipient,
+            &NotificationRequest {
+                title: payload
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                body: payload
+                    .get("body")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                format: "text".to_string(),
+                priority: "normal".to_string(),
+                tags: vec![],
+                url: None,
+                mentions: vec![],
+                template_id: _template_id,
+                params: serde_json::Value::Null,
+            },
+            pool,
+        )
+        .await?;
 
         let mut push_payload = payload.clone();
         if let Some(ref key) = device_key {

@@ -63,7 +63,10 @@ pub struct UpdateNotificationTemplate {
 
 impl NotificationTemplate {
     /// 根据 ID 获取模板
-    pub fn get_by_id(template_id: i32, conn: &mut PgConnection) -> Result<Option<Self>, (u8, String)> {
+    pub fn get_by_id(
+        template_id: i32,
+        conn: &mut PgConnection,
+    ) -> Result<Option<Self>, (u8, String)> {
         match notification_templates
             .filter(id.eq(template_id))
             .filter(is_enabled.eq(Some(true)))
@@ -77,7 +80,10 @@ impl NotificationTemplate {
     }
 
     /// 根据名称获取模板
-    pub fn get_by_name(template_name: &str, conn: &mut PgConnection) -> Result<Option<Self>, (u8, String)> {
+    pub fn get_by_name(
+        template_name: &str,
+        conn: &mut PgConnection,
+    ) -> Result<Option<Self>, (u8, String)> {
         match notification_templates
             .filter(name.eq(template_name))
             .filter(is_enabled.eq(Some(true)))
@@ -150,7 +156,10 @@ impl NotificationTemplate {
             .execute(conn)
         {
             Ok(num) => match num {
-                0 => Err((BAD_REQUEST_CODE, format!("Template id: {} not found", template_id))),
+                0 => Err((
+                    BAD_REQUEST_CODE,
+                    format!("Template id: {} not found", template_id),
+                )),
                 _ => Ok(num),
             },
             Err(e) => Err((UNKNOWN_ERROR_CODE, e.to_string())),
@@ -161,7 +170,10 @@ impl NotificationTemplate {
     pub fn delete(template_id: i32, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::delete(notification_templates.filter(id.eq(template_id))).execute(conn) {
             Ok(num) => match num {
-                0 => Err((BAD_REQUEST_CODE, format!("Template id: {} not found", template_id))),
+                0 => Err((
+                    BAD_REQUEST_CODE,
+                    format!("Template id: {} not found", template_id),
+                )),
                 _ => Ok(num),
             },
             Err(e) => Err((UNKNOWN_ERROR_CODE, e.to_string())),
@@ -215,7 +227,11 @@ impl NotificationTemplate {
                 }
                 Value::Object(rendered)
             }
-            Value::Array(arr) => Value::Array(arr.iter().map(|v| self.render_value(v, variables)).collect()),
+            Value::Array(arr) => Value::Array(
+                arr.iter()
+                    .map(|v| self.render_value(v, variables))
+                    .collect(),
+            ),
             other => other.clone(),
         }
     }

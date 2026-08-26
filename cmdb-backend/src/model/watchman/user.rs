@@ -74,9 +74,7 @@ impl UserModel {
         filter: &Map<String, Value>,
         conn: &mut PgConnection,
     ) -> Result<Vec<Value>, (u8, String)> {
-        let mut query = user_table
-            .into_boxed()
-            .select(UserModel::as_select());
+        let mut query = user_table.into_boxed().select(UserModel::as_select());
 
         for (q_k, q_v) in filter.iter() {
             match q_k.as_str() {
@@ -109,23 +107,14 @@ impl UserModel {
 }
 
 impl UserModel {
-    pub fn new(
-        info: &UserInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
-        match diesel::insert_into(user_table)
-            .values(info)
-            .execute(conn)
-        {
+    pub fn new(info: &UserInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
+        match diesel::insert_into(user_table).values(info).execute(conn) {
             Ok(num_of_eff) => Ok(num_of_eff),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 
-    pub fn update(
-        info: &UserInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn update(info: &UserInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::update(user_table.filter(id.eq(info.id.unwrap())))
             .set(info)
             .execute(conn)

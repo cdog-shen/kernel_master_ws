@@ -50,7 +50,10 @@ pub struct UpdateNotificationRecord {
 
 impl NotificationRecord {
     /// 根据 ID 获取通知记录
-    pub fn get_by_id(record_id: i32, conn: &mut PgConnection) -> Result<Option<Self>, (u8, String)> {
+    pub fn get_by_id(
+        record_id: i32,
+        conn: &mut PgConnection,
+    ) -> Result<Option<Self>, (u8, String)> {
         match notification_records
             .filter(id.eq(record_id))
             .first::<NotificationRecord>(conn)
@@ -129,7 +132,10 @@ impl NotificationRecord {
             .execute(conn)
         {
             Ok(num) => match num {
-                0 => Err((BAD_REQUEST_CODE, format!("Record id: {} not found", record_id))),
+                0 => Err((
+                    BAD_REQUEST_CODE,
+                    format!("Record id: {} not found", record_id),
+                )),
                 _ => Ok(num),
             },
             Err(e) => Err((UNKNOWN_ERROR_CODE, e.to_string())),

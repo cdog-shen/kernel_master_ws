@@ -90,10 +90,7 @@ impl ChannelConfigModel {
 }
 
 impl ChannelConfigModel {
-    pub fn new(
-        info: &ChannelConfigInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn new(info: &ChannelConfigInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::insert_into(channel_configs)
             .values(info)
             .execute(conn)

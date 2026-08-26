@@ -5,8 +5,9 @@ use diesel::{
 };
 use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
+use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model::group, service::group_service, util::err_mapping::MailManErrResponser};
+use crate::{model::group, service::group_service};
 
 // GET api/group_control/all_group
 pub async fn all_group(

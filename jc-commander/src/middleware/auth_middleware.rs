@@ -1,14 +1,14 @@
 use actix_service::forward_ready;
 use actix_web::{
+    Error, HttpResponse,
     body::EitherBody,
     dev::{Service, ServiceRequest, ServiceResponse, Transform},
     http::{
-        header::{HeaderName, HeaderValue},
         Method,
+        header::{HeaderName, HeaderValue},
     },
-    Error, HttpResponse,
 };
-use futures::future::{ok, LocalBoxFuture, Ready};
+use futures::future::{LocalBoxFuture, Ready, ok};
 // use log::{debug, error};
 
 use share_lib::data_structure::MailManErr;

@@ -5,8 +5,9 @@ use diesel::{
 };
 use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
+use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model::subsys, service::subsys_service, util::err_mapping::MailManErrResponser};
+use crate::{model::subsys, service::subsys_service};
 
 // GET api/subsystem_control/all_subsystem
 pub async fn all_subsys(

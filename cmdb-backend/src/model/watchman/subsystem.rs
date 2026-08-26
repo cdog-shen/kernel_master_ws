@@ -109,10 +109,7 @@ impl SubsystemModel {
 }
 
 impl SubsystemModel {
-    pub fn new(
-        info: &SubsystemInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn new(info: &SubsystemInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::insert_into(subsystem_table)
             .values(info)
             .execute(conn)
@@ -122,10 +119,7 @@ impl SubsystemModel {
         }
     }
 
-    pub fn update(
-        info: &SubsystemInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn update(info: &SubsystemInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::update(subsystem_table.filter(id.eq(info.id.unwrap())))
             .set(info)
             .execute(conn)

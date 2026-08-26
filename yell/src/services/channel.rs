@@ -2,8 +2,8 @@ use actix_web::web;
 use async_trait::async_trait;
 use chrono::Local;
 use diesel::{
-    r2d2::{ConnectionManager, Pool},
     PgConnection,
+    r2d2::{ConnectionManager, Pool},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -17,13 +17,13 @@ use crate::model::notification_record::{
 pub struct NotificationRequest {
     pub title: String,
     pub body: String,
-    pub format: String,      // text / html / markdown
-    pub priority: String,    // low / normal / high / urgent
+    pub format: String,   // text / html / markdown
+    pub priority: String, // low / normal / high / urgent
     pub tags: Vec<String>,
     pub url: Option<String>,
     pub mentions: Vec<String>,
     pub template_id: Option<i32>,
-    pub params: Value,       // 渠道扩展参数（Bark: level/sound/group/icon 等）
+    pub params: Value, // 渠道扩展参数（Bark: level/sound/group/icon 等）
 }
 
 /// 渠道推送结果
@@ -78,8 +78,13 @@ pub trait Channel: Send + Sync {
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<ChannelResult, String> {
         let request = NotificationRequest {
-            title: payload.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            body: payload.get("body")
+            title: payload
+                .get("title")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            body: payload
+                .get("body")
                 .or_else(|| payload.get("message"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
@@ -87,7 +92,10 @@ pub trait Channel: Send + Sync {
             format: "text".to_string(),
             priority: "normal".to_string(),
             tags: vec![],
-            url: payload.get("url").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            url: payload
+                .get("url")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
             mentions: vec![],
             template_id,
             params: payload.clone(),
@@ -119,8 +127,7 @@ pub async fn create_record(
         let pool = pool.clone();
         move || {
             let mut conn = pool.get().map_err(|e| e.to_string())?;
-            NotificationRecord::create(&new_record, &mut conn)
-                .map_err(|(_, msg)| msg)
+            NotificationRecord::create(&new_record, &mut conn).map_err(|(_, msg)| msg)
         }
     })
     .await;
@@ -154,8 +161,7 @@ pub async fn update_record(
         let pool = pool.clone();
         move || {
             let mut conn = pool.get().map_err(|e| e.to_string())?;
-            NotificationRecord::update_status(record_id, &update, &mut conn)
-                .map_err(|(_, msg)| msg)
+            NotificationRecord::update_status(record_id, &update, &mut conn).map_err(|(_, msg)| msg)
         }
     })
     .await;

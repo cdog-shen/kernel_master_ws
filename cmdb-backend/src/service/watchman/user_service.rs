@@ -16,18 +16,8 @@ pub fn get_all<'a>(
     match UserModel::get_model_info_with_filter(&filter, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "Service: All user", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Service: All user",
-                Some(msg.1),
-                1,
-            )),
-            _ => Err(MailManErr::new(
-                400,
-                "Service: All user",
-                Some(msg.1),
-                1,
-            )),
+            0 => Err(MailManErr::new(500, "Service: All user", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Service: All user", Some(msg.1), 1)),
         },
     }
 }
@@ -43,18 +33,8 @@ pub fn new_table<'a>(
             Some(Value::String(format!("New line: {msg}"))),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Service: Create user",
-                Some(msg.1),
-                1,
-            )),
-            _ => Err(MailManErr::new(
-                400,
-                "Service: Create user",
-                Some(msg.1),
-                1,
-            )),
+            0 => Err(MailManErr::new(500, "Service: Create user", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Service: Create user", Some(msg.1), 1)),
         },
     }
 }
@@ -70,18 +50,8 @@ pub fn update_table<'a>(
             Some(Value::String(format!("Update line: {msg}"))),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Service: Update user",
-                Some(msg.1),
-                1,
-            )),
-            _ => Err(MailManErr::new(
-                400,
-                "Service: Update user",
-                Some(msg.1),
-                1,
-            )),
+            0 => Err(MailManErr::new(500, "Service: Update user", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Service: Update user", Some(msg.1), 1)),
         },
     }
 }
@@ -97,18 +67,8 @@ pub fn delete_table<'a>(
             Some(Value::String(format!("Delete line: {msg}"))),
         )),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Service: Delete user",
-                Some(msg.1),
-                1,
-            )),
-            _ => Err(MailManErr::new(
-                400,
-                "Service: Delete user",
-                Some(msg.1),
-                1,
-            )),
+            0 => Err(MailManErr::new(500, "Service: Delete user", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Service: Delete user", Some(msg.1), 1)),
         },
     }
 }

@@ -17,22 +17,23 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
             )
             .service(
                 web::scope("/token")
-                    .service(web::resource("/gen").route(web::post().to(token::generate)))
-                    // .service(web::resource("/delete").route(web::post().to(table_manage::delete_table)))
+                    .service(web::resource("/gen").route(web::post().to(token::generate))), // .service(web::resource("/delete").route(web::post().to(table_manage::delete_table)))
             )
             .service(
                 web::scope("/file")
                     .service(web::resource("/check").route(web::post().to(file_manage::check)))
-                    .service(web::resource("/download/{path:.*}").route(web::get().to(file_manage::download)))
+                    .service(
+                        web::resource("/download/{path:.*}")
+                            .route(web::get().to(file_manage::download)),
+                    )
                     .service(web::resource("/upload").route(web::post().to(file_manage::upload)))
-                    .service(web::resource("/delete").route(web::post().to(file_manage::delete)))
+                    .service(web::resource("/delete").route(web::post().to(file_manage::delete))),
             )
             .service(
                 web::scope("/directory")
                     .service(web::resource("/check").route(web::post().to(dir_manage::check)))
-                    .service(web::resource("/list").route(web::post().to(dir_manage::list)))
-                    // .service(web::resource("/download").route(web::post().to(file_manage::update_table)))
-                    // .service(web::resource("/delete").route(web::post().to(table_manage::delete_table)))
+                    .service(web::resource("/list").route(web::post().to(dir_manage::list))), // .service(web::resource("/download").route(web::post().to(file_manage::update_table)))
+                                                                                              // .service(web::resource("/delete").route(web::post().to(table_manage::delete_table)))
             ),
     );
 }

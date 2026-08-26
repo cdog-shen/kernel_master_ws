@@ -5,8 +5,9 @@ use diesel::{
 };
 use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
+use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model::user, service::account_service, util::err_mapping::MailManErrResponser};
+use crate::{model::user, service::account_service};
 
 // GET api/auth/me/{id}
 pub async fn get_me(

@@ -92,9 +92,7 @@ impl JobLogModel {
         filter: &Map<String, Value>,
         conn: &mut PgConnection,
     ) -> Result<Vec<Value>, (u8, String)> {
-        let mut query = job_log
-            .into_boxed()
-            .select(JobLogModel::as_select());
+        let mut query = job_log.into_boxed().select(JobLogModel::as_select());
 
         for (q_k, q_v) in filter.iter() {
             match q_k.as_str() {
@@ -126,23 +124,14 @@ impl JobLogModel {
 }
 
 impl JobLogModel {
-    pub fn new(
-        info: &JobLogInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
-        match diesel::insert_into(job_log)
-            .values(info)
-            .execute(conn)
-        {
+    pub fn new(info: &JobLogInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
+        match diesel::insert_into(job_log).values(info).execute(conn) {
             Ok(num_of_eff) => Ok(num_of_eff),
             Err(e) => Err((UNKNOW_ERROR_CODE, e.to_string())),
         }
     }
 
-    pub fn update(
-        info: &JobLogInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn update(info: &JobLogInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::update(job_log.filter(id.eq(info.id.as_ref().unwrap())))
             .set(info)
             .execute(conn)

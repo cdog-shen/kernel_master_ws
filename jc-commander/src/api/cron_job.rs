@@ -7,11 +7,11 @@ use diesel::{
 };
 use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
+use share_lib::err_mapping::MailManErrResponser;
 
 use crate::{
     model::{cron_job::CronJobInfo, job_log::JobLogInfo},
     service::cron_job,
-    util::err_mapping::MailManErrResponser,
 };
 
 // POST /api/cron_job/get

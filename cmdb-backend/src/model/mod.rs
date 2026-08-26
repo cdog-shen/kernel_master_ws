@@ -3,9 +3,9 @@
 pub mod km;
 // others table
 pub mod cloudserver;
+pub mod cloudstorage;
 pub mod lighthouse;
 pub mod logservice;
-pub mod cloudstorage;
 // table schema
 pub mod schema;
 

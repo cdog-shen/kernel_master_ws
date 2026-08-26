@@ -4,12 +4,13 @@ use futures::TryStreamExt;
 use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
 use share_lib::data_structure::MailManOk;
+use share_lib::err_mapping::MailManErrResponser;
 use std::path::PathBuf;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 // use uuid::Uuid;
 
-use crate::{server::GLOBAL_CONFIG, service::file_manage, util::err_mapping::MailManErrResponser};
+use crate::{server::GLOBAL_CONFIG, service::file_manage};
 
 // POST api/file/check
 pub async fn check(

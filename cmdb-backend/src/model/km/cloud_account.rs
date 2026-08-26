@@ -110,10 +110,7 @@ impl CloudAccountModel {
 }
 
 impl CloudAccountModel {
-    pub fn new(
-        info: &CloudAccountInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn new(info: &CloudAccountInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::insert_into(cloud_account)
             .values(info)
             .execute(conn)
@@ -123,10 +120,7 @@ impl CloudAccountModel {
         }
     }
 
-    pub fn update(
-        info: &CloudAccountInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn update(info: &CloudAccountInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::update(cloud_account.filter(id.eq(info.id.unwrap())))
             .set(info)
             .execute(conn)

@@ -16,18 +16,8 @@ pub fn get_all<'a>(
     match ServiceModel::get_model_info_with_filter(&filter, &mut pool.get().unwrap()) {
         Ok(msg) => Ok(MailManOk::new(200, "Service: All service", Some(msg))),
         Err(msg) => match msg.0 {
-            0 => Err(MailManErr::new(
-                500,
-                "Service: All service",
-                Some(msg.1),
-                1,
-            )),
-            _ => Err(MailManErr::new(
-                400,
-                "Service: All service",
-                Some(msg.1),
-                1,
-            )),
+            0 => Err(MailManErr::new(500, "Service: All service", Some(msg.1), 1)),
+            _ => Err(MailManErr::new(400, "Service: All service", Some(msg.1), 1)),
         },
     }
 }

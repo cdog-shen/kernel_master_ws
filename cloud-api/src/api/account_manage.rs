@@ -5,11 +5,9 @@ use diesel::{
 };
 use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
+use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{
-    model::cloud_account::CloudAccountInfo, service::account_service,
-    util::err_mapping::MailManErrResponser,
-};
+use crate::{model::cloud_account::CloudAccountInfo, service::account_service};
 
 // GET /api/account_db/get
 pub async fn get_all(

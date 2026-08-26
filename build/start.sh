@@ -1,8 +1,8 @@
 #!/bin/sh
 
-DIRS="cloud-api cmdb-backend jc-commander jc-worker watchman-backend file-agent"
+DIRS="cloud-api cmdb-backend file-agent jc-commander jc-worker watchman-backend yell"
 
-for sys in $SYSS; do
+for sys in $DIRS; do
     if [ ! -f "$sys" ]; then
         echo "System $sys does not exist."
         echo "PLZ compile all system component."
@@ -14,7 +14,7 @@ done
 
 mkdir -p log
 
-for sys in $SYSS; do
+for sys in $DIRS; do
     nohup ./$sys > ./log/"$sys".log 2>&1 &
 done
 

@@ -1,7 +1,7 @@
 use actix_web::web;
 use diesel::{
-    r2d2::{ConnectionManager, Pool},
     PgConnection,
+    r2d2::{ConnectionManager, Pool},
 };
 use serde_json::Value;
 use std::collections::HashMap;
@@ -9,10 +9,7 @@ use std::sync::Arc;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
-use crate::model::{
-    channel_config::ChannelConfig,
-    notification_template::NotificationTemplate,
-};
+use crate::model::{channel_config::ChannelConfig, notification_template::NotificationTemplate};
 use crate::services::bark::service::BarkChannel;
 use crate::services::channel::{Channel, ChannelResult, NotificationRequest};
 use crate::services::gotify::service::GotifyChannel;
@@ -127,11 +124,7 @@ impl NotificationRouter {
             }
         }
 
-        Ok(MailManOk::new(
-            200,
-            "Notification processed",
-            Some(results),
-        ))
+        Ok(MailManOk::new(200, "Notification processed", Some(results)))
     }
 
     /// 使用模板发送 — 渲染各渠道 JSON，只向模板中有对应字段的渠道发送
@@ -147,8 +140,7 @@ impl NotificationRouter {
             let name = template_name.to_string();
             move || {
                 let mut conn = pool.get().map_err(|e| e.to_string())?;
-                NotificationTemplate::get_by_name(&name, &mut conn)
-                    .map_err(|(_, msg)| msg)
+                NotificationTemplate::get_by_name(&name, &mut conn).map_err(|(_, msg)| msg)
             }
         })
         .await;
@@ -164,12 +156,7 @@ impl NotificationRouter {
                 ));
             }
             Ok(Err(msg)) => {
-                return Err(MailManErr::new(
-                    500,
-                    "Failed to get template",
-                    Some(msg),
-                    0,
-                ));
+                return Err(MailManErr::new(500, "Failed to get template", Some(msg), 0));
             }
             Err(e) => {
                 return Err(MailManErr::new(
@@ -196,7 +183,15 @@ impl NotificationRouter {
                     let pool = pool.clone();
 
                     let task = tokio::spawn(async move {
-                        channel.send_template(&recipient, &instance, &payload, Some(template_id), &pool).await
+                        channel
+                            .send_template(
+                                &recipient,
+                                &instance,
+                                &payload,
+                                Some(template_id),
+                                &pool,
+                            )
+                            .await
                     });
 
                     tasks.push(task);
@@ -265,10 +260,7 @@ impl NotificationRouter {
     }
 
     /// 初始化渠道
-    async fn init_channel(
-        _channel: &Arc<dyn Channel>,
-        _config: &Value,
-    ) -> Result<(), String> {
+    async fn init_channel(_channel: &Arc<dyn Channel>, _config: &Value) -> Result<(), String> {
         // TODO: 根据配置初始化渠道客户端
         // 例如：SMTP 可以在这里创建连接池
         Ok(())

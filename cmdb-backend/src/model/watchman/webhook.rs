@@ -84,9 +84,7 @@ impl WebhookModel {
         filter: &Map<String, Value>,
         conn: &mut PgConnection,
     ) -> Result<Vec<Value>, (u8, String)> {
-        let mut query = webhook_table
-            .into_boxed()
-            .select(WebhookModel::as_select());
+        let mut query = webhook_table.into_boxed().select(WebhookModel::as_select());
 
         for (q_k, q_v) in filter.iter() {
             match q_k.as_str() {
@@ -118,10 +116,7 @@ impl WebhookModel {
 }
 
 impl WebhookModel {
-    pub fn new(
-        info: &WebhookInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn new(info: &WebhookInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::insert_into(webhook_table)
             .values(info)
             .execute(conn)
@@ -131,10 +126,7 @@ impl WebhookModel {
         }
     }
 
-    pub fn update(
-        info: &WebhookInfo,
-        conn: &mut PgConnection,
-    ) -> Result<usize, (u8, String)> {
+    pub fn update(info: &WebhookInfo, conn: &mut PgConnection) -> Result<usize, (u8, String)> {
         match diesel::update(webhook_table.filter(id.eq(info.id.unwrap())))
             .set(info)
             .execute(conn)

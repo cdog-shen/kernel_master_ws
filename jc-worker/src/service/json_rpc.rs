@@ -48,13 +48,11 @@ pub fn update_log<'a>(
                 ))
             }
         }
-        Err(e) => {
-            Err(MailManErr::new(
-                500,
-                "log update Failed",
-                Some(e.to_string()),
-                1,
-            ))
-        }
+        Err(e) => Err(MailManErr::new(
+            500,
+            "log update Failed",
+            Some(e.to_string()),
+            1,
+        )),
     }
 }

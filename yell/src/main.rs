@@ -5,11 +5,11 @@ use std::io;
 use actix_cors::Cors;
 use actix_web::dev::Service;
 use actix_web::web;
-use actix_web::{http, App, HttpServer};
+use actix_web::{App, HttpServer, http};
 use futures::FutureExt;
 // db utils import
-use diesel::r2d2::ConnectionManager;
 use diesel::PgConnection;
+use diesel::r2d2::ConnectionManager;
 // db models
 
 // share-lib import
@@ -25,7 +25,6 @@ mod config;
 mod middleware;
 mod model;
 mod services;
-mod util;
 
 #[actix_rt::main]
 async fn main() -> io::Result<()> {

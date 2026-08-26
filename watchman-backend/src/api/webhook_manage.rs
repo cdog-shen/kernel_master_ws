@@ -1,9 +1,13 @@
 use actix_web::{HttpResponse, web};
-use diesel::{PgConnection, r2d2::{ConnectionManager, Pool}};
+use diesel::{
+    PgConnection,
+    r2d2::{ConnectionManager, Pool},
+};
 use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
+use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model::webhook, service::webhook_service, util::err_mapping::MailManErrResponser};
+use crate::{model::webhook, service::webhook_service};
 
 // GET api/webhook
 pub async fn all_webhook(
@@ -35,18 +39,20 @@ pub async fn new_webhook(
                 1,
             )),
         )?),
-        target_url: Some(
+        target_url: Some(webhook_info.target_url.clone().ok_or(
+            MailManErrResponser::mapping_from_mme(MailManErr::new(
+                400,
+                "Bad Request",
+                Some("Missing `target_url` field.".to_string()),
+                1,
+            )),
+        )?),
+        method_type: Some(
             webhook_info
-                .target_url
+                .method_type
                 .clone()
-                .ok_or(MailManErrResponser::mapping_from_mme(MailManErr::new(
-                    400,
-                    "Bad Request",
-                    Some("Missing `target_url` field.".to_string()),
-                    1,
-                )))?,
+                .unwrap_or("POST".to_string()),
         ),
-        method_type: Some(webhook_info.method_type.clone().unwrap_or("POST".to_string())),
         token: None, // token将在service层自动生成
         header_json: webhook_info.header_json,
         body_json: webhook_info.body_json,
