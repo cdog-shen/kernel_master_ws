@@ -1,8 +1,6 @@
 // std import
-use crossbeam::queue::SegQueue;
 use log::info;
 use std::path::PathBuf;
-use std::sync::Arc;
 // rt import
 use actix_cors::Cors;
 use actix_web::dev::Service;
@@ -54,10 +52,6 @@ async fn main() -> std::io::Result<()> {
     log_info!("Binding Root Dir...");
     let root = PathBuf::from(&server::GLOBAL_CONFIG.read().unwrap().root);
 
-    // init access list
-    log_info!("Creating AccessList...");
-    let access_list: Arc<SegQueue<util::file_op::FileOpInfo>> = Arc::new(SegQueue::new());
-
     // init token_cleaner
     // todo!("token Cleaner thread not finish yet !!!");
 
@@ -94,7 +88,6 @@ async fn main() -> std::io::Result<()> {
             )
             // .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(root.clone()))
-            .app_data(web::Data::from(access_list.clone()))
             // wrap default logger
             .wrap(actix_web::middleware::Logger::default())
             // Comment this line if you want to integrate with yew-address-book-frontend

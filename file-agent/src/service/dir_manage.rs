@@ -2,18 +2,20 @@ use actix_web::Result;
 use chrono::{DateTime, Local};
 use serde_json::{Value, json};
 use share_lib::data_structure::{MailManErr, MailManOk};
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
+
+use crate::util::file_op;
 
 pub async fn check<'a>(
     path: PathBuf,
 ) -> Result<MailManOk<'a, serde_json::Value>, MailManErr<'a, String>> {
-    if path.is_file() {
+    if file_op::is_file(&path) {
         Ok(MailManOk::new(
             200,
             "Service: File check",
             Some(json!({"type": "normal"})),
         ))
-    } else if path.is_dir() {
+    } else if file_op::is_dir(&path) {
         Ok(MailManOk::new(
             200,
             "Service: File check",
@@ -32,14 +34,14 @@ pub async fn check<'a>(
 pub async fn list<'a>(
     path: PathBuf,
 ) -> Result<MailManOk<'a, serde_json::Value>, MailManErr<'a, String>> {
-    if path.is_file() {
+    if file_op::is_file(&path) {
         return Err(MailManErr::new(
             200,
             "Service: File check",
             Some("It's a File".to_string()),
             1,
         ));
-    } else if path.is_dir() {
+    } else if file_op::is_dir(&path) {
         MailManOk::new(
             200,
             "Service: File check",
@@ -54,38 +56,24 @@ pub async fn list<'a>(
         ));
     };
 
+    let entries = file_op::read_dir(&path)
+        .map_err(|e| MailManErr::new(500, "Service: read_dir failed", Some(e.to_string()), 1))?;
+
     let mut items = Vec::new();
-    for entry in fs::read_dir(&path)
-        .map_err(|e| MailManErr::new(500, "Service: read_dir failed", Some(e.to_string()), 1))?
-    {
-        let entry = entry.map_err(|e| {
-            MailManErr::new(500, "Service: DirEntry failed", Some(e.to_string()), 1)
-        })?;
-
-        let name = entry
-            .file_name()
-            .into_string()
-            .unwrap_or_else(|_| String::from("<invalid utf8>"));
-
-        let md = entry.metadata().map_err(|e| {
-            MailManErr::new(500, "Service: metadata failed", Some(e.to_string()), 1)
-        })?;
-
-        let file_type = if md.is_dir() {
+    for entry in entries {
+        let file_type = if entry.is_dir {
             "directory"
-        } else if md.is_file() {
+        } else if entry.is_file {
             "file"
         } else {
             "other"
         };
 
         // 取修改时间 → chrono → RFC 3339 字符串
-        let update_time: DateTime<Local> = DateTime::from(md.modified().map_err(|e| {
-            MailManErr::new(500, "Service: modified failed", Some(e.to_string()), 1)
-        })?);
+        let update_time: DateTime<Local> = DateTime::from(entry.modified);
 
         items.push(json!({
-            "name": name,
+            "name": entry.name,
             "type": file_type,
             "update_time": update_time.to_rfc3339()
         }));
