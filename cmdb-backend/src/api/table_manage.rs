@@ -16,7 +16,15 @@ pub async fn query_table(
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     let data = data.into_inner();
-    let table_name = data.get("table").unwrap().as_str().unwrap();
+    let table_name =
+        data.get("table")
+            .and_then(Value::as_str)
+            .ok_or(MailManErrResponser::mapping_from_mme(MailManErr {
+                code: 400,
+                key: "Bad request",
+                msg: Some("Query operation must have `table` field as a string".to_string()),
+                level: 1,
+            }))?;
     let query = serde_json::from_value(
         data.get("query")
             .ok_or(MailManErrResponser::mapping_from_mme(MailManErr {
@@ -163,7 +171,15 @@ pub async fn new_table(
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     let data = data.into_inner();
-    let table_name = data.get("table").unwrap().as_str().unwrap();
+    let table_name =
+        data.get("table")
+            .and_then(Value::as_str)
+            .ok_or(MailManErrResponser::mapping_from_mme(MailManErr {
+                code: 400,
+                key: "Bad request",
+                msg: Some("Creat operation must have `table` field as a string".to_string()),
+                level: 1,
+            }))?;
     let new = serde_json::from_value(
         data.get("new")
             .ok_or(MailManErrResponser::mapping_from_mme(MailManErr {
@@ -491,7 +507,15 @@ pub async fn update_table(
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     let data = data.into_inner();
-    let table_name = data.get("table").unwrap().as_str().unwrap();
+    let table_name =
+        data.get("table")
+            .and_then(Value::as_str)
+            .ok_or(MailManErrResponser::mapping_from_mme(MailManErr {
+                code: 400,
+                key: "Bad request",
+                msg: Some("Update operation must have `table` field as a string".to_string()),
+                level: 1,
+            }))?;
     let update = serde_json::from_value(
         data.get("update")
             .ok_or(MailManErrResponser::mapping_from_mme(MailManErr {
@@ -828,7 +852,15 @@ pub async fn delete_table(
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     let data = data.into_inner();
-    let table_name = data.get("table").unwrap().as_str().unwrap();
+    let table_name =
+        data.get("table")
+            .and_then(Value::as_str)
+            .ok_or(MailManErrResponser::mapping_from_mme(MailManErr {
+                code: 400,
+                key: "Bad request",
+                msg: Some("Delete operation must have `table` field as a string".to_string()),
+                level: 1,
+            }))?;
     let id = serde_json::from_value(
         data.get("delete")
             .ok_or(MailManErrResponser::mapping_from_mme(MailManErr {
