@@ -18,7 +18,7 @@ pub async fn check(
     let root = root.into_inner();
     let file_full_path = root.join(file_name);
 
-    match dir_manage::check(file_full_path) {
+    match dir_manage::check(file_full_path).await {
         Ok(res) => Ok(HttpResponse::Ok().json(res)),
         Err(mme_obj) => Err(MailManErrResponser::mapping_from_mme(mme_obj)),
     }
@@ -35,7 +35,7 @@ pub async fn list(
     let root = root.into_inner();
     let file_full_path = root.join(file_name);
 
-    match dir_manage::list(file_full_path) {
+    match dir_manage::list(file_full_path).await {
         Ok(res) => Ok(HttpResponse::Ok().json(res)),
         Err(mme_obj) => Err(MailManErrResponser::mapping_from_mme(mme_obj)),
     }

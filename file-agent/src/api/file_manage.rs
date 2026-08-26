@@ -23,7 +23,7 @@ pub async fn check(
     let root = root.into_inner();
     let file_full_path = root.join(file_name);
 
-    match file_manage::check(&file_full_path) {
+    match file_manage::check(&file_full_path).await {
         Ok(res) => Ok(HttpResponse::Ok().json(res)),
         Err(mme_obj) => Err(MailManErrResponser::mapping_from_mme(mme_obj)),
     }
@@ -39,7 +39,7 @@ pub async fn download(
     let root = root.into_inner();
     let file_full_path = root.join(fp);
 
-    match file_manage::download(&file_full_path) {
+    match file_manage::download(&file_full_path).await {
         Ok(file) => Ok(HttpResponse::Ok()
             .content_type("application/octet-stream")
             .body(file)),
@@ -58,7 +58,7 @@ pub async fn delete(
     let root = root.into_inner();
     let file_full_path = root.join(file_name);
 
-    match file_manage::delete(&file_full_path) {
+    match file_manage::delete(&file_full_path).await {
         Ok(res) => Ok(HttpResponse::Ok().json(res)),
         Err(mme_obj) => Err(MailManErrResponser::mapping_from_mme(mme_obj)),
     }
@@ -87,9 +87,16 @@ pub async fn upload(
             continue;
         };
 
-        let path = file_manage::prepare_path(filename, &root).map_err(|e| {
-            MailManErrResponser::mapping_from_mme(MailManErr::new(500, "Prepare path", Some(e), 1))
-        })?;
+        let path = file_manage::prepare_path(filename, &root)
+            .await
+            .map_err(|e| {
+                MailManErrResponser::mapping_from_mme(MailManErr::new(
+                    500,
+                    "Prepare path",
+                    Some(e),
+                    1,
+                ))
+            })?;
 
         let mut file = File::create(&path).await.map_err(|e| {
             MailManErrResponser::mapping_from_mme(MailManErr::new(

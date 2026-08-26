@@ -4,7 +4,7 @@ use serde_json::{Value, json};
 use share_lib::data_structure::{MailManErr, MailManOk};
 use std::{fs, path::PathBuf};
 
-pub fn check<'a>(
+pub async fn check<'a>(
     path: PathBuf,
 ) -> Result<MailManOk<'a, serde_json::Value>, MailManErr<'a, String>> {
     if path.is_file() {
@@ -29,7 +29,9 @@ pub fn check<'a>(
     }
 }
 
-pub fn list<'a>(path: PathBuf) -> Result<MailManOk<'a, serde_json::Value>, MailManErr<'a, String>> {
+pub async fn list<'a>(
+    path: PathBuf,
+) -> Result<MailManOk<'a, serde_json::Value>, MailManErr<'a, String>> {
     if path.is_file() {
         return Err(MailManErr::new(
             200,

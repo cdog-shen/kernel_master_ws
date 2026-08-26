@@ -4,7 +4,7 @@ use serde_json::json;
 use share_lib::data_structure::{MailManErr, MailManOk};
 use std::{fs, path::PathBuf};
 
-pub fn check<'a>(
+pub async fn check<'a>(
     path: &PathBuf,
 ) -> Result<MailManOk<'a, serde_json::Value>, MailManErr<'a, String>> {
     if path.is_file() {
@@ -29,7 +29,7 @@ pub fn check<'a>(
     }
 }
 
-pub fn download<'a>(path: &PathBuf) -> Result<Vec<u8>, MailManErr<'a, String>> {
+pub async fn download<'a>(path: &PathBuf) -> Result<Vec<u8>, MailManErr<'a, String>> {
     if path.is_file() {
         MailManOk::new(200, "Service: File check", Some(json!({"type": "normal"})));
     } else {
@@ -52,14 +52,14 @@ pub fn download<'a>(path: &PathBuf) -> Result<Vec<u8>, MailManErr<'a, String>> {
     }
 }
 
-pub fn prepare_path(original: &str, root: &PathBuf) -> Result<PathBuf, String> {
+pub async fn prepare_path(original: &str, root: &PathBuf) -> Result<PathBuf, String> {
     let safe = sanitize(original);
     let dir = root.join("upload");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir.join(safe))
 }
 
-pub fn delete<'a>(path: &PathBuf) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
+pub async fn delete<'a>(path: &PathBuf) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
     if path.is_file() {
         MailManOk::new(200, "Service: File check", Some(json!({"type": "normal"})));
     } else {
