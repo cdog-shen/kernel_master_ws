@@ -92,6 +92,18 @@ pub static GLOBAL_CONFIG: Lazy<RwLock<AllConfigs>> = Lazy::new(|| RwLock::new(Al
 
 表定义集中在 `model/schema.rs`（diesel CLI 生成），禁止手写。
 
+### 清洗层的职责划分
+
+清洗层指 api handler 及其同层辅助模块。经评估确定以下两条正式惯例：
+
+1. **`from_map` 清洗函数留在 model 文件**，不搬迁到 api 层。理由：它与三结构体
+   定义天然内聚，搬迁会在全仓库造成无收益的大规模 churn。新代码若清洗逻辑复杂，
+   可以在 api 层另建独立的清洗模块。
+2. **GET filter 的 key 白名单校验与值类型校验属清洗层职责**：handler 在透传
+   filter map 前，按表白名单剔除未知 key 与类型不符的值（剔除后语义与 model 的
+   静默忽略等价，不得因此新增 400 错误）。filter key → 数据库列的映射逻辑留在
+   model 的 `get_*_with_filter` 中，属 model 的原子职责，不上移。
+
 ### middleware/auth_middleware.rs
 
 提供 `JwtAuth` 与 `PermissionCheck` 两个 actix Transform，在 `config/app.rs` 中按需 wrap。该文件各 crate 因依赖自身 model 已分化，修改时必须逐 crate 同步评估。
