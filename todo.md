@@ -71,16 +71,16 @@
 
 - [x] `subsystem_call` 链路补清洗层：消除 service 里 `subsys_params["target"].as_str().unwrap()`
   （subsys_service.rs:298-300）
-- [ ] 删除 legacy `Authentication` 中间件死代码（middleware/auth_middleware.rs:52-246），
+- [x] 删除 legacy `Authentication` 中间件死代码（middleware/auth_middleware.rs:52-246），
   并评估中间件内嵌编排（:487-506）与 `get_me` 查询序列的去重
-- [ ] 删除 `subsys_service.rs:38-80` 注释掉的死代码
+- [x] 删除 `subsys_service.rs:38-80` 注释掉的死代码
 
 ### cmdb-backend
 
-- [ ] handler 裸 `unwrap` 取 `data.get("table")` 改为 400 错误返回
+- [x] handler 裸 `unwrap` 取 `data.get("table")` 改为 400 错误返回
   （table_manage.rs:19,161,489,824）
-- [ ] 删除空文件 `api/db_manage.rs`
-- [ ] 评估编排层空心化：18 个同构透传 service 是否保留（作为错误码翻译层有其价值，
+- [x] 删除空文件 `api/db_manage.rs`
+- [x] 评估编排层空心化：18 个同构透传 service 是否保留（作为错误码翻译层有其价值，
   需在骨架规范中明确这一层的定位）
 
 ## P1 —— 清洗层统一
