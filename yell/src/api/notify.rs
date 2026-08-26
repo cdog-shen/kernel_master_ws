@@ -9,11 +9,11 @@ use share_lib::err_mapping::MailManErrResponser;
 use std::collections::HashMap;
 
 use crate::{
+    api::filter,
     model::{
         notification_alias::{NewNotificationAlias, UpdateNotificationAlias},
         notification_template::{NewNotificationTemplate, UpdateNotificationTemplate},
     },
-    services::channel::NotificationRequest,
     services::manage_service,
     services::notification_router::NotificationRouter,
     services::notify_service,
@@ -28,66 +28,7 @@ pub async fn send(
     req: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    let title = req
-        .get("title")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-
-    let body = req
-        .get("body")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-
-    let format = req
-        .get("format")
-        .and_then(|v| v.as_str())
-        .unwrap_or("text")
-        .to_string();
-
-    let priority = req
-        .get("priority")
-        .and_then(|v| v.as_str())
-        .unwrap_or("normal")
-        .to_string();
-
-    let tags = req
-        .get("tags")
-        .and_then(|v| v.as_array())
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                .collect()
-        })
-        .unwrap_or_default();
-
-    let url = req
-        .get("url")
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
-
-    let mentions = req
-        .get("mentions")
-        .and_then(|v| v.as_array())
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                .collect()
-        })
-        .unwrap_or_default();
-
-    let request = NotificationRequest {
-        title,
-        body,
-        format,
-        priority,
-        tags,
-        url,
-        mentions,
-        template_id: None,
-        params: serde_json::Value::Null,
-    };
+    let request = filter::SendRequestInput::from_map(&req).into_notification_request();
 
     let recipients = match notify_service::resolve_recipients(req.get("recipients"), &pool).await {
         Ok(recipients) => recipients,
@@ -120,23 +61,18 @@ pub async fn send_with_template(
     req: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    let template_name = req
-        .get("template_name")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| {
-            MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
-                400,
-                "Bad Request",
-                Some("Missing 'template_name' field".to_string()),
-                1,
-            ))
-        })?;
+    let input = filter::SendTemplateRequestInput::from_map(&req);
 
-    let variables = req
-        .get("variables")
-        .and_then(|v| v.as_object())
-        .cloned()
-        .unwrap_or_default();
+    let template_name = input.template_name.as_deref().ok_or_else(|| {
+        MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
+            400,
+            "Bad Request",
+            Some("Missing 'template_name' field".to_string()),
+            1,
+        ))
+    })?;
+
+    let variables = input.variables;
 
     let recipients = match notify_service::resolve_recipients(req.get("recipients"), &pool).await {
         Ok(recipients) => recipients,
@@ -176,7 +112,9 @@ pub async fn get_templates(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match manage_service::get_templates(query.into_inner(), &pool).await {
+    match manage_service::get_templates(filter::clean_template_filter(query.into_inner()), &pool)
+        .await
+    {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
@@ -303,7 +241,8 @@ pub async fn get_records(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match manage_service::get_records(query.into_inner(), &pool).await {
+    match manage_service::get_records(filter::clean_record_filter(query.into_inner()), &pool).await
+    {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
