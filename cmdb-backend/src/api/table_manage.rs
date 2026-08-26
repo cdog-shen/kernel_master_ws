@@ -8,7 +8,7 @@ use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
 use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model, service};
+use crate::{api::filter, model, service};
 
 // POST api/table/query
 pub async fn query_table(
@@ -43,6 +43,7 @@ pub async fn query_table(
             level: 1,
         })
     })?;
+    let query = filter::clean_query_filter(table_name, query);
 
     match table_name {
         // === cmdb native tables ===
