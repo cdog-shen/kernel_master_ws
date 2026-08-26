@@ -1,15 +1,9 @@
-use actix_web::web;
 use async_trait::async_trait;
-use diesel::{
-    PgConnection,
-    r2d2::{ConnectionManager, Pool},
-};
-use serde_json::json;
+use serde_json::{Value, json};
+use share_lib::infrastructure::http_client;
 
-use crate::model::channel_config::ChannelConfig;
-use crate::services::channel::{
-    Channel, ChannelResult, NotificationRequest, create_record, update_record,
-};
+use crate::model::channel_config::GotifyConfig;
+use crate::services::channel::{Channel, DispatchError, NotificationRequest, run_http_call};
 
 /// Gotify 推送渠道实现
 pub struct GotifyChannel;
@@ -26,10 +20,6 @@ impl Channel for GotifyChannel {
         "gotify"
     }
 
-    fn build_message(&self, request: &NotificationRequest) -> Result<String, String> {
-        Ok(request.body.clone())
-    }
-
     /// Gotify 对非 text 格式降级为简介
     fn prepare_request(&self, mut request: NotificationRequest) -> NotificationRequest {
         if request.format != "text" {
@@ -39,34 +29,20 @@ impl Channel for GotifyChannel {
         request
     }
 
-    async fn send(
+    async fn dispatch(
         &self,
+        config: &Value,
         recipient: &str,
-        instance_name: &str,
         request: &NotificationRequest,
-        pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-    ) -> Result<ChannelResult, String> {
-        let gotify_config = web::block({
-            let pool = pool.clone();
-            let name = instance_name.to_string();
-            move || {
-                let mut conn = pool.get().map_err(|e| e.to_string())?;
-                ChannelConfig::get_gotify_config_by_name(&name, &mut conn).map_err(|(_, msg)| msg)
-            }
-        })
-        .await
-        .map_err(|e| e.to_string())?
-        .map_err(|e| e)?;
-
-        let config = gotify_config.ok_or("Gotify config not found")?;
+    ) -> Result<(), DispatchError> {
+        let gotify_config: GotifyConfig = serde_json::from_value(config.clone())
+            .map_err(|e| DispatchError::Abort(format!("Invalid Gotify config: {}", e)))?;
 
         let app_token = if !recipient.is_empty() {
             recipient.to_string()
         } else {
-            config.app_token.clone()
+            gotify_config.app_token.clone()
         };
-
-        let record_id = create_record("gotify", recipient, request, pool).await?;
 
         let priority = request
             .params
@@ -113,102 +89,60 @@ impl Channel for GotifyChannel {
 
         let push_url = format!(
             "{}/message?token={}",
-            config.server_url.trim_end_matches('/'),
+            gotify_config.server_url.trim_end_matches('/'),
             app_token
         );
-        let result = web::block(move || {
-            ureq::post(&push_url)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .send(form_body.as_str())
-                .map_err(|e| format!("Gotify request error: {}", e))
+        run_http_call("Gotify", move || {
+            http_client::post_raw(
+                &push_url,
+                &[(
+                    "Content-Type".to_string(),
+                    "application/x-www-form-urlencoded".to_string(),
+                )],
+                &[],
+                &form_body,
+            )
         })
-        .await;
+        .await
+    }
 
-        match result {
-            Ok(Ok(_)) => {
-                update_record(record_id, "sent", None, pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "gotify".to_string(),
-                    success: true,
-                    record_id,
-                    error_msg: None,
-                })
-            }
-            Ok(Err(e)) => {
-                update_record(record_id, "failed", Some(e.clone()), pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "gotify".to_string(),
-                    success: false,
-                    record_id,
-                    error_msg: Some(e),
-                })
-            }
-            Err(e) => {
-                let error_msg = format!("Gotify task error: {}", e);
-                update_record(record_id, "failed", Some(error_msg.clone()), pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "gotify".to_string(),
-                    success: false,
-                    record_id,
-                    error_msg: Some(error_msg),
-                })
-            }
+    fn template_request(&self, payload: &Value, template_id: Option<i32>) -> NotificationRequest {
+        NotificationRequest {
+            title: payload
+                .get("title")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            body: payload
+                .get("message")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            format: "text".to_string(),
+            priority: "normal".to_string(),
+            tags: vec![],
+            url: None,
+            mentions: vec![],
+            template_id,
+            params: Value::Null,
         }
     }
 
-    async fn send_template(
+    async fn dispatch_template(
         &self,
+        config: &Value,
         recipient: &str,
-        instance_name: &str,
-        payload: &serde_json::Value,
+        payload: &Value,
         _template_id: Option<i32>,
-        pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-    ) -> Result<ChannelResult, String> {
-        let gotify_config = web::block({
-            let pool = pool.clone();
-            let name = instance_name.to_string();
-            move || {
-                let mut conn = pool.get().map_err(|e| e.to_string())?;
-                ChannelConfig::get_gotify_config_by_name(&name, &mut conn).map_err(|(_, msg)| msg)
-            }
-        })
-        .await
-        .map_err(|e| e.to_string())?
-        .map_err(|e| e)?;
-
-        let config = gotify_config.ok_or("Gotify config not found")?;
+    ) -> Result<(), DispatchError> {
+        let gotify_config: GotifyConfig = serde_json::from_value(config.clone())
+            .map_err(|e| DispatchError::Abort(format!("Invalid Gotify config: {}", e)))?;
 
         let app_token = if !recipient.is_empty() {
             recipient.to_string()
         } else {
-            config.app_token.clone()
+            gotify_config.app_token.clone()
         };
-
-        let record_id = create_record(
-            "gotify",
-            recipient,
-            &NotificationRequest {
-                title: payload
-                    .get("title")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string(),
-                body: payload
-                    .get("message")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string(),
-                format: "text".to_string(),
-                priority: "normal".to_string(),
-                tags: vec![],
-                url: None,
-                mentions: vec![],
-                template_id: _template_id,
-                params: serde_json::Value::Null,
-            },
-            pool,
-        )
-        .await?;
 
         let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or("");
         let message = payload
@@ -234,46 +168,20 @@ impl Channel for GotifyChannel {
 
         let push_url = format!(
             "{}/message?token={}",
-            config.server_url.trim_end_matches('/'),
+            gotify_config.server_url.trim_end_matches('/'),
             app_token
         );
-        let result = web::block(move || {
-            ureq::post(&push_url)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .send(form_body.as_str())
-                .map_err(|e| format!("Gotify request error: {}", e))
+        run_http_call("Gotify", move || {
+            http_client::post_raw(
+                &push_url,
+                &[(
+                    "Content-Type".to_string(),
+                    "application/x-www-form-urlencoded".to_string(),
+                )],
+                &[],
+                &form_body,
+            )
         })
-        .await;
-
-        match result {
-            Ok(Ok(_)) => {
-                update_record(record_id, "sent", None, pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "gotify".to_string(),
-                    success: true,
-                    record_id,
-                    error_msg: None,
-                })
-            }
-            Ok(Err(e)) => {
-                update_record(record_id, "failed", Some(e.clone()), pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "gotify".to_string(),
-                    success: false,
-                    record_id,
-                    error_msg: Some(e),
-                })
-            }
-            Err(e) => {
-                let error_msg = format!("Gotify task error: {}", e);
-                update_record(record_id, "failed", Some(error_msg.clone()), pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "gotify".to_string(),
-                    success: false,
-                    record_id,
-                    error_msg: Some(error_msg),
-                })
-            }
-        }
+        .await
     }
 }

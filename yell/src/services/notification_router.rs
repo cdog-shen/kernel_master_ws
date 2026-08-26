@@ -11,7 +11,9 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 
 use crate::model::notification_template::NotificationTemplate;
 use crate::services::bark::service::BarkChannel;
-use crate::services::channel::{Channel, ChannelResult, NotificationRequest};
+use crate::services::channel::{
+    Channel, ChannelConfigs, ChannelResult, NotificationRequest, deliver, deliver_template,
+};
 use crate::services::gotify::service::GotifyChannel;
 use crate::services::mail::service::SmtpChannel;
 use crate::services::teams::service::TeamsChannel;
@@ -46,13 +48,13 @@ impl NotificationRouter {
     /// recipients: Vec<(channel_type, recipient, instance)>
     /// 各 channel_type 自行解释 recipient 的含义（邮件地址/用户ID/群组ID/openID/token等）
     /// instance 为配置实例名，必填
-    /// channel_configs: 由编排层注入的渠道配置（HashMap<channel_type, config_json>），
-    /// 预留给渠道初始化使用；当前各渠道按 instance 自行查库加载配置
+    /// channel_configs: 由编排层注入的渠道配置（channel_type -> instance_name -> config_json），
+    /// 渠道发送时按实例名取用，不再自行查库
     pub async fn send_to_channels<'a>(
         &self,
         request: NotificationRequest,
         recipients: Vec<(String, String, String)>,
-        channel_configs: HashMap<String, Value>,
+        channel_configs: ChannelConfigs,
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<MailManOk<'a, Vec<ChannelResult>>, MailManErr<'a, String>> {
         if recipients.is_empty() {
@@ -63,20 +65,18 @@ impl NotificationRouter {
             ));
         }
 
-        // 配置已注入但暂不消费（原 init_channel 为空实现，已移除）
-        let _ = &channel_configs;
-
         let mut tasks = Vec::new();
 
         for (channel_type, recipient, instance) in recipients {
             if let Some(channel) = self.channels.get(&channel_type) {
                 let channel = Arc::clone(channel);
                 let request = request.clone();
+                let configs = channel_configs.clone();
                 let pool = pool.clone();
 
                 let task = tokio::spawn(async move {
                     let request = channel.prepare_request(request);
-                    channel.send(&recipient, &instance, &request, &pool).await
+                    deliver(&channel, &recipient, &instance, &request, &configs, &pool).await
                 });
 
                 tasks.push(task);
@@ -112,11 +112,13 @@ impl NotificationRouter {
     /// 使用模板发送 — 渲染各渠道 JSON，只向模板中有对应字段的渠道发送
     ///
     /// template: 由编排层按名称查询后注入的模板对象
+    /// channel_configs: 由编排层注入的渠道配置（channel_type -> instance_name -> config_json）
     pub async fn send_with_template<'a>(
         &self,
         template: NotificationTemplate,
         variables: serde_json::Map<String, Value>,
         recipients: Vec<(String, String, String)>,
+        channel_configs: ChannelConfigs,
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<MailManOk<'a, Vec<ChannelResult>>, MailManErr<'a, String>> {
         // 渲染各渠道 JSON: HashMap<channel_type, rendered_payload>
@@ -131,18 +133,20 @@ impl NotificationRouter {
                 if let Some(channel) = self.channels.get(&channel_type) {
                     let channel = Arc::clone(channel);
                     let payload = payload.clone();
+                    let configs = channel_configs.clone();
                     let pool = pool.clone();
 
                     let task = tokio::spawn(async move {
-                        channel
-                            .send_template(
-                                &recipient,
-                                &instance,
-                                &payload,
-                                Some(template_id),
-                                &pool,
-                            )
-                            .await
+                        deliver_template(
+                            &channel,
+                            &recipient,
+                            &instance,
+                            &payload,
+                            Some(template_id),
+                            &configs,
+                            &pool,
+                        )
+                        .await
                     });
 
                     tasks.push(task);

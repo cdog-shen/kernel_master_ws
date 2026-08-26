@@ -6,7 +6,6 @@ use serde_json::Value;
 use crate::model::schema::channel_configs::{self, dsl::*};
 
 static UNKNOWN_ERROR_CODE: u8 = 0;
-static BAD_REQUEST_CODE: u8 = 1;
 
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, Clone)]
 #[diesel(table_name = channel_configs, check_for_backend(diesel::pg::Pg))]
@@ -75,33 +74,6 @@ pub struct WebhookConfig {
 }
 
 impl ChannelConfig {
-    /// 根据通道类型 + 实例名获取配置
-    pub fn get_by_name(
-        channel: &str,
-        instance_name: &str,
-        conn: &mut PgConnection,
-    ) -> Result<Option<Self>, (u8, String)> {
-        match channel_configs
-            .filter(channel_type.eq(channel))
-            .filter(name.eq(instance_name))
-            .filter(is_enabled.eq(Some(true)))
-            .select(ChannelConfig::as_select())
-            .first(conn)
-        {
-            Ok(config) => Ok(Some(config)),
-            Err(diesel::result::Error::NotFound) => Ok(None),
-            Err(e) => Err((UNKNOWN_ERROR_CODE, e.to_string())),
-        }
-    }
-
-    /// 获取默认配置（name 为空字符串）
-    pub fn get_default_by_type(
-        channel: &str,
-        conn: &mut PgConnection,
-    ) -> Result<Option<Self>, (u8, String)> {
-        Self::get_by_name(channel, "", conn)
-    }
-
     /// 获取所有配置
     pub fn get_all(conn: &mut PgConnection) -> Result<Vec<Value>, (u8, String)> {
         match channel_configs
@@ -152,93 +124,6 @@ impl ChannelConfig {
             }
             Ok(n) => Ok(n),
             Err(e) => Err((UNKNOWN_ERROR_CODE, e.to_string())),
-        }
-    }
-
-    /// 获取 SMTP 配置（默认实例）
-    pub fn get_smtp_config(conn: &mut PgConnection) -> Result<Option<SmtpConfig>, (u8, String)> {
-        Self::get_smtp_config_by_name("", conn)
-    }
-
-    /// 获取指定实例的 SMTP 配置
-    pub fn get_smtp_config_by_name(
-        instance_name: &str,
-        conn: &mut PgConnection,
-    ) -> Result<Option<SmtpConfig>, (u8, String)> {
-        match Self::get_by_name("smtp", instance_name, conn)? {
-            Some(config) => match serde_json::from_value::<SmtpConfig>(config.config_json) {
-                Ok(smtp_config) => Ok(Some(smtp_config)),
-                Err(e) => Err((BAD_REQUEST_CODE, format!("Invalid SMTP config: {}", e))),
-            },
-            None => Ok(None),
-        }
-    }
-
-    /// 获取 Bark 配置（默认实例）
-    pub fn get_bark_config(conn: &mut PgConnection) -> Result<Option<BarkConfig>, (u8, String)> {
-        Self::get_bark_config_by_name("", conn)
-    }
-
-    /// 获取指定实例的 Bark 配置
-    pub fn get_bark_config_by_name(
-        instance_name: &str,
-        conn: &mut PgConnection,
-    ) -> Result<Option<BarkConfig>, (u8, String)> {
-        match Self::get_by_name("bark", instance_name, conn)? {
-            Some(config) => match serde_json::from_value::<BarkConfig>(config.config_json) {
-                Ok(bark_config) => Ok(Some(bark_config)),
-                Err(e) => Err((BAD_REQUEST_CODE, format!("Invalid Bark config: {}", e))),
-            },
-            None => Ok(None),
-        }
-    }
-
-    /// 获取 Gotify 配置（默认实例）
-    pub fn get_gotify_config(
-        conn: &mut PgConnection,
-    ) -> Result<Option<GotifyConfig>, (u8, String)> {
-        Self::get_gotify_config_by_name("", conn)
-    }
-
-    /// 获取指定实例的 Gotify 配置
-    pub fn get_gotify_config_by_name(
-        instance_name: &str,
-        conn: &mut PgConnection,
-    ) -> Result<Option<GotifyConfig>, (u8, String)> {
-        match Self::get_by_name("gotify", instance_name, conn)? {
-            Some(config) => match serde_json::from_value::<GotifyConfig>(config.config_json) {
-                Ok(gotify_config) => Ok(Some(gotify_config)),
-                Err(e) => Err((BAD_REQUEST_CODE, format!("Invalid Gotify config: {}", e))),
-            },
-            None => Ok(None),
-        }
-    }
-
-    /// 获取指定实例的 Teams 配置
-    pub fn get_teams_config_by_name(
-        instance_name: &str,
-        conn: &mut PgConnection,
-    ) -> Result<Option<TeamsConfig>, (u8, String)> {
-        match Self::get_by_name("teams", instance_name, conn)? {
-            Some(config) => match serde_json::from_value::<TeamsConfig>(config.config_json) {
-                Ok(teams_config) => Ok(Some(teams_config)),
-                Err(e) => Err((BAD_REQUEST_CODE, format!("Invalid Teams config: {}", e))),
-            },
-            None => Ok(None),
-        }
-    }
-
-    /// 获取指定实例的通用 Webhook 配置
-    pub fn get_webhook_config_by_name(
-        instance_name: &str,
-        conn: &mut PgConnection,
-    ) -> Result<Option<WebhookConfig>, (u8, String)> {
-        match Self::get_by_name("webhook", instance_name, conn)? {
-            Some(config) => match serde_json::from_value::<WebhookConfig>(config.config_json) {
-                Ok(webhook_config) => Ok(Some(webhook_config)),
-                Err(e) => Err((BAD_REQUEST_CODE, format!("Invalid Webhook config: {}", e))),
-            },
-            None => Ok(None),
         }
     }
 }

@@ -1,15 +1,9 @@
-use actix_web::web;
 use async_trait::async_trait;
-use diesel::{
-    PgConnection,
-    r2d2::{ConnectionManager, Pool},
-};
-use serde_json::json;
+use serde_json::{Value, json};
+use share_lib::infrastructure::http_client;
 
-use crate::model::channel_config::ChannelConfig;
-use crate::services::channel::{
-    Channel, ChannelResult, NotificationRequest, create_record, update_record,
-};
+use crate::model::channel_config::WebhookConfig;
+use crate::services::channel::{Channel, DispatchError, NotificationRequest, run_http_call};
 
 /// 通用 Webhook 推送渠道实现
 pub struct WebhookChannel;
@@ -26,44 +20,28 @@ impl Channel for WebhookChannel {
         "webhook"
     }
 
-    fn build_message(&self, request: &NotificationRequest) -> Result<String, String> {
-        Ok(request.body.clone())
-    }
-
-    async fn send(
+    async fn dispatch(
         &self,
+        config: &Value,
         recipient: &str,
-        instance_name: &str,
         request: &NotificationRequest,
-        pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-    ) -> Result<ChannelResult, String> {
-        let webhook_config = web::block({
-            let pool = pool.clone();
-            let name = instance_name.to_string();
-            move || {
-                let mut conn = pool.get().map_err(|e| e.to_string())?;
-                ChannelConfig::get_webhook_config_by_name(&name, &mut conn).map_err(|(_, msg)| msg)
-            }
-        })
-        .await
-        .map_err(|e| e.to_string())?
-        .map_err(|e| e)?;
-
-        let config = webhook_config.ok_or("Webhook config not found")?;
+    ) -> Result<(), DispatchError> {
+        let webhook_config: WebhookConfig = serde_json::from_value(config.clone())
+            .map_err(|e| DispatchError::Abort(format!("Invalid Webhook config: {}", e)))?;
 
         let webhook_url = if !recipient.is_empty() {
             recipient.to_string()
         } else {
-            config.webhook_url.clone()
+            webhook_config.webhook_url.clone()
         };
-
-        let record_id = create_record("webhook", recipient, request, pool).await?;
 
         // content_format=json 时，params_template 整体作为 payload
         let payload = if request.format == "json" {
             if request.params.is_null() || request.params.as_object().map_or(true, |m| m.is_empty())
             {
-                return Err("content_format=json requires params_template to be set".to_string());
+                return Err(DispatchError::Abort(
+                    "content_format=json requires params_template to be set".to_string(),
+                ));
             }
             request.params.clone()
         } else {
@@ -89,138 +67,56 @@ impl Channel for WebhookChannel {
             body
         };
 
-        let result = web::block(move || {
-            ureq::post(&webhook_url)
-                .send_json(&payload)
-                .map_err(|e| format!("Webhook request error: {}", e))
+        run_http_call("Webhook", move || {
+            http_client::post_json(&webhook_url, &[], &[], &payload)
         })
-        .await;
+        .await
+    }
 
-        match result {
-            Ok(Ok(_)) => {
-                update_record(record_id, "sent", None, pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "webhook".to_string(),
-                    success: true,
-                    record_id,
-                    error_msg: None,
-                })
-            }
-            Ok(Err(e)) => {
-                update_record(record_id, "failed", Some(e.clone()), pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "webhook".to_string(),
-                    success: false,
-                    record_id,
-                    error_msg: Some(e),
-                })
-            }
-            Err(e) => {
-                let error_msg = format!("Webhook task error: {}", e);
-                update_record(record_id, "failed", Some(error_msg.clone()), pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "webhook".to_string(),
-                    success: false,
-                    record_id,
-                    error_msg: Some(error_msg),
-                })
-            }
+    fn template_request(&self, payload: &Value, template_id: Option<i32>) -> NotificationRequest {
+        NotificationRequest {
+            title: payload
+                .get("title")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            body: payload
+                .get("body")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            format: "text".to_string(),
+            priority: "normal".to_string(),
+            tags: vec![],
+            url: None,
+            mentions: vec![],
+            template_id,
+            params: Value::Null,
         }
     }
 
-    async fn send_template(
+    async fn dispatch_template(
         &self,
+        config: &Value,
         recipient: &str,
-        instance_name: &str,
-        payload: &serde_json::Value,
+        payload: &Value,
         _template_id: Option<i32>,
-        pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-    ) -> Result<ChannelResult, String> {
-        let webhook_config = web::block({
-            let pool = pool.clone();
-            let name = instance_name.to_string();
-            move || {
-                let mut conn = pool.get().map_err(|e| e.to_string())?;
-                ChannelConfig::get_webhook_config_by_name(&name, &mut conn).map_err(|(_, msg)| msg)
-            }
-        })
-        .await
-        .map_err(|e| e.to_string())?
-        .map_err(|e| e)?;
-
-        let config = webhook_config.ok_or("Webhook config not found")?;
+    ) -> Result<(), DispatchError> {
+        let webhook_config: WebhookConfig = serde_json::from_value(config.clone())
+            .map_err(|e| DispatchError::Abort(format!("Invalid Webhook config: {}", e)))?;
 
         let webhook_url = if !recipient.is_empty() {
             recipient.to_string()
         } else {
-            config.webhook_url.clone()
+            webhook_config.webhook_url.clone()
         };
-
-        let record_id = create_record(
-            "webhook",
-            recipient,
-            &NotificationRequest {
-                title: payload
-                    .get("title")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string(),
-                body: payload
-                    .get("body")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string(),
-                format: "text".to_string(),
-                priority: "normal".to_string(),
-                tags: vec![],
-                url: None,
-                mentions: vec![],
-                template_id: _template_id,
-                params: serde_json::Value::Null,
-            },
-            pool,
-        )
-        .await?;
 
         // Webhook 固定使用 JSON 格式，渲染后的 payload 原样发送
         let webhook_payload = payload.clone();
 
-        let result = web::block(move || {
-            ureq::post(&webhook_url)
-                .send_json(&webhook_payload)
-                .map_err(|e| format!("Webhook request error: {}", e))
+        run_http_call("Webhook", move || {
+            http_client::post_json(&webhook_url, &[], &[], &webhook_payload)
         })
-        .await;
-
-        match result {
-            Ok(Ok(_)) => {
-                update_record(record_id, "sent", None, pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "webhook".to_string(),
-                    success: true,
-                    record_id,
-                    error_msg: None,
-                })
-            }
-            Ok(Err(e)) => {
-                update_record(record_id, "failed", Some(e.clone()), pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "webhook".to_string(),
-                    success: false,
-                    record_id,
-                    error_msg: Some(e),
-                })
-            }
-            Err(e) => {
-                let error_msg = format!("Webhook task error: {}", e);
-                update_record(record_id, "failed", Some(error_msg.clone()), pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "webhook".to_string(),
-                    success: false,
-                    record_id,
-                    error_msg: Some(error_msg),
-                })
-            }
-        }
+        .await
     }
 }

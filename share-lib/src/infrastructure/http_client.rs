@@ -57,6 +57,23 @@ pub fn post_json(
     handle_response(req.send_json(body), url, "Infrastructure: HTTP POST")
 }
 
+/// POST 请求，body 为原始字符串（Content-Type 由 headers 指定），返回响应体文本
+pub fn post_raw(
+    url: &str,
+    headers: &[(String, String)],
+    query: &[(String, String)],
+    body: &str,
+) -> Result<String, MailManErr<'static, String>> {
+    let mut req = ureq::post(url);
+    for (key, value) in headers {
+        req = req.header(key, value);
+    }
+    for (key, value) in query {
+        req = req.query(key, value);
+    }
+    handle_response(req.send(body), url, "Infrastructure: HTTP POST")
+}
+
 /// PUT 请求，body 为 JSON，返回响应体文本
 pub fn put_json(
     url: &str,

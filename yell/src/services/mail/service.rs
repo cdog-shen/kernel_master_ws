@@ -1,9 +1,4 @@
-use actix_web::web;
 use async_trait::async_trait;
-use diesel::{
-    PgConnection,
-    r2d2::{ConnectionManager, Pool},
-};
 use lettre::{
     AsyncSmtpTransport, AsyncTransport, Message,
     message::{Mailbox, header::ContentType},
@@ -13,10 +8,8 @@ use serde_json::Value;
 use std::str::FromStr;
 use tokio::sync::Mutex;
 
-use crate::model::channel_config::ChannelConfig;
-use crate::services::channel::{
-    Channel, ChannelResult, NotificationRequest, create_record, update_record,
-};
+use crate::model::channel_config::SmtpConfig;
+use crate::services::channel::{Channel, DispatchError, NotificationRequest};
 
 /// SMTP 渠道实现
 pub struct SmtpChannel {
@@ -31,48 +24,83 @@ impl SmtpChannel {
     }
 
     /// 初始化 SMTP 客户端（懒加载，第一次发送时初始化）
-    async fn init_transport(
-        &self,
-        instance_name: &str,
-        pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-    ) -> Result<(), String> {
+    async fn init_transport(&self, config: &Value) -> Result<(), String> {
         let mut transport_lock = self.transport.lock().await;
 
         if transport_lock.is_some() {
             return Ok(());
         }
 
-        let smtp_config = web::block({
-            let pool = pool.clone();
-            let name = instance_name.to_string();
-            move || {
-                let mut conn = pool.get().map_err(|e| e.to_string())?;
-                ChannelConfig::get_smtp_config_by_name(&name, &mut conn).map_err(|(_, msg)| msg)
-            }
-        })
-        .await
-        .map_err(|e| e.to_string())?
-        .map_err(|e| e)?;
+        let smtp_config: SmtpConfig = serde_json::from_value(config.clone())
+            .map_err(|e| format!("Invalid SMTP config: {}", e))?;
 
-        let config = smtp_config.ok_or("SMTP config not found")?;
+        let creds = Credentials::new(smtp_config.username, smtp_config.password);
 
-        let creds = Credentials::new(config.username, config.password);
-
-        let transport = if config.use_tls {
-            AsyncSmtpTransport::<lettre::Tokio1Executor>::starttls_relay(&config.host)
+        let transport = if smtp_config.use_tls {
+            AsyncSmtpTransport::<lettre::Tokio1Executor>::starttls_relay(&smtp_config.host)
                 .map_err(|e| format!("SMTP relay error: {}", e))?
-                .port(config.port)
+                .port(smtp_config.port)
                 .credentials(creds)
                 .build()
         } else {
-            AsyncSmtpTransport::<lettre::Tokio1Executor>::builder_dangerous(&config.host)
-                .port(config.port)
+            AsyncSmtpTransport::<lettre::Tokio1Executor>::builder_dangerous(&smtp_config.host)
+                .port(smtp_config.port)
                 .credentials(creds)
                 .build()
         };
 
         *transport_lock = Some(transport);
         Ok(())
+    }
+
+    /// 取已初始化的 transport（由 preflight 保证已初始化）
+    async fn transport(&self) -> Result<AsyncSmtpTransport<lettre::Tokio1Executor>, DispatchError> {
+        let lock = self.transport.lock().await;
+        lock.as_ref()
+            .cloned()
+            .ok_or_else(|| DispatchError::Abort("SMTP transport not initialized".to_string()))
+    }
+
+    /// 解析收件人地址列表（逗号/分号分隔）
+    fn parse_addresses(recipient: &str) -> Result<Vec<&str>, DispatchError> {
+        let addresses: Vec<&str> = recipient
+            .split(|c| c == ',' || c == ';')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        if addresses.is_empty() {
+            return Err(DispatchError::Abort(
+                "No valid recipient addresses provided".to_string(),
+            ));
+        }
+        Ok(addresses)
+    }
+
+    /// 构建邮件
+    fn build_email(
+        from: &str,
+        addresses: &[&str],
+        subject: &str,
+        content_type: ContentType,
+        body: &str,
+    ) -> Result<Message, DispatchError> {
+        let from_mailbox = Mailbox::from_str(from)
+            .map_err(|e| DispatchError::Abort(format!("Invalid from address: {}", e)))?;
+
+        let mut builder = Message::builder().from(from_mailbox);
+        for addr in addresses {
+            let mailbox = Mailbox::from_str(addr).map_err(|e| {
+                DispatchError::Abort(format!("Invalid recipient address '{}': {}", addr, e))
+            })?;
+            builder = builder.to(mailbox);
+        }
+
+        builder
+            .subject(subject.to_string())
+            .header(content_type)
+            .body(body.to_string())
+            .map_err(|e| DispatchError::Abort(format!("Failed to build email: {}", e)))
     }
 }
 
@@ -82,56 +110,22 @@ impl Channel for SmtpChannel {
         "smtp"
     }
 
-    fn build_message(&self, request: &NotificationRequest) -> Result<String, String> {
-        Ok(request.body.clone())
+    /// 发送前确保 SMTP transport 已初始化
+    async fn preflight(&self, config: &Value) -> Result<(), String> {
+        self.init_transport(config).await
     }
 
-    async fn send(
+    async fn dispatch(
         &self,
+        config: &Value,
         recipient: &str,
-        instance_name: &str,
         request: &NotificationRequest,
-        pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-    ) -> Result<ChannelResult, String> {
-        self.init_transport(instance_name, pool).await?;
+    ) -> Result<(), DispatchError> {
+        let smtp_config: SmtpConfig = serde_json::from_value(config.clone())
+            .map_err(|e| DispatchError::Abort(format!("Invalid SMTP config: {}", e)))?;
 
-        let record_id = create_record("smtp", recipient, request, pool).await?;
-
-        let transport = {
-            let lock = self.transport.lock().await;
-            lock.as_ref()
-                .ok_or("SMTP transport not initialized")?
-                .clone()
-        };
-
-        let from_addr = web::block({
-            let pool = pool.clone();
-            let name = instance_name.to_string();
-            move || {
-                let mut conn = pool.get().map_err(|e| e.to_string())?;
-                let config = ChannelConfig::get_smtp_config_by_name(&name, &mut conn)
-                    .map_err(|(_, msg)| msg)?;
-                config
-                    .ok_or("SMTP config not found".to_string())
-                    .map(|c| c.from)
-            }
-        })
-        .await
-        .map_err(|e| e.to_string())?
-        .map_err(|e| e)?;
-
-        let addresses: Vec<&str> = recipient
-            .split(|c| c == ',' || c == ';')
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
-            .collect();
-
-        if addresses.is_empty() {
-            return Err("No valid recipient addresses provided".to_string());
-        }
-
-        let from_mailbox =
-            Mailbox::from_str(&from_addr).map_err(|e| format!("Invalid from address: {}", e))?;
+        let transport = self.transport().await?;
+        let addresses = Self::parse_addresses(recipient)?;
 
         let content_type = if request.format == "html" {
             ContentType::TEXT_HTML
@@ -139,113 +133,54 @@ impl Channel for SmtpChannel {
             ContentType::TEXT_PLAIN
         };
 
-        let mut builder = Message::builder().from(from_mailbox);
-        for addr in &addresses {
-            let mailbox = Mailbox::from_str(addr)
-                .map_err(|e| format!("Invalid recipient address '{}': {}", addr, e))?;
-            builder = builder.to(mailbox);
-        }
-
-        let email = builder
-            .subject(request.title.clone())
-            .header(content_type)
-            .body(request.body.clone())
-            .map_err(|e| format!("Failed to build email: {}", e))?;
+        let email = Self::build_email(
+            &smtp_config.from,
+            &addresses,
+            &request.title,
+            content_type,
+            &request.body,
+        )?;
 
         match transport.send(email).await {
-            Ok(_) => {
-                update_record(record_id, "sent", None, pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "smtp".to_string(),
-                    success: true,
-                    record_id,
-                    error_msg: None,
-                })
-            }
-            Err(e) => {
-                let error_msg = format!("SMTP send error: {}", e);
-                update_record(record_id, "failed", Some(error_msg.clone()), pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "smtp".to_string(),
-                    success: false,
-                    record_id,
-                    error_msg: Some(error_msg),
-                })
-            }
+            Ok(_) => Ok(()),
+            Err(e) => Err(DispatchError::Failed(format!("SMTP send error: {}", e))),
         }
     }
 
-    async fn send_template(
+    fn template_request(&self, payload: &Value, template_id: Option<i32>) -> NotificationRequest {
+        NotificationRequest {
+            title: payload
+                .get("subject")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            body: payload
+                .get("body")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            format: "text".to_string(),
+            priority: "normal".to_string(),
+            tags: vec![],
+            url: None,
+            mentions: vec![],
+            template_id,
+            params: Value::Null,
+        }
+    }
+
+    async fn dispatch_template(
         &self,
+        config: &Value,
         recipient: &str,
-        instance_name: &str,
         payload: &Value,
         _template_id: Option<i32>,
-        pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-    ) -> Result<ChannelResult, String> {
-        self.init_transport(instance_name, pool).await?;
+    ) -> Result<(), DispatchError> {
+        let smtp_config: SmtpConfig = serde_json::from_value(config.clone())
+            .map_err(|e| DispatchError::Abort(format!("Invalid SMTP config: {}", e)))?;
 
-        let record_id = create_record(
-            "smtp",
-            recipient,
-            &NotificationRequest {
-                title: payload
-                    .get("subject")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string(),
-                body: payload
-                    .get("body")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string(),
-                format: "text".to_string(),
-                priority: "normal".to_string(),
-                tags: vec![],
-                url: None,
-                mentions: vec![],
-                template_id: _template_id,
-                params: Value::Null,
-            },
-            pool,
-        )
-        .await?;
-
-        let transport = {
-            let lock = self.transport.lock().await;
-            lock.as_ref()
-                .ok_or("SMTP transport not initialized")?
-                .clone()
-        };
-
-        let from_addr = web::block({
-            let pool = pool.clone();
-            let name = instance_name.to_string();
-            move || {
-                let mut conn = pool.get().map_err(|e| e.to_string())?;
-                let config = ChannelConfig::get_smtp_config_by_name(&name, &mut conn)
-                    .map_err(|(_, msg)| msg)?;
-                config
-                    .ok_or("SMTP config not found".to_string())
-                    .map(|c| c.from)
-            }
-        })
-        .await
-        .map_err(|e| e.to_string())?
-        .map_err(|e| e)?;
-
-        let addresses: Vec<&str> = recipient
-            .split(|c| c == ',' || c == ';')
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
-            .collect();
-
-        if addresses.is_empty() {
-            return Err("No valid recipient addresses provided".to_string());
-        }
-
-        let from_mailbox =
-            Mailbox::from_str(&from_addr).map_err(|e| format!("Invalid from address: {}", e))?;
+        let transport = self.transport().await?;
+        let addresses = Self::parse_addresses(recipient)?;
 
         let subject = payload
             .get("subject")
@@ -258,39 +193,11 @@ impl Channel for SmtpChannel {
             ContentType::TEXT_PLAIN
         };
 
-        let mut builder = Message::builder().from(from_mailbox);
-        for addr in &addresses {
-            let mailbox = Mailbox::from_str(addr)
-                .map_err(|e| format!("Invalid recipient address '{}': {}", addr, e))?;
-            builder = builder.to(mailbox);
-        }
-
-        let email = builder
-            .subject(subject.to_string())
-            .header(content_type)
-            .body(body.to_string())
-            .map_err(|e| format!("Failed to build email: {}", e))?;
+        let email = Self::build_email(&smtp_config.from, &addresses, subject, content_type, body)?;
 
         match transport.send(email).await {
-            Ok(_) => {
-                update_record(record_id, "sent", None, pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "smtp".to_string(),
-                    success: true,
-                    record_id,
-                    error_msg: None,
-                })
-            }
-            Err(e) => {
-                let error_msg = format!("SMTP send error: {}", e);
-                update_record(record_id, "failed", Some(error_msg.clone()), pool).await?;
-                Ok(ChannelResult {
-                    channel_type: "smtp".to_string(),
-                    success: false,
-                    record_id,
-                    error_msg: Some(error_msg),
-                })
-            }
+            Ok(_) => Ok(()),
+            Err(e) => Err(DispatchError::Failed(format!("SMTP send error: {}", e))),
         }
     }
 }

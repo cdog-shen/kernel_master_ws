@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use actix_web::web;
 use async_trait::async_trait;
 use chrono::Local;
@@ -7,6 +10,7 @@ use diesel::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use share_lib::data_structure::MailManErr;
 
 use crate::model::notification_record::{
     NewNotificationRecord, NotificationRecord, UpdateNotificationRecord,
@@ -35,21 +39,27 @@ pub struct ChannelResult {
     pub error_msg: Option<String>,
 }
 
-/// 渠道配置上下文
-#[derive(Debug, Clone)]
-pub struct ChannelContext {
-    pub channel_type: String,
-    pub config: Value,
+/// 注入的渠道配置表：channel_type -> instance_name -> config_json
+/// 由编排层（notify_service::load_channel_configs）统一加载后注入，
+/// 渠道内不再自行查询 ChannelConfig
+pub type ChannelConfigs = HashMap<String, HashMap<String, Value>>;
+
+/// 渠道外呼失败类型
+#[derive(Debug)]
+pub enum DispatchError {
+    /// 前置失败（参数/地址校验、配置解析失败等）：通知记录保持 pending，错误直接上抛
+    Abort(String),
+    /// 外呼已发起但失败：通知记录标记 failed，以 success=false 的 ChannelResult 返回
+    Failed(String),
 }
 
 /// 渠道 trait —— 所有通知渠道必须实现
+/// 渠道只负责"外呼"本身；配置获取与通知记录生命周期由本模块的
+/// 统一骨架（deliver / deliver_template）管理
 #[async_trait]
 pub trait Channel: Send + Sync {
     /// 渠道类型标识
     fn channel_type(&self) -> &'static str;
-
-    /// 构建渠道特定的消息体
-    fn build_message(&self, request: &NotificationRequest) -> Result<String, String>;
 
     /// 发送前适配请求内容（默认不修改）
     /// 简单推送渠道（Bark/Gotify 等）可覆写此方法，对 HTML 等不适配格式做降级处理
@@ -57,27 +67,27 @@ pub trait Channel: Send + Sync {
         request
     }
 
-    /// 直接发送消息
-    async fn send(
-        &self,
-        recipient: &str,
-        instance_name: &str,
-        request: &NotificationRequest,
-        pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-    ) -> Result<ChannelResult, String>;
+    /// 外呼前置准备（默认无操作）
+    /// 在创建通知记录之前调用；返回 Err 时中止发送，不创建记录。
+    /// 渠道可在此校验注入的配置、初始化惰性资源（如 SMTP transport）
+    async fn preflight(&self, config: &Value) -> Result<(), String> {
+        let _ = config;
+        Ok(())
+    }
 
-    /// 通过模板发送 — payload 是渲染后的渠道专属 JSON
-    /// 默认实现：从 payload 提取 title/body/message 构造 NotificationRequest，回退到 send()
-    /// 各渠道可覆写此方法以直接使用 payload JSON 构造请求
-    async fn send_template(
+    /// 直接发送的外呼实现 —— 只负责把 request 投递到渠道
+    /// config 为按 channel_type + instance_name 从注入配置中取出的 config_json
+    async fn dispatch(
         &self,
+        config: &Value,
         recipient: &str,
-        instance_name: &str,
-        payload: &Value,
-        template_id: Option<i32>,
-        pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-    ) -> Result<ChannelResult, String> {
-        let request = NotificationRequest {
+        request: &NotificationRequest,
+    ) -> Result<(), DispatchError>;
+
+    /// 由渲染后的模板 payload 构造落库用的请求视图
+    /// 默认实现：从 payload 提取 title/body/message 构造 NotificationRequest
+    fn template_request(&self, payload: &Value, template_id: Option<i32>) -> NotificationRequest {
+        NotificationRequest {
             title: payload
                 .get("title")
                 .and_then(|v| v.as_str())
@@ -99,9 +109,147 @@ pub trait Channel: Send + Sync {
             mentions: vec![],
             template_id,
             params: payload.clone(),
-        };
-        self.send(recipient, instance_name, &request, pool).await
+        }
     }
+
+    /// 模板发送的外呼实现 —— 默认经 template_request 回退到 dispatch
+    /// 各渠道可覆写此方法以直接使用 payload JSON 构造请求
+    async fn dispatch_template(
+        &self,
+        config: &Value,
+        recipient: &str,
+        payload: &Value,
+        template_id: Option<i32>,
+    ) -> Result<(), DispatchError> {
+        let request = self.template_request(payload, template_id);
+        self.dispatch(config, recipient, &request).await
+    }
+}
+
+/// 统一发送流程骨架（直接发送）：
+/// 取注入的配置 → preflight → create_record(pending) → 渠道外呼 → update_record(sent/failed)
+pub async fn deliver(
+    channel: &Arc<dyn Channel>,
+    recipient: &str,
+    instance_name: &str,
+    request: &NotificationRequest,
+    channel_configs: &ChannelConfigs,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<ChannelResult, String> {
+    let config = resolve_config(channel_configs, channel.channel_type(), instance_name)?;
+    channel.preflight(config).await?;
+
+    let record_id = create_record(channel.channel_type(), recipient, request, pool).await?;
+
+    let outcome = channel.dispatch(config, recipient, request).await;
+    finalize_delivery(outcome, channel.channel_type(), record_id, pool).await
+}
+
+/// 统一发送流程骨架（模板发送）：流程同 deliver，外呼走 dispatch_template
+pub async fn deliver_template(
+    channel: &Arc<dyn Channel>,
+    recipient: &str,
+    instance_name: &str,
+    payload: &Value,
+    template_id: Option<i32>,
+    channel_configs: &ChannelConfigs,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<ChannelResult, String> {
+    let config = resolve_config(channel_configs, channel.channel_type(), instance_name)?;
+    channel.preflight(config).await?;
+
+    let record_id = create_record(
+        channel.channel_type(),
+        recipient,
+        &channel.template_request(payload, template_id),
+        pool,
+    )
+    .await?;
+
+    let outcome = channel
+        .dispatch_template(config, recipient, payload, template_id)
+        .await;
+    finalize_delivery(outcome, channel.channel_type(), record_id, pool).await
+}
+
+/// 根据外呼结果更新记录状态并构造 ChannelResult
+async fn finalize_delivery(
+    outcome: Result<(), DispatchError>,
+    channel_type: &str,
+    record_id: i32,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<ChannelResult, String> {
+    match outcome {
+        Ok(()) => {
+            update_record(record_id, "sent", None, pool).await?;
+            Ok(ChannelResult {
+                channel_type: channel_type.to_string(),
+                success: true,
+                record_id,
+                error_msg: None,
+            })
+        }
+        Err(DispatchError::Failed(e)) => {
+            update_record(record_id, "failed", Some(e.clone()), pool).await?;
+            Ok(ChannelResult {
+                channel_type: channel_type.to_string(),
+                success: false,
+                record_id,
+                error_msg: Some(e),
+            })
+        }
+        // 前置失败：记录保持 pending，错误直接上抛
+        Err(DispatchError::Abort(e)) => Err(e),
+    }
+}
+
+/// 从注入的配置表中按 channel_type + instance_name 取配置
+fn resolve_config<'c>(
+    channel_configs: &'c ChannelConfigs,
+    channel_type: &str,
+    instance_name: &str,
+) -> Result<&'c Value, String> {
+    channel_configs
+        .get(channel_type)
+        .and_then(|instances| instances.get(instance_name))
+        .ok_or_else(|| format!("{} config not found", channel_display_name(channel_type)))
+}
+
+/// 渠道显示名（用于 "Xxx config not found" 错误信息，保持与原各渠道实现一致）
+fn channel_display_name(channel_type: &str) -> &str {
+    match channel_type {
+        "smtp" => "SMTP",
+        "bark" => "Bark",
+        "gotify" => "Gotify",
+        "teams" => "Teams",
+        "webhook" => "Webhook",
+        other => other,
+    }
+}
+
+/// 在阻塞线程池执行同步 HTTP 外呼，并把结果映射为外呼成败
+/// prefix 为渠道显示名（如 "Bark"），保持原 "Xxx request/task error" 错误格式
+pub async fn run_http_call<F>(prefix: &str, call: F) -> Result<(), DispatchError>
+where
+    F: FnOnce() -> Result<String, MailManErr<'static, String>> + Send + 'static,
+{
+    match web::block(call).await {
+        Ok(Ok(_)) => Ok(()),
+        Ok(Err(e)) => Err(DispatchError::Failed(format!(
+            "{} request error: {}",
+            prefix,
+            http_err_text(&e)
+        ))),
+        Err(e) => Err(DispatchError::Failed(format!(
+            "{} task error: {}",
+            prefix, e
+        ))),
+    }
+}
+
+/// 提取 MailManErr 的可读错误文本（供渠道包装 HTTP 外呼错误）
+fn http_err_text(err: &MailManErr<'static, String>) -> String {
+    err.msg.clone().unwrap_or_else(|| err.key.to_string())
 }
 
 /// 创建通知记录

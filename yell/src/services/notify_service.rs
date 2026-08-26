@@ -15,6 +15,7 @@ use std::collections::HashMap;
 use crate::model::channel_config::ChannelConfig;
 use crate::model::notification_alias::NotificationAlias;
 use crate::model::notification_template::NotificationTemplate;
+use crate::services::channel::ChannelConfigs;
 
 /// 解析 recipients 字段，支持 String（alias）和 Array 两种格式
 pub async fn resolve_recipients<'a>(
@@ -128,10 +129,11 @@ fn parse_recipients_array(
     Ok(recipients)
 }
 
-/// 加载所有渠道配置，返回 HashMap<channel_type, config_json>
+/// 加载所有启用的渠道配置，返回 channel_type -> instance_name -> config_json 嵌套表
+/// 只加载 is_enabled=true 的配置（渠道发送时按实例名取用，不再自行查库）
 pub async fn load_channel_configs<'a>(
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-) -> Result<HashMap<String, Value>, MailManErr<'a, String>> {
+) -> Result<ChannelConfigs, MailManErr<'a, String>> {
     let result = web::block({
         let pool = pool.clone();
         move || {
@@ -161,12 +163,19 @@ pub async fn load_channel_configs<'a>(
         }
     };
 
-    let mut map = HashMap::new();
+    let mut map: ChannelConfigs = HashMap::new();
     for config in configs {
-        if let Ok(channel_type) = serde_json::from_value::<String>(
-            config.get("channel_type").cloned().unwrap_or(Value::Null),
+        if config.get("is_enabled").and_then(|v| v.as_bool()) != Some(true) {
+            continue;
+        }
+        if let (Some(channel_type), Some(instance), Some(config_json)) = (
+            config.get("channel_type").and_then(|v| v.as_str()),
+            config.get("name").and_then(|v| v.as_str()),
+            config.get("config_json").cloned(),
         ) {
-            map.insert(channel_type, config);
+            map.entry(channel_type.to_string())
+                .or_default()
+                .insert(instance.to_string(), config_json);
         }
     }
     Ok(map)
