@@ -80,6 +80,8 @@ pub static GLOBAL_CONFIG: Lazy<RwLock<AllConfigs>> = Lazy::new(|| RwLock::new(Al
 
 与 api 一一对应（`account_manage.rs` → `account_service.rs`）。函数返回 `Result<MailManOk<...>, MailManErr<...>>`，由 handler 侧转成 HTTP 响应。参考 `watchman-backend/src/service/account_service.rs` 的 `login()`。
 
+**透传型编排层也是合法形态。** 编排层不必总包含多步编排：当某个 service 只做一次 model 调用、随后把 model 错误码翻译成 `MailManErr` 并包装统一返回时（如 `cmdb-backend` 按子系统组织的 18 个同构透传 service），它同样履行了编排层的核心职责——model 错误码 → MailMan 体系的翻译与统一返回包装，并为未来真正的编排逻辑预留挂点。此类透传 service 应保留，不得因"看起来空心"而被删除或内联回 handler。
+
 ### model/ diesel 数据层
 
 每张表对应一个文件，内部固定三个结构体 + 查询/更新 `impl` 块，参考 `watchman-backend/src/model/user.rs`：

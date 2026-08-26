@@ -80,6 +80,8 @@ One file per resource (e.g. `account_manage.rs`, `group_manage.rs`), exported un
 
 One-to-one with api (`account_manage.rs` → `account_service.rs`). Functions return `Result<MailManOk<...>, MailManErr<...>>`, which the handler converts into an HTTP response. See `login()` in `watchman-backend/src/service/account_service.rs`.
 
+**A pass-through orchestration layer is also a valid form.** The orchestration layer does not always have to contain multi-step orchestration: when a service performs a single model call and then translates the model error code into a `MailManErr` with a uniformly wrapped return value (e.g. the 18 isomorphic pass-through services in `cmdb-backend`, organized per subsystem), it still fulfills the core duty of the orchestration layer — translating model error codes into the MailMan system and wrapping the uniform response — while reserving a hook for future real orchestration logic. Such pass-through services must be kept; they must not be deleted or inlined back into handlers just because they "look hollow".
+
 ### The model/ Diesel Data Layer
 
 One file per table, containing a fixed set of three structs plus query/update `impl` blocks, as in `watchman-backend/src/model/user.rs`:
