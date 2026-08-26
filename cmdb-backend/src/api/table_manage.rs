@@ -38,34 +38,35 @@ pub async fn query_table(
 
     match table_name {
         // === cmdb native tables ===
-        "lighthouse" => match service::lighthouse::instance_service::get_all(query, &pool) {
+        "lighthouse" => match service::lighthouse::instance_service::get_all(query, &pool).await {
             Ok(data) => Ok(HttpResponse::Ok().json(data)),
             Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
         },
         "cloudserver_instance" => {
-            match service::cloudserver::instance_service::get_all(query, &pool) {
+            match service::cloudserver::instance_service::get_all(query, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
         }
-        "logservice_topic" => match service::logservice::topic_service::get_all(query, &pool) {
+        "logservice_topic" => match service::logservice::topic_service::get_all(query, &pool).await
+        {
             Ok(data) => Ok(HttpResponse::Ok().json(data)),
             Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
         },
-        "cloud_account" => match service::km::cloud_account_service::get_all(query, &pool) {
+        "cloud_account" => match service::km::cloud_account_service::get_all(query, &pool).await {
             Ok(data) => Ok(HttpResponse::Ok().json(data)),
             Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
         },
-        "job_log" => match service::km::job_log_service::get_all(query, &pool) {
+        "job_log" => match service::km::job_log_service::get_all(query, &pool).await {
             Ok(data) => Ok(HttpResponse::Ok().json(data)),
             Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
         },
-        "cron_job" => match service::km::cron_job_service::get_all(query, &pool) {
+        "cron_job" => match service::km::cron_job_service::get_all(query, &pool).await {
             Ok(data) => Ok(HttpResponse::Ok().json(data)),
             Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
         },
         "cloudstorage_bucket" => {
-            match service::cloudstorage::bucket_service::get_all(query, &pool) {
+            match service::cloudstorage::bucket_service::get_all(query, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -73,71 +74,75 @@ pub async fn query_table(
 
         // === watchman tables (feature-gated) ===
         #[cfg(feature = "full-schema")]
-        "access_table" => match service::watchman::access_service::get_all(query, &pool) {
+        "access_table" => match service::watchman::access_service::get_all(query, &pool).await {
             Ok(data) => Ok(HttpResponse::Ok().json(data)),
             Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
         },
         #[cfg(feature = "full-schema")]
-        "group_table" => match service::watchman::group_service::get_all(query, &pool) {
+        "group_table" => match service::watchman::group_service::get_all(query, &pool).await {
             Ok(data) => Ok(HttpResponse::Ok().json(data)),
             Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
         },
         #[cfg(feature = "full-schema")]
-        "service_table" => match service::watchman::service_service::get_all(query, &pool) {
+        "service_table" => match service::watchman::service_service::get_all(query, &pool).await {
             Ok(data) => Ok(HttpResponse::Ok().json(data)),
             Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
         },
         #[cfg(feature = "full-schema")]
-        "subsystem_table" => match service::watchman::subsystem_service::get_all(query, &pool) {
+        "subsystem_table" => {
+            match service::watchman::subsystem_service::get_all(query, &pool).await {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
+            }
+        }
+        #[cfg(feature = "full-schema")]
+        "token_table" => match service::watchman::token_service::get_all(query, &pool).await {
             Ok(data) => Ok(HttpResponse::Ok().json(data)),
             Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
         },
         #[cfg(feature = "full-schema")]
-        "token_table" => match service::watchman::token_service::get_all(query, &pool) {
+        "user_table" => match service::watchman::user_service::get_all(query, &pool).await {
             Ok(data) => Ok(HttpResponse::Ok().json(data)),
             Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
         },
         #[cfg(feature = "full-schema")]
-        "user_table" => match service::watchman::user_service::get_all(query, &pool) {
-            Ok(data) => Ok(HttpResponse::Ok().json(data)),
-            Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
-        },
-        #[cfg(feature = "full-schema")]
-        "webhook_table" => match service::watchman::webhook_service::get_all(query, &pool) {
+        "webhook_table" => match service::watchman::webhook_service::get_all(query, &pool).await {
             Ok(data) => Ok(HttpResponse::Ok().json(data)),
             Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
         },
 
         // === yell tables (feature-gated) ===
         #[cfg(feature = "full-schema")]
-        "channel_configs" => match service::yell::channel_config_service::get_all(query, &pool) {
-            Ok(data) => Ok(HttpResponse::Ok().json(data)),
-            Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
-        },
+        "channel_configs" => {
+            match service::yell::channel_config_service::get_all(query, &pool).await {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
+            }
+        }
         #[cfg(feature = "full-schema")]
         "notification_records" => {
-            match service::yell::notification_record_service::get_all(query, &pool) {
+            match service::yell::notification_record_service::get_all(query, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
         }
         #[cfg(feature = "full-schema")]
         "notification_templates" => {
-            match service::yell::notification_template_service::get_all(query, &pool) {
+            match service::yell::notification_template_service::get_all(query, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
         }
         #[cfg(feature = "full-schema")]
         "notification_groups" => {
-            match service::yell::notification_group_service::get_all(query, &pool) {
+            match service::yell::notification_group_service::get_all(query, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
         }
         #[cfg(feature = "full-schema")]
         "notification_group_members" => {
-            match service::yell::notification_group_member_service::get_all(query, &pool) {
+            match service::yell::notification_group_member_service::get_all(query, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -189,7 +194,7 @@ pub async fn new_table(
                     1,
                 ))
             })?;
-            match service::lighthouse::instance_service::new_table(new, &pool) {
+            match service::lighthouse::instance_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -204,7 +209,7 @@ pub async fn new_table(
                         1,
                     ))
                 })?;
-            match service::cloudserver::instance_service::new_table(new, &pool) {
+            match service::cloudserver::instance_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -219,7 +224,7 @@ pub async fn new_table(
                         1,
                     ))
                 })?;
-            match service::logservice::topic_service::new_table(new, &pool) {
+            match service::logservice::topic_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -233,7 +238,7 @@ pub async fn new_table(
                     1,
                 ))
             })?;
-            match service::km::cloud_account_service::new_table(new, &pool) {
+            match service::km::cloud_account_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -247,7 +252,7 @@ pub async fn new_table(
                     1,
                 ))
             })?;
-            match service::km::job_log_service::new_table(new, &pool) {
+            match service::km::job_log_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -261,7 +266,7 @@ pub async fn new_table(
                     1,
                 ))
             })?;
-            match service::km::cron_job_service::new_table(new, &pool) {
+            match service::km::cron_job_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -275,7 +280,7 @@ pub async fn new_table(
                     1,
                 ))
             })?;
-            match service::cloudstorage::bucket_service::new_table(new, &pool) {
+            match service::cloudstorage::bucket_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -292,7 +297,7 @@ pub async fn new_table(
                     1,
                 ))
             })?;
-            match service::watchman::access_service::new_table(new, &pool) {
+            match service::watchman::access_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -307,7 +312,7 @@ pub async fn new_table(
                     1,
                 ))
             })?;
-            match service::watchman::group_service::new_table(new, &pool) {
+            match service::watchman::group_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -322,7 +327,7 @@ pub async fn new_table(
                     1,
                 ))
             })?;
-            match service::watchman::service_service::new_table(new, &pool) {
+            match service::watchman::service_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -337,7 +342,7 @@ pub async fn new_table(
                     1,
                 ))
             })?;
-            match service::watchman::subsystem_service::new_table(new, &pool) {
+            match service::watchman::subsystem_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -352,7 +357,7 @@ pub async fn new_table(
                     1,
                 ))
             })?;
-            match service::watchman::token_service::new_table(new, &pool) {
+            match service::watchman::token_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -367,7 +372,7 @@ pub async fn new_table(
                     1,
                 ))
             })?;
-            match service::watchman::user_service::new_table(new, &pool) {
+            match service::watchman::user_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -382,7 +387,7 @@ pub async fn new_table(
                     1,
                 ))
             })?;
-            match service::watchman::webhook_service::new_table(new, &pool) {
+            match service::watchman::webhook_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -400,7 +405,7 @@ pub async fn new_table(
                         1,
                     ))
                 })?;
-            match service::yell::channel_config_service::new_table(new, &pool) {
+            match service::yell::channel_config_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -416,7 +421,7 @@ pub async fn new_table(
                         1,
                     ))
                 })?;
-            match service::yell::notification_record_service::new_table(new, &pool) {
+            match service::yell::notification_record_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -432,7 +437,7 @@ pub async fn new_table(
                     1,
                 ))
             })?;
-            match service::yell::notification_template_service::new_table(new, &pool) {
+            match service::yell::notification_template_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -448,7 +453,7 @@ pub async fn new_table(
                         1,
                     ))
                 })?;
-            match service::yell::notification_group_service::new_table(new, &pool) {
+            match service::yell::notification_group_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -465,7 +470,7 @@ pub async fn new_table(
                             1,
                         ))
                     })?;
-            match service::yell::notification_group_member_service::new_table(new, &pool) {
+            match service::yell::notification_group_member_service::new_table(new, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -518,7 +523,7 @@ pub async fn update_table(
                         1,
                     ))
                 })?;
-            match service::lighthouse::instance_service::update_table(update, &pool) {
+            match service::lighthouse::instance_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -533,7 +538,7 @@ pub async fn update_table(
                         1,
                     ))
                 })?;
-            match service::cloudserver::instance_service::update_table(update, &pool) {
+            match service::cloudserver::instance_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -548,7 +553,7 @@ pub async fn update_table(
                         1,
                     ))
                 })?;
-            match service::logservice::topic_service::update_table(update, &pool) {
+            match service::logservice::topic_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -563,7 +568,7 @@ pub async fn update_table(
                         1,
                     ))
                 })?;
-            match service::km::cloud_account_service::update_table(update, &pool) {
+            match service::km::cloud_account_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -577,7 +582,7 @@ pub async fn update_table(
                     1,
                 ))
             })?;
-            match service::km::job_log_service::update_table(update, &pool) {
+            match service::km::job_log_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -591,7 +596,7 @@ pub async fn update_table(
                     1,
                 ))
             })?;
-            match service::km::cron_job_service::update_table(update, &pool) {
+            match service::km::cron_job_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -606,7 +611,7 @@ pub async fn update_table(
                         1,
                     ))
                 })?;
-            match service::cloudstorage::bucket_service::update_table(update, &pool) {
+            match service::cloudstorage::bucket_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -623,7 +628,7 @@ pub async fn update_table(
                     1,
                 ))
             })?;
-            match service::watchman::access_service::update_table(update, &pool) {
+            match service::watchman::access_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -638,7 +643,7 @@ pub async fn update_table(
                     1,
                 ))
             })?;
-            match service::watchman::group_service::update_table(update, &pool) {
+            match service::watchman::group_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -653,7 +658,7 @@ pub async fn update_table(
                     1,
                 ))
             })?;
-            match service::watchman::service_service::update_table(update, &pool) {
+            match service::watchman::service_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -669,7 +674,7 @@ pub async fn update_table(
                         1,
                     ))
                 })?;
-            match service::watchman::subsystem_service::update_table(update, &pool) {
+            match service::watchman::subsystem_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -684,7 +689,7 @@ pub async fn update_table(
                     1,
                 ))
             })?;
-            match service::watchman::token_service::update_table(update, &pool) {
+            match service::watchman::token_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -699,7 +704,7 @@ pub async fn update_table(
                     1,
                 ))
             })?;
-            match service::watchman::user_service::update_table(update, &pool) {
+            match service::watchman::user_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -714,7 +719,7 @@ pub async fn update_table(
                     1,
                 ))
             })?;
-            match service::watchman::webhook_service::update_table(update, &pool) {
+            match service::watchman::webhook_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -732,7 +737,7 @@ pub async fn update_table(
                         1,
                     ))
                 })?;
-            match service::yell::channel_config_service::update_table(update, &pool) {
+            match service::yell::channel_config_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -748,7 +753,7 @@ pub async fn update_table(
                         1,
                     ))
                 })?;
-            match service::yell::notification_record_service::update_table(update, &pool) {
+            match service::yell::notification_record_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -765,7 +770,7 @@ pub async fn update_table(
                             1,
                         ))
                     })?;
-            match service::yell::notification_template_service::update_table(update, &pool) {
+            match service::yell::notification_template_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -781,7 +786,7 @@ pub async fn update_table(
                     1,
                 ))
             })?;
-            match service::yell::notification_group_service::update_table(update, &pool) {
+            match service::yell::notification_group_service::update_table(update, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -800,7 +805,9 @@ pub async fn update_table(
                         1,
                     ))
                 })?;
-            match service::yell::notification_group_member_service::update_table(update, &pool) {
+            match service::yell::notification_group_member_service::update_table(update, &pool)
+                .await
+            {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -850,35 +857,44 @@ pub async fn delete_table(
 
     match table_name {
         // === cmdb native tables ===
-        "lighthouse" => match service::lighthouse::instance_service::delete_table(id, &pool) {
-            Ok(data) => Ok(HttpResponse::Ok().json(data)),
-            Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
-        },
-        "cloudserver_instance" => {
-            match service::cloudserver::instance_service::delete_table(id, &pool) {
+        "lighthouse" => {
+            match service::lighthouse::instance_service::delete_table(id, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
         }
-        "logservice_topic" => match service::logservice::topic_service::delete_table(id, &pool) {
-            Ok(data) => Ok(HttpResponse::Ok().json(data)),
-            Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
-        },
-        "cloud_account" => match service::km::cloud_account_service::delete_table(id as i32, &pool)
-        {
-            Ok(data) => Ok(HttpResponse::Ok().json(data)),
-            Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
-        },
-        "job_log" => match service::km::job_log_service::delete_table(id.to_string(), &pool) {
-            Ok(data) => Ok(HttpResponse::Ok().json(data)),
-            Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
-        },
-        "cron_job" => match service::km::cron_job_service::delete_table(id.to_string(), &pool) {
-            Ok(data) => Ok(HttpResponse::Ok().json(data)),
-            Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
-        },
+        "cloudserver_instance" => {
+            match service::cloudserver::instance_service::delete_table(id, &pool).await {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
+            }
+        }
+        "logservice_topic" => {
+            match service::logservice::topic_service::delete_table(id, &pool).await {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
+            }
+        }
+        "cloud_account" => {
+            match service::km::cloud_account_service::delete_table(id as i32, &pool).await {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
+            }
+        }
+        "job_log" => {
+            match service::km::job_log_service::delete_table(id.to_string(), &pool).await {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
+            }
+        }
+        "cron_job" => {
+            match service::km::cron_job_service::delete_table(id.to_string(), &pool).await {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
+            }
+        }
         "cloudstorage_bucket" => {
-            match service::cloudstorage::bucket_service::delete_table(id, &pool) {
+            match service::cloudstorage::bucket_service::delete_table(id, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
@@ -886,79 +902,89 @@ pub async fn delete_table(
 
         // === watchman tables (feature-gated) ===
         #[cfg(feature = "full-schema")]
-        "access_table" => match service::watchman::access_service::delete_table(id as i32, &pool) {
-            Ok(data) => Ok(HttpResponse::Ok().json(data)),
-            Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
-        },
+        "access_table" => {
+            match service::watchman::access_service::delete_table(id as i32, &pool).await {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
+            }
+        }
         #[cfg(feature = "full-schema")]
-        "group_table" => match service::watchman::group_service::delete_table(id as i32, &pool) {
-            Ok(data) => Ok(HttpResponse::Ok().json(data)),
-            Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
-        },
+        "group_table" => {
+            match service::watchman::group_service::delete_table(id as i32, &pool).await {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
+            }
+        }
         #[cfg(feature = "full-schema")]
-        "service_table" => match service::watchman::service_service::delete_table(id as i32, &pool)
-        {
-            Ok(data) => Ok(HttpResponse::Ok().json(data)),
-            Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
-        },
+        "service_table" => {
+            match service::watchman::service_service::delete_table(id as i32, &pool).await {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
+            }
+        }
         #[cfg(feature = "full-schema")]
         "subsystem_table" => {
-            match service::watchman::subsystem_service::delete_table(id as i32, &pool) {
+            match service::watchman::subsystem_service::delete_table(id as i32, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
         }
         #[cfg(feature = "full-schema")]
         "token_table" => {
-            match service::watchman::token_service::delete_table(id.to_string(), &pool) {
+            match service::watchman::token_service::delete_table(id.to_string(), &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
         }
         #[cfg(feature = "full-schema")]
-        "user_table" => match service::watchman::user_service::delete_table(id as i32, &pool) {
-            Ok(data) => Ok(HttpResponse::Ok().json(data)),
-            Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
-        },
-        #[cfg(feature = "full-schema")]
-        "webhook_table" => match service::watchman::webhook_service::delete_table(id as i32, &pool)
+        "user_table" => match service::watchman::user_service::delete_table(id as i32, &pool).await
         {
             Ok(data) => Ok(HttpResponse::Ok().json(data)),
             Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
         },
+        #[cfg(feature = "full-schema")]
+        "webhook_table" => {
+            match service::watchman::webhook_service::delete_table(id as i32, &pool).await {
+                Ok(data) => Ok(HttpResponse::Ok().json(data)),
+                Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
+            }
+        }
 
         // === yell tables (feature-gated) ===
         #[cfg(feature = "full-schema")]
         "channel_configs" => {
-            match service::yell::channel_config_service::delete_table(id as i32, &pool) {
+            match service::yell::channel_config_service::delete_table(id as i32, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
         }
         #[cfg(feature = "full-schema")]
         "notification_records" => {
-            match service::yell::notification_record_service::delete_table(id as i32, &pool) {
+            match service::yell::notification_record_service::delete_table(id as i32, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
         }
         #[cfg(feature = "full-schema")]
         "notification_templates" => {
-            match service::yell::notification_template_service::delete_table(id as i32, &pool) {
+            match service::yell::notification_template_service::delete_table(id as i32, &pool).await
+            {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
         }
         #[cfg(feature = "full-schema")]
         "notification_groups" => {
-            match service::yell::notification_group_service::delete_table(id as i32, &pool) {
+            match service::yell::notification_group_service::delete_table(id as i32, &pool).await {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }
         }
         #[cfg(feature = "full-schema")]
         "notification_group_members" => {
-            match service::yell::notification_group_member_service::delete_table(id as i32, &pool) {
+            match service::yell::notification_group_member_service::delete_table(id as i32, &pool)
+                .await
+            {
                 Ok(data) => Ok(HttpResponse::Ok().json(data)),
                 Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
             }

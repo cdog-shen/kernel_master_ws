@@ -9,7 +9,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 
 use crate::model::km::cron_job::*;
 
-pub fn get_all<'a>(
+pub async fn get_all<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<Value>>, MailManErr<'a, String>> {
@@ -32,7 +32,7 @@ pub fn get_all<'a>(
     }
 }
 
-pub fn new_table<'a>(
+pub async fn new_table<'a>(
     data: CronJobInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {
@@ -59,7 +59,7 @@ pub fn new_table<'a>(
     }
 }
 
-pub fn update_table<'a>(
+pub async fn update_table<'a>(
     data: CronJobInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {
@@ -86,7 +86,7 @@ pub fn update_table<'a>(
     }
 }
 
-pub fn delete_table<'a>(
+pub async fn delete_table<'a>(
     id: String,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {

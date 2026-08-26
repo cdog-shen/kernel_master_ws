@@ -10,7 +10,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 use crate::model::logservice::topic::*;
 
 // get all
-pub fn get_all<'a>(
+pub async fn get_all<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<Value>>, MailManErr<'a, String>> {
@@ -34,7 +34,7 @@ pub fn get_all<'a>(
 }
 
 // create new
-pub fn new_table<'a>(
+pub async fn new_table<'a>(
     data: LogServiceTopicInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {
@@ -62,7 +62,7 @@ pub fn new_table<'a>(
 }
 
 // update
-pub fn update_table<'a>(
+pub async fn update_table<'a>(
     data: LogServiceTopicInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {
@@ -90,7 +90,7 @@ pub fn update_table<'a>(
 }
 
 // delete
-pub fn delete_table<'a>(
+pub async fn delete_table<'a>(
     _id: i64,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {

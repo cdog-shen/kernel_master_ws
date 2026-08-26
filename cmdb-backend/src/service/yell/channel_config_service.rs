@@ -9,7 +9,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 
 use crate::model::yell::channel_config::*;
 
-pub fn get_all<'a>(
+pub async fn get_all<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<Value>>, MailManErr<'a, String>> {
@@ -37,7 +37,7 @@ pub fn get_all<'a>(
 }
 
 // create new channel_config info
-pub fn new_table<'a>(
+pub async fn new_table<'a>(
     data: ChannelConfigInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {
@@ -65,7 +65,7 @@ pub fn new_table<'a>(
 }
 
 // update channel_config info
-pub fn update_table<'a>(
+pub async fn update_table<'a>(
     data: ChannelConfigInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {
@@ -93,7 +93,7 @@ pub fn update_table<'a>(
 }
 
 // delete channel_config info
-pub fn delete_table<'a>(
+pub async fn delete_table<'a>(
     id: i32,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {
