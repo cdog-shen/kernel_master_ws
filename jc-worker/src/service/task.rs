@@ -2,6 +2,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
+use share_lib::infrastructure::process_runner;
 
 use crate::config::worker;
 use crate::service::json_rpc::update_log;
@@ -63,46 +64,43 @@ pub async fn execute<'a>(payload: &[u8]) -> Result<MailManOk<'a, String>, MailMa
     }
     script_path.push_str(&format!("{script_name}.py"));
 
-    let output =
-        std::process::Command::new(worker::GLOBAL_CONFIG.read().unwrap().python_path.clone())
-            .arg(script_path)
-            .arg(payload.params.to_string())
-            .output();
+    let params_str = payload.params.to_string();
+    let output = process_runner::run(
+        &worker::GLOBAL_CONFIG.read().unwrap().python_path,
+        &[script_path.as_str(), params_str.as_str()],
+        None,
+    );
 
-    let res = match output {
-        Ok(ref output) => {
+    let res = match &output {
+        Ok(output) => {
             if !output.stdout.is_empty() {
-                let res_data =
-                    String::from_utf8(output.stdout.clone()).expect("Error: stdout is not utf8");
                 // log info
                 log::info!(
                     "Task {} with params {} Info: {}",
                     script_name,
                     payload.params,
-                    res_data
+                    output.stdout
                 );
-                Ok(res_data)
+                Ok(output.stdout.clone())
             } else if !output.stderr.is_empty() {
-                let err_msg =
-                    String::from_utf8(output.stderr.clone()).expect("Error: stderr is not utf8");
                 // log error
                 log::error!(
                     "Task {} with params {} Error: {}",
                     script_name,
                     payload.params,
-                    err_msg
+                    output.stderr
                 );
-                Ok(err_msg)
+                Ok(output.stderr.clone())
             } else {
                 log::error!("Task {script_name} with params {auth} Nothing in stdout",);
                 Err("Nothing in stdout".to_string())
             }
         }
-        Err(ref e) => Err(format!("Error: {e}")),
+        Err(e) => Err(format!("Error: {e:?}")),
     };
 
     let (result, status) = match &output {
-        Ok(o) if o.status.success() => (res.clone().unwrap_or_else(|e| e), 2),
+        Ok(o) if o.exit_code == 0 => (res.clone().unwrap_or_else(|e| e), 2),
         _ => {
             MailManErr::new(500, "task execute Error", Some(res.clone()), 1);
             (
