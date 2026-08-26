@@ -56,9 +56,9 @@
 - [x] `resolve_recipients` 的 alias 查库从 handler 移到编排层（api/notify.rs:34-42）
 - [x] router 直接查库（ChannelConfig/模板）改为由编排层注入或经 service 获取
   （notification_router.rs:233-260, 138-146）
-- [ ] 渠道 [查配置→建记录→外呼→更新记录] 小编排在 5 渠道 × 2 方法中重复，
+- [x] 渠道 [查配置→建记录→外呼→更新记录] 小编排在 5 渠道 × 2 方法中重复，
   收敛为 channel.rs 中的统一流程骨架，渠道只实现"外呼"本身
-- [ ] 模板 render 业务逻辑从 model 移出（model/notification_template.rs:185-237）
+- [x] 模板 render 业务逻辑从 model 移出（model/notification_template.rs:185-237）
 - [x] 处理 wecom 空目录死代码（实现或删除）
 
 ### cloud-api
