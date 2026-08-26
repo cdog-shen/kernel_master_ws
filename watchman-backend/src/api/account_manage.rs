@@ -66,7 +66,7 @@ pub async fn signup(
                     1,
                 )),
             )?),
-            passwd: Some(user_info.username.clone().ok_or(
+            passwd: Some(user_info.passwd.clone().ok_or(
                 MailManErrResponser::mapping_from_mme(MailManErr::new(
                     400,
                     "Bad Request",
