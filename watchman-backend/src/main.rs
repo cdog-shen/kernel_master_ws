@@ -89,8 +89,6 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             // wrap default logger
             .wrap(actix_web::middleware::Logger::default())
-            // wrap Authentication
-            // .wrap(crate::middleware::auth_middleware::Authentication)
             .wrap_fn(|req, srv| srv.call(req).map(|res| res))
             .configure(config::app::config_services)
     })
