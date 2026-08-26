@@ -92,6 +92,10 @@ pub static GLOBAL_CONFIG: Lazy<RwLock<AllConfigs>> = Lazy::new(|| RwLock::new(Al
 
 表定义集中在 `model/schema.rs`（diesel CLI 生成），禁止手写。
 
+### 数据库迁移（决策）
+
+迁移文件放在各 crate 的 `migrations/` 目录，每个迁移必须同时提供 `up.sql` 与 `down.sql`。**迁移一律使用 diesel CLI 手工执行**（`diesel migration run`），服务启动时不自动执行迁移。理由：多个服务共享同一个 PostgreSQL 实例（CMDB 还托管其他子系统的表），运行时自动迁移存在并发与权限风险。`diesel_migrations` 依赖虽已声明但当前未使用，仍予保留——作为将来 embed 迁移的预备，且移除它不改变任何行为。
+
 ### 清洗层的职责划分
 
 清洗层指 api handler 及其同层辅助模块。经评估确定以下两条正式惯例：
