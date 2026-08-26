@@ -19,7 +19,7 @@ pub async fn get_all(
     query: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match cron_job::get_all(query.into_inner(), &pool) {
+    match cron_job::get_all(query.into_inner(), &pool).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -125,7 +125,7 @@ pub async fn new(
         comment: Some(info.comment.clone().unwrap_or(String::new())),
     };
 
-    match cron_job::new(_corn, _log, &pool) {
+    match cron_job::new(_corn, _log, &pool).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -140,7 +140,7 @@ pub async fn update(
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
-    match cron_job::update(info, &pool) {
+    match cron_job::update(info, &pool).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -173,7 +173,7 @@ pub async fn delete(
         })?
         .to_string();
 
-    match cron_job::delete(id, &pool) {
+    match cron_job::delete(id, &pool).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -184,7 +184,7 @@ pub async fn refresh(
     // data: web::Json<Map<String, Value>>,
     flush_flag: web::Data<Mutex<bool>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match cron_job::refresh(&flush_flag) {
+    match cron_job::refresh(&flush_flag).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

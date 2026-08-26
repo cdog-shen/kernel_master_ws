@@ -16,7 +16,7 @@ pub async fn get_all(
     query: web::Json<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match job_log::get_all(query.into_inner(), &pool) {
+    match job_log::get_all(query.into_inner(), &pool).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -47,7 +47,7 @@ pub async fn update(
         MailManErrResponser::mapping_from_mme(MailManErr::new(400, "Bad Request", Some(e), 1))
     })?;
 
-    match job_log::update(info, &pool, &done_task_list) {
+    match job_log::update(info, &pool, &done_task_list).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }
@@ -80,7 +80,7 @@ pub async fn delete(
         })?
         .to_string();
 
-    match job_log::delete(id, &pool) {
+    match job_log::delete(id, &pool).await {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err_mm) => Err(MailManErrResponser::mapping_from_mme(err_mm)),
     }

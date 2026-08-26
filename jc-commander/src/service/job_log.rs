@@ -12,7 +12,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 use crate::model::job_log::*;
 
 // get job by id
-pub fn get_by_id<'a>(
+pub async fn get_by_id<'a>(
     id: String,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, JobLogModel>, MailManErr<'a, String>> {
@@ -26,7 +26,7 @@ pub fn get_by_id<'a>(
 }
 
 // get all job logs
-pub fn get_all<'a>(
+pub async fn get_all<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<JobLogModel>>, MailManErr<'a, String>> {
@@ -40,7 +40,7 @@ pub fn get_all<'a>(
 }
 
 // create new job log
-pub fn new<'a>(
+pub async fn new<'a>(
     data: JobLogInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {
@@ -58,7 +58,7 @@ pub fn new<'a>(
 }
 
 // update job log
-pub fn update<'a>(
+pub async fn update<'a>(
     data: JobLogInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     done_task_list: &web::Data<SegQueue<Uuid>>,
@@ -87,7 +87,7 @@ pub fn update<'a>(
 }
 
 // delete job log
-pub fn delete<'a>(
+pub async fn delete<'a>(
     id: String,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Value>, MailManErr<'a, String>> {

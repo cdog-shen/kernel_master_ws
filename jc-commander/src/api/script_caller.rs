@@ -63,7 +63,7 @@ pub async fn call_sync(
         MailManErrResponser::mapping_from_mme(MailManErr::new(500, "Server Error", Some(e), 1))
     })?;
 
-    match job_log::new(new_log, &db_pool) {
+    match job_log::new(new_log, &db_pool).await {
         Ok(_) => (),
         Err(e) => return Err(MailManErrResponser::mapping_from_mme(e)),
     }
@@ -126,7 +126,7 @@ pub async fn call_sync(
         tokio::time::sleep(std::time::Duration::from_millis(5)).await;
     }
 
-    match job_log::get_by_id(uuid.to_string().clone(), &db_pool) {
+    match job_log::get_by_id(uuid.to_string().clone(), &db_pool).await {
         Ok(MailManOk {
             code: _,
             key: _,
@@ -205,7 +205,7 @@ pub async fn call_async(
         MailManErrResponser::mapping_from_mme(MailManErr::new(500, "Server Error", Some(e), 1))
     })?;
 
-    match job_log::new(new_log, &db_pool) {
+    match job_log::new(new_log, &db_pool).await {
         Ok(_) => (),
         Err(e) => return Err(MailManErrResponser::mapping_from_mme(e)),
     }

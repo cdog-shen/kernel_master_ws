@@ -15,7 +15,7 @@ use crate::model::{
 };
 
 // get cron by filter
-pub fn get_all<'a>(
+pub async fn get_all<'a>(
     filter: Map<String, Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, Vec<CronJobModel>>, MailManErr<'a, String>> {
@@ -29,7 +29,7 @@ pub fn get_all<'a>(
 }
 
 // new cron job
-pub fn new<'a>(
+pub async fn new<'a>(
     cron: CronJobInfo,
     log: JobLogInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
@@ -72,7 +72,7 @@ pub fn new<'a>(
 }
 
 // update cron job
-pub fn update<'a>(
+pub async fn update<'a>(
     cron: CronJobInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -90,7 +90,7 @@ pub fn update<'a>(
 }
 
 // delete job log
-pub fn delete<'a>(
+pub async fn delete<'a>(
     id: String,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
@@ -108,7 +108,7 @@ pub fn delete<'a>(
 }
 
 // refresh TimeWheel scheduler
-pub fn refresh(
+pub async fn refresh(
     flush_flag: &web::Data<Mutex<bool>>,
 ) -> Result<MailManOk<'static, Value>, MailManErr<'static, String>> {
     let mut i = flush_flag.lock().unwrap();
