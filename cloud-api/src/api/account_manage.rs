@@ -7,14 +7,19 @@ use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
 use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{model::cloud_account::CloudAccountInfo, service::account_service};
+use crate::{api::filter, model::cloud_account::CloudAccountInfo, service::account_service};
 
 // GET /api/account_db/get
 pub async fn get_all(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match account_service::get_all(query.into_inner(), &pool).await {
+    match account_service::get_all(
+        filter::clean_cloud_account_filter(query.into_inner()),
+        &pool,
+    )
+    .await
+    {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
