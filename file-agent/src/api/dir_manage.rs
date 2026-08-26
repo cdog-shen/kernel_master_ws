@@ -3,6 +3,7 @@ use serde_json::{Map, Value};
 use std::path::PathBuf;
 // use uuid::Uuid;
 
+use share_lib::data_structure::MailManErr;
 use share_lib::err_mapping::MailManErrResponser;
 
 use crate::service::dir_manage;
@@ -13,7 +14,14 @@ pub async fn check(
     root: web::Data<PathBuf>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     let data = data.into_inner();
-    let file_name = data.get("file").unwrap().as_str().unwrap();
+    let Some(file_name) = data.get("file").and_then(Value::as_str) else {
+        return Err(MailManErrResponser::mapping_from_mme(MailManErr::new(
+            400,
+            "Bad request",
+            Some("missing or invalid param: file".into()),
+            1,
+        )));
+    };
     // let token = data.get("token").unwrap().as_str().unwrap();
     let root = root.into_inner();
     let file_full_path = root.join(file_name);
@@ -30,7 +38,14 @@ pub async fn list(
     root: web::Data<PathBuf>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     let data = data.into_inner();
-    let file_name = data.get("file").unwrap().as_str().unwrap();
+    let Some(file_name) = data.get("file").and_then(Value::as_str) else {
+        return Err(MailManErrResponser::mapping_from_mme(MailManErr::new(
+            400,
+            "Bad request",
+            Some("missing or invalid param: file".into()),
+            1,
+        )));
+    };
     // let token = data.get("token").unwrap().as_str().unwrap();
     let root = root.into_inner();
     let file_full_path = root.join(file_name);
