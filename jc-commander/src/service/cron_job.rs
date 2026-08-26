@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use actix_web::web;
 use diesel::{
-    PgConnection,
+    Connection, PgConnection,
     r2d2::{ConnectionManager, Pool},
 };
 use serde_json::{Map, Value};
@@ -29,42 +29,50 @@ pub async fn get_all<'a>(
 }
 
 // new cron job
+//
+// cron_job 与 job_log 双表写入包在同一事务中，任一失败即整体回滚
 pub async fn new<'a>(
     cron: CronJobInfo,
     log: JobLogInfo,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, String>, MailManErr<'a, String>> {
-    match CronJobModel::new_cron(&cron, &mut pool.get().unwrap()) {
-        Ok(msg) => {
-            MailManOk::new(
-                200,
-                "Service: New Cron",
-                Some(format!("Line changed: {msg}")),
-            );
-        }
-        Err(msg) => match msg.0 {
-            1 => return Err(MailManErr::new(400, "Service: New Cron", Some(msg.1), 1)),
-            _ => return Err(MailManErr::new(500, "Service: New Cron", Some(msg.1), 1)),
-        },
-    }
+    let mut conn = pool.get().unwrap();
 
-    match JobLogModel::new_log(&log, &mut pool.get().unwrap()) {
+    // model 层错误是 (u8, String)，事务闭包内用 RollbackTransaction 携带回滚信号，
+    // 真实错误经 captured 带出
+    let mut captured: Option<(u8, String)> = None;
+    let tx_result = conn.transaction::<usize, diesel::result::Error, _>(|tx| {
+        match CronJobModel::new_cron(&cron, tx) {
+            Ok(cron_lines) => match JobLogModel::new_log(&log, tx) {
+                Ok(log_lines) => Ok(cron_lines + log_lines),
+                Err(e) => {
+                    captured = Some(e);
+                    Err(diesel::result::Error::RollbackTransaction)
+                }
+            },
+            Err(e) => {
+                captured = Some(e);
+                Err(diesel::result::Error::RollbackTransaction)
+            }
+        }
+    });
+
+    match tx_result {
         Ok(msg) => Ok(MailManOk::new(
             200,
             "Service: New Cron",
             Some(format!("Line changed: {msg}")),
         )),
-        Err(msg) => match msg.0 {
-            1 => Err(MailManErr::new(
-                400,
-                "Service: New Cron (log)",
-                Some(msg.1),
-                1,
-            )),
-            _ => Err(MailManErr::new(
+        Err(e) => match captured {
+            Some(msg) => match msg.0 {
+                1 => Err(MailManErr::new(400, "Service: New Cron", Some(msg.1), 1)),
+                _ => Err(MailManErr::new(500, "Service: New Cron", Some(msg.1), 1)),
+            },
+            // 非业务错误的 diesel 事务失败（如连接中断）
+            None => Err(MailManErr::new(
                 500,
-                "Service: New Cron (log)",
-                Some(msg.1),
+                "Service: New Cron",
+                Some(format!("Transaction Error: {e}")),
                 1,
             )),
         },
