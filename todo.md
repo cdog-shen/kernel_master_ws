@@ -35,11 +35,11 @@
 
 ### jc-worker
 
-- [ ] 建立清洗层：MQ payload 定义强类型输入结构 + 反序列化校验，
+- [x] 建立清洗层：MQ payload 定义强类型输入结构 + 反序列化校验，
   杜绝链式 `unwrap`/`expect` 导致脏消息在 ack 前 panic（service/task.rs:10-36）
-- [ ] 进程执行收敛为原子模块（替代 task.rs:47-51 的内联 Command）
-- [ ] MQ 连接/消费/ack 从 main.rs 抽为独立模块（main.rs:42-198）
-- [ ] `json_rpc.rs` 更名/归位：它是 HTTP 外呼原子操作，不应叫 service
+- [x] 进程执行收敛为原子模块（替代 task.rs:47-51 的内联 Command）
+- [x] MQ 连接/消费/ack 从 main.rs 抽为独立模块（main.rs:42-198）
+- [x] `json_rpc.rs` 更名/归位：它是 HTTP 外呼原子操作，不应叫 service
 
 ### file-agent
 
