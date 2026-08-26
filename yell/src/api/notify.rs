@@ -9,14 +9,11 @@ use share_lib::err_mapping::MailManErrResponser;
 
 use crate::{
     model::{
-        channel_config::ChannelConfig,
-        notification_alias::NotificationAlias,
-        notification_record::NotificationRecord,
-        notification_template::{
-            NewNotificationTemplate, NotificationTemplate, UpdateNotificationTemplate,
-        },
+        notification_alias::{NewNotificationAlias, NotificationAlias, UpdateNotificationAlias},
+        notification_template::{NewNotificationTemplate, UpdateNotificationTemplate},
     },
     services::channel::NotificationRequest,
+    services::manage_service,
     services::notification_router::NotificationRouter,
 };
 
@@ -275,33 +272,9 @@ pub async fn get_templates(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match web::block({
-        let pool = pool.clone();
-        let filter = query.into_inner();
-        move || {
-            let mut conn = pool.get().unwrap();
-            NotificationTemplate::get_with_filter(&filter, &mut conn)
-        }
-    })
-    .await
-    {
-        Ok(Ok(data)) => Ok(HttpResponse::Ok().json(data)),
-        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to get templates",
-                Some(msg),
-                0,
-            ),
-        )),
-        Err(e) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to get templates",
-                Some(e.to_string()),
-                0,
-            ),
-        )),
+    match manage_service::get_templates(query.into_inner(), &pool).await {
+        Ok(data) => Ok(HttpResponse::Ok().json(data)),
+        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }
 
@@ -335,38 +308,15 @@ pub async fn create_template(
         webhook: req.get("webhook").cloned(),
     };
 
-    match web::block({
-        let pool = pool.clone();
-        move || {
-            let mut conn = pool.get().unwrap();
-            NotificationTemplate::create(&new_template, &mut conn)
-        }
-    })
-    .await
-    {
-        Ok(Ok(id)) => Ok(
+    match manage_service::create_template(new_template, &pool).await {
+        Ok(id) => Ok(
             HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
                 200,
                 "Template created",
                 Some(format!("Template ID: {}", id)),
             )),
         ),
-        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to create template",
-                Some(msg),
-                0,
-            ),
-        )),
-        Err(e) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to create template",
-                Some(e.to_string()),
-                0,
-            ),
-        )),
+        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }
 
@@ -404,38 +354,15 @@ pub async fn update_template(
         updated_at: Some(chrono::Local::now().naive_local()),
     };
 
-    match web::block({
-        let pool = pool.clone();
-        move || {
-            let mut conn = pool.get().unwrap();
-            NotificationTemplate::update(template_id, &update, &mut conn)
-        }
-    })
-    .await
-    {
-        Ok(Ok(num)) => Ok(
+    match manage_service::update_template(template_id, update, &pool).await {
+        Ok(num) => Ok(
             HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
                 200,
                 "Template updated",
                 Some(format!("Rows affected: {}", num)),
             )),
         ),
-        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to update template",
-                Some(msg),
-                0,
-            ),
-        )),
-        Err(e) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to update template",
-                Some(e.to_string()),
-                0,
-            ),
-        )),
+        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }
 
@@ -453,38 +380,15 @@ pub async fn delete_template(
         ))
     })? as i32;
 
-    match web::block({
-        let pool = pool.clone();
-        move || {
-            let mut conn = pool.get().unwrap();
-            NotificationTemplate::delete(template_id, &mut conn)
-        }
-    })
-    .await
-    {
-        Ok(Ok(num)) => Ok(
+    match manage_service::delete_template(template_id, &pool).await {
+        Ok(num) => Ok(
             HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
                 200,
                 "Template deleted",
                 Some(format!("Rows affected: {}", num)),
             )),
         ),
-        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to delete template",
-                Some(msg),
-                0,
-            ),
-        )),
-        Err(e) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to delete template",
-                Some(e.to_string()),
-                0,
-            ),
-        )),
+        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }
 
@@ -495,28 +399,9 @@ pub async fn get_records(
     query: web::Query<Map<String, Value>>,
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match web::block({
-        let pool = pool.clone();
-        let filter = query.into_inner();
-        move || {
-            let mut conn = pool.get().unwrap();
-            NotificationRecord::get_with_filter(&filter, &mut conn)
-        }
-    })
-    .await
-    {
-        Ok(Ok(data)) => Ok(HttpResponse::Ok().json(data)),
-        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(500, "Failed to get records", Some(msg), 0),
-        )),
-        Err(e) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to get records",
-                Some(e.to_string()),
-                0,
-            ),
-        )),
+    match manage_service::get_records(query.into_inner(), &pool).await {
+        Ok(data) => Ok(HttpResponse::Ok().json(data)),
+        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }
 
@@ -526,32 +411,9 @@ pub async fn get_records(
 pub async fn get_channel_configs(
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match web::block({
-        let pool = pool.clone();
-        move || {
-            let mut conn = pool.get().unwrap();
-            ChannelConfig::get_all(&mut conn)
-        }
-    })
-    .await
-    {
-        Ok(Ok(data)) => Ok(HttpResponse::Ok().json(data)),
-        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to get channel configs",
-                Some(msg),
-                0,
-            ),
-        )),
-        Err(e) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to get channel configs",
-                Some(e.to_string()),
-                0,
-            ),
-        )),
+    match manage_service::get_channel_configs(&pool).await {
+        Ok(data) => Ok(HttpResponse::Ok().json(data)),
+        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }
 
@@ -594,40 +456,23 @@ pub async fn update_channel_config(
         ))
     })?;
 
-    match web::block({
-        let pool = pool.clone();
-        let channel = channel_type.to_string();
-        let name = instance_name.to_string();
-        move || {
-            let mut conn = pool.get().unwrap();
-            ChannelConfig::upsert(&channel, &name, &config_json, is_enabled, &mut conn)
-        }
-    })
+    match manage_service::update_channel_config(
+        channel_type.to_string(),
+        instance_name.to_string(),
+        config_json,
+        is_enabled,
+        &pool,
+    )
     .await
     {
-        Ok(Ok(num)) => Ok(
+        Ok(num) => Ok(
             HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
                 200,
                 "Channel config updated",
                 Some(format!("Rows affected: {}", num)),
             )),
         ),
-        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to update channel config",
-                Some(msg),
-                0,
-            ),
-        )),
-        Err(e) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to update channel config",
-                Some(e.to_string()),
-                0,
-            ),
-        )),
+        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }
 
@@ -637,27 +482,9 @@ pub async fn update_channel_config(
 pub async fn get_aliases(
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
-    match web::block({
-        let pool = pool.clone();
-        move || {
-            let mut conn = pool.get().unwrap();
-            NotificationAlias::get_all(&mut conn)
-        }
-    })
-    .await
-    {
-        Ok(Ok(data)) => Ok(HttpResponse::Ok().json(data)),
-        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(500, "Failed to get aliases", Some(msg), 0),
-        )),
-        Err(e) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to get aliases",
-                Some(e.to_string()),
-                0,
-            ),
-        )),
+    match manage_service::get_aliases(&pool).await {
+        Ok(data) => Ok(HttpResponse::Ok().json(data)),
+        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }
 
@@ -684,7 +511,7 @@ pub async fn create_alias(
         ))
     })?;
 
-    let new_alias = crate::model::notification_alias::NewNotificationAlias {
+    let new_alias = NewNotificationAlias {
         name: name.to_string(),
         description: req
             .get("description")
@@ -694,33 +521,15 @@ pub async fn create_alias(
         is_enabled: req.get("is_enabled").and_then(|v| v.as_bool()),
     };
 
-    match web::block({
-        let pool = pool.clone();
-        move || {
-            let mut conn = pool.get().unwrap();
-            NotificationAlias::create(&new_alias, &mut conn)
-        }
-    })
-    .await
-    {
-        Ok(Ok(id)) => Ok(
+    match manage_service::create_alias(new_alias, &pool).await {
+        Ok(id) => Ok(
             HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
                 200,
                 "Alias created",
                 Some(format!("Alias ID: {}", id)),
             )),
         ),
-        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(500, "Failed to create alias", Some(msg), 0),
-        )),
-        Err(e) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to create alias",
-                Some(e.to_string()),
-                0,
-            ),
-        )),
+        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }
 
@@ -738,7 +547,7 @@ pub async fn update_alias(
         ))
     })? as i32;
 
-    let update = crate::model::notification_alias::UpdateNotificationAlias {
+    let update = UpdateNotificationAlias {
         name: req
             .get("name")
             .and_then(|v| v.as_str())
@@ -752,33 +561,15 @@ pub async fn update_alias(
         updated_at: Some(chrono::Local::now().naive_local()),
     };
 
-    match web::block({
-        let pool = pool.clone();
-        move || {
-            let mut conn = pool.get().unwrap();
-            NotificationAlias::update(alias_id, &update, &mut conn)
-        }
-    })
-    .await
-    {
-        Ok(Ok(num)) => Ok(
+    match manage_service::update_alias(alias_id, update, &pool).await {
+        Ok(num) => Ok(
             HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
                 200,
                 "Alias updated",
                 Some(format!("Rows affected: {}", num)),
             )),
         ),
-        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(500, "Failed to update alias", Some(msg), 0),
-        )),
-        Err(e) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to update alias",
-                Some(e.to_string()),
-                0,
-            ),
-        )),
+        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }
 
@@ -796,32 +587,14 @@ pub async fn delete_alias(
         ))
     })? as i32;
 
-    match web::block({
-        let pool = pool.clone();
-        move || {
-            let mut conn = pool.get().unwrap();
-            NotificationAlias::delete(alias_id, &mut conn)
-        }
-    })
-    .await
-    {
-        Ok(Ok(num)) => Ok(
+    match manage_service::delete_alias(alias_id, &pool).await {
+        Ok(num) => Ok(
             HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
                 200,
                 "Alias deleted",
                 Some(format!("Rows affected: {}", num)),
             )),
         ),
-        Ok(Err((_, msg))) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(500, "Failed to delete alias", Some(msg), 0),
-        )),
-        Err(e) => Err(MailManErrResponser::mapping_from_mme(
-            share_lib::data_structure::MailManErr::new(
-                500,
-                "Failed to delete alias",
-                Some(e.to_string()),
-                0,
-            ),
-        )),
+        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }
