@@ -54,8 +54,9 @@ docker-compose --profile build up      # 用 builder 容器编译
 docker-compose --profile run up -d     # 启动全部服务（先备好 MQ 与 DB，改好配置）
 ```
 
-注意：本机编译需要 OpenSSL（`pq-sys` bundled 依赖链），Windows 上需配置
-`OPENSSL_DIR` 或 vcpkg；Linux/容器环境无此问题。
+注意：`pq-sys` 使用 `bundled_without_openssl` feature（vendored libpq，不含 OpenSSL），
+任何环境都无需安装 OpenSSL 开发包即可编译；代价是 PG 连接不支持 TLS（`sslmode=require`
+不可用），如需加密连接请改回 `bundled` 并配置 OpenSSL/vcpkg。
 
 ## 开发铁律
 

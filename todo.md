@@ -103,9 +103,11 @@
 
 ## P2 —— 工程遗留
 
-- [ ] 在有 OpenSSL 的环境跑一次 `build/check_all_ws.sh` + `build/clippy_all_ws.sh`，
+- [x] 在有 OpenSSL 的环境跑一次 `build/check_all_ws.sh` + `build/clippy_all_ws.sh`，
   验证 5 个 diesel crate（本机 Windows 缺 OpenSSL 未验证）
-  （**GitHub Actions `check.yml` 已建，首次运行即完成此验证**）
+  （**已解决**：pq-sys 改用 `bundled_without_openssl` feature，本机 `cargo check --workspace`
+  与 `cargo clippy --workspace --all-targets` 全部通过，不再需要 OpenSSL；代价是 PG 连接
+  不支持 TLS）
 - [x] yell 补登记进 `docker-compose.yaml`（端口 9005）
 - [x] yell 补双语 README（`Readme.md` + `Readme_ZH-CN.md`）
 - [x] yell 迁移 `2026-05-22-010000_add_webhook_presets` 补 down.sql
