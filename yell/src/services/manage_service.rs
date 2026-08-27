@@ -38,12 +38,21 @@ pub async fn get_templates<'a>(
 
     match result {
         Ok(Ok(data)) => Ok(data),
-        Ok(Err((_, msg))) => Err(MailManErr::new(
-            500,
-            "Failed to get templates",
-            Some(msg),
-            0,
-        )),
+        // model 错误码约定：1 = BAD_REQUEST_CODE → 400，0 及其他 → 500
+        Ok(Err((code, msg))) => match code {
+            1 => Err(MailManErr::new(
+                400,
+                "Failed to get templates",
+                Some(msg),
+                0,
+            )),
+            _ => Err(MailManErr::new(
+                500,
+                "Failed to get templates",
+                Some(msg),
+                0,
+            )),
+        },
         Err(e) => Err(MailManErr::new(
             500,
             "Failed to get templates",
@@ -69,12 +78,21 @@ pub async fn create_template<'a>(
 
     match result {
         Ok(Ok(id)) => Ok(id),
-        Ok(Err((_, msg))) => Err(MailManErr::new(
-            500,
-            "Failed to create template",
-            Some(msg),
-            0,
-        )),
+        // model 错误码约定：1 = BAD_REQUEST_CODE → 400，0 及其他 → 500
+        Ok(Err((code, msg))) => match code {
+            1 => Err(MailManErr::new(
+                400,
+                "Failed to create template",
+                Some(msg),
+                0,
+            )),
+            _ => Err(MailManErr::new(
+                500,
+                "Failed to create template",
+                Some(msg),
+                0,
+            )),
+        },
         Err(e) => Err(MailManErr::new(
             500,
             "Failed to create template",
@@ -101,12 +119,21 @@ pub async fn update_template<'a>(
 
     match result {
         Ok(Ok(num)) => Ok(num),
-        Ok(Err((_, msg))) => Err(MailManErr::new(
-            500,
-            "Failed to update template",
-            Some(msg),
-            0,
-        )),
+        // model 错误码约定：1 = BAD_REQUEST_CODE → 400，0 及其他 → 500
+        Ok(Err((code, msg))) => match code {
+            1 => Err(MailManErr::new(
+                400,
+                "Failed to update template",
+                Some(msg),
+                0,
+            )),
+            _ => Err(MailManErr::new(
+                500,
+                "Failed to update template",
+                Some(msg),
+                0,
+            )),
+        },
         Err(e) => Err(MailManErr::new(
             500,
             "Failed to update template",
@@ -132,12 +159,21 @@ pub async fn delete_template<'a>(
 
     match result {
         Ok(Ok(num)) => Ok(num),
-        Ok(Err((_, msg))) => Err(MailManErr::new(
-            500,
-            "Failed to delete template",
-            Some(msg),
-            0,
-        )),
+        // model 错误码约定：1 = BAD_REQUEST_CODE → 400，0 及其他 → 500
+        Ok(Err((code, msg))) => match code {
+            1 => Err(MailManErr::new(
+                400,
+                "Failed to delete template",
+                Some(msg),
+                0,
+            )),
+            _ => Err(MailManErr::new(
+                500,
+                "Failed to delete template",
+                Some(msg),
+                0,
+            )),
+        },
         Err(e) => Err(MailManErr::new(
             500,
             "Failed to delete template",
@@ -165,7 +201,11 @@ pub async fn get_records<'a>(
 
     match result {
         Ok(Ok(data)) => Ok(data),
-        Ok(Err((_, msg))) => Err(MailManErr::new(500, "Failed to get records", Some(msg), 0)),
+        // model 错误码约定：1 = BAD_REQUEST_CODE → 400，0 及其他 → 500
+        Ok(Err((code, msg))) => match code {
+            1 => Err(MailManErr::new(400, "Failed to get records", Some(msg), 0)),
+            _ => Err(MailManErr::new(500, "Failed to get records", Some(msg), 0)),
+        },
         Err(e) => Err(MailManErr::new(
             500,
             "Failed to get records",
@@ -192,12 +232,21 @@ pub async fn get_channel_configs<'a>(
 
     match result {
         Ok(Ok(data)) => Ok(data),
-        Ok(Err((_, msg))) => Err(MailManErr::new(
-            500,
-            "Failed to get channel configs",
-            Some(msg),
-            0,
-        )),
+        // model 错误码约定：1 = BAD_REQUEST_CODE → 400，0 及其他 → 500
+        Ok(Err((code, msg))) => match code {
+            1 => Err(MailManErr::new(
+                400,
+                "Failed to get channel configs",
+                Some(msg),
+                0,
+            )),
+            _ => Err(MailManErr::new(
+                500,
+                "Failed to get channel configs",
+                Some(msg),
+                0,
+            )),
+        },
         Err(e) => Err(MailManErr::new(
             500,
             "Failed to get channel configs",
@@ -232,12 +281,21 @@ pub async fn update_channel_config<'a>(
 
     match result {
         Ok(Ok(num)) => Ok(num),
-        Ok(Err((_, msg))) => Err(MailManErr::new(
-            500,
-            "Failed to update channel config",
-            Some(msg),
-            0,
-        )),
+        // model 错误码约定：1 = BAD_REQUEST_CODE → 400，0 及其他 → 500
+        Ok(Err((code, msg))) => match code {
+            1 => Err(MailManErr::new(
+                400,
+                "Failed to update channel config",
+                Some(msg),
+                0,
+            )),
+            _ => Err(MailManErr::new(
+                500,
+                "Failed to update channel config",
+                Some(msg),
+                0,
+            )),
+        },
         Err(e) => Err(MailManErr::new(
             500,
             "Failed to update channel config",
@@ -264,7 +322,11 @@ pub async fn get_aliases<'a>(
 
     match result {
         Ok(Ok(data)) => Ok(data),
-        Ok(Err((_, msg))) => Err(MailManErr::new(500, "Failed to get aliases", Some(msg), 0)),
+        // model 错误码约定：1 = BAD_REQUEST_CODE → 400，0 及其他 → 500
+        Ok(Err((code, msg))) => match code {
+            1 => Err(MailManErr::new(400, "Failed to get aliases", Some(msg), 0)),
+            _ => Err(MailManErr::new(500, "Failed to get aliases", Some(msg), 0)),
+        },
         Err(e) => Err(MailManErr::new(
             500,
             "Failed to get aliases",
@@ -290,7 +352,11 @@ pub async fn create_alias<'a>(
 
     match result {
         Ok(Ok(id)) => Ok(id),
-        Ok(Err((_, msg))) => Err(MailManErr::new(500, "Failed to create alias", Some(msg), 0)),
+        // model 错误码约定：1 = BAD_REQUEST_CODE → 400，0 及其他 → 500
+        Ok(Err((code, msg))) => match code {
+            1 => Err(MailManErr::new(400, "Failed to create alias", Some(msg), 0)),
+            _ => Err(MailManErr::new(500, "Failed to create alias", Some(msg), 0)),
+        },
         Err(e) => Err(MailManErr::new(
             500,
             "Failed to create alias",
@@ -317,7 +383,11 @@ pub async fn update_alias<'a>(
 
     match result {
         Ok(Ok(num)) => Ok(num),
-        Ok(Err((_, msg))) => Err(MailManErr::new(500, "Failed to update alias", Some(msg), 0)),
+        // model 错误码约定：1 = BAD_REQUEST_CODE → 400，0 及其他 → 500
+        Ok(Err((code, msg))) => match code {
+            1 => Err(MailManErr::new(400, "Failed to update alias", Some(msg), 0)),
+            _ => Err(MailManErr::new(500, "Failed to update alias", Some(msg), 0)),
+        },
         Err(e) => Err(MailManErr::new(
             500,
             "Failed to update alias",
@@ -343,7 +413,11 @@ pub async fn delete_alias<'a>(
 
     match result {
         Ok(Ok(num)) => Ok(num),
-        Ok(Err((_, msg))) => Err(MailManErr::new(500, "Failed to delete alias", Some(msg), 0)),
+        // model 错误码约定：1 = BAD_REQUEST_CODE → 400，0 及其他 → 500
+        Ok(Err((code, msg))) => match code {
+            1 => Err(MailManErr::new(400, "Failed to delete alias", Some(msg), 0)),
+            _ => Err(MailManErr::new(500, "Failed to delete alias", Some(msg), 0)),
+        },
         Err(e) => Err(MailManErr::new(
             500,
             "Failed to delete alias",
