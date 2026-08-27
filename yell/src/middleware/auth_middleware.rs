@@ -9,10 +9,8 @@ use actix_web::{
     },
 };
 use futures::future::{LocalBoxFuture, Ready, ok};
-// use log::{debug, error};
 
 use share_lib::data_structure::MailManErr;
-// use share_lib::{log_debug, log_error};
 
 use crate::server::GLOBAL_CONFIG;
 
@@ -79,13 +77,10 @@ where
 
         if !authenticate_pass {
             if let Ok(token_lock) = GLOBAL_CONFIG.read() {
-                // log_debug!("Getting configeration...");
                 let auth_uuid = &token_lock.subsys_uuid;
                 if let Some(authen_header) = req.headers().get("Authorization") {
-                    // log_debug!("Parsing authorization header...");
                     if let Ok(authen_str) = authen_header.to_str() {
                         if authen_str.starts_with("uuid") || authen_str.starts_with("UUID") {
-                            // log_debug!("Parsing token...");
                             let token = authen_str[5..authen_str.len()].trim().to_string();
                             if *auth_uuid == token {
                                 authenticate_pass = true;

@@ -36,11 +36,6 @@ impl NotificationRouter {
         channels.insert("teams_hook".to_string(), Arc::new(TeamsHookChannel::new()));
         channels.insert("webhook".to_string(), Arc::new(WebhookChannel::new()));
 
-        // TODO: 注册更多渠道
-        // channels.insert("wecom".to_string(), Arc::new(WeComChannel::new()));
-        // channels.insert("lark".to_string(), Arc::new(LarkChannel::new()));
-        // channels.insert("dingtalk".to_string(), Arc::new(DingtalkChannel::new()));
-
         Self { channels }
     }
 

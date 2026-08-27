@@ -36,7 +36,7 @@ impl AllConfigs {
             log_level: String::new(),
 
             listen_addr: String::new(),
-            listen_port: 9001,
+            listen_port: 9005,
             workers: 2,
             allowed_origin_list: vec![],
 
