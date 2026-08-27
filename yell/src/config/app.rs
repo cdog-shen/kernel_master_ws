@@ -11,6 +11,13 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
         web::scope("/api")
             // Health check - public, no auth required
             .service(web::resource("/hey").route(web::post().to(hey_hi_hello::hey)))
+            // System management APIs
+            .service(
+                web::scope("/manage").service(
+                    web::resource("/refresh_master")
+                        .route(web::post().to(system_manage::refresh_master)),
+                ),
+            )
             // Unified notification APIs
             .service(
                 web::scope("/notify")
