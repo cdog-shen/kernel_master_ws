@@ -85,12 +85,10 @@ diesel::table! {
         is_enabled -> Nullable<Bool>,
         created_at -> Nullable<Timestamp>,
         updated_at -> Nullable<Timestamp>,
-        params_template -> Nullable<Jsonb>,
         smtp -> Nullable<Jsonb>,
         bark -> Nullable<Jsonb>,
         gotify -> Nullable<Jsonb>,
-        ntfy -> Nullable<Jsonb>,
-        teams -> Nullable<Jsonb>,
+        teams_hook -> Nullable<Jsonb>,
         webhook -> Nullable<Jsonb>,
     }
 }

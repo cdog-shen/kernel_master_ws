@@ -17,12 +17,10 @@ pub struct NotificationTemplate {
     pub is_enabled: Option<bool>,
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
-    pub params_template: Option<Value>,
     pub smtp: Option<Value>,
     pub bark: Option<Value>,
     pub gotify: Option<Value>,
-    pub ntfy: Option<Value>,
-    pub teams: Option<Value>,
+    pub teams_hook: Option<Value>,
     pub webhook: Option<Value>,
 }
 
@@ -32,12 +30,10 @@ pub struct NewNotificationTemplate {
     pub name: String,
     pub description: Option<String>,
     pub is_enabled: Option<bool>,
-    pub params_template: Option<Value>,
     pub smtp: Option<Value>,
     pub bark: Option<Value>,
     pub gotify: Option<Value>,
-    pub ntfy: Option<Value>,
-    pub teams: Option<Value>,
+    pub teams_hook: Option<Value>,
     pub webhook: Option<Value>,
 }
 
@@ -47,12 +43,10 @@ pub struct UpdateNotificationTemplate {
     pub name: Option<String>,
     pub description: Option<String>,
     pub is_enabled: Option<bool>,
-    pub params_template: Option<Value>,
     pub smtp: Option<Value>,
     pub bark: Option<Value>,
     pub gotify: Option<Value>,
-    pub ntfy: Option<Value>,
-    pub teams: Option<Value>,
+    pub teams_hook: Option<Value>,
     pub webhook: Option<Value>,
     pub updated_at: Option<NaiveDateTime>,
 }

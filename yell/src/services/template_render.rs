@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use crate::model::notification_template::NotificationTemplate;
 
 /// 渠道 JSONB 字段名列表
-const CHANNEL_COLUMNS: &[&str] = &["smtp", "bark", "gotify", "ntfy", "teams", "webhook"];
+const CHANNEL_COLUMNS: &[&str] = &["smtp", "bark", "gotify", "teams_hook", "webhook"];
 
 /// 渲染模板，返回 HashMap<channel_type, rendered_payload_json>
 /// 只渲染模板中已配置的渠道字段
@@ -32,8 +32,7 @@ fn get_channel_json<'t>(template: &'t NotificationTemplate, col: &str) -> Option
         "smtp" => template.smtp.as_ref(),
         "bark" => template.bark.as_ref(),
         "gotify" => template.gotify.as_ref(),
-        "ntfy" => template.ntfy.as_ref(),
-        "teams" => template.teams.as_ref(),
+        "teams_hook" => template.teams_hook.as_ref(),
         "webhook" => template.webhook.as_ref(),
         _ => None,
     }

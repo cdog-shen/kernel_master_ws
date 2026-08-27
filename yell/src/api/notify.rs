@@ -105,12 +105,10 @@ pub async fn create_template(
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
         is_enabled: req.get("is_enabled").and_then(|v| v.as_bool()),
-        params_template: req.get("params_template").cloned(),
         smtp: req.get("smtp").cloned(),
         bark: req.get("bark").cloned(),
         gotify: req.get("gotify").cloned(),
-        ntfy: req.get("ntfy").cloned(),
-        teams: req.get("teams").cloned(),
+        teams_hook: req.get("teams_hook").cloned(),
         webhook: req.get("webhook").cloned(),
     };
 
@@ -150,12 +148,10 @@ pub async fn update_template(
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
         is_enabled: req.get("is_enabled").and_then(|v| v.as_bool()),
-        params_template: req.get("params_template").cloned(),
         smtp: req.get("smtp").cloned(),
         bark: req.get("bark").cloned(),
         gotify: req.get("gotify").cloned(),
-        ntfy: req.get("ntfy").cloned(),
-        teams: req.get("teams").cloned(),
+        teams_hook: req.get("teams_hook").cloned(),
         webhook: req.get("webhook").cloned(),
         updated_at: Some(chrono::Local::now().naive_local()),
     };
