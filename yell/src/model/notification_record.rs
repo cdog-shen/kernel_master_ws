@@ -95,13 +95,10 @@ impl NotificationRecord {
         }
 
         match query.load::<NotificationRecord>(conn) {
-            Ok(records) => Ok(records
+            Ok(records) => records
                 .into_iter()
-                .map(|r| {
-                    let value = serde_json::to_value(&r).unwrap();
-                    value
-                })
-                .collect()),
+                .map(|r| serde_json::to_value(&r).map_err(|e| (UNKNOWN_ERROR_CODE, e.to_string())))
+                .collect(),
             Err(e) => Err((UNKNOWN_ERROR_CODE, e.to_string())),
         }
     }

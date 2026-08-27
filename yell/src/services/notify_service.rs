@@ -30,7 +30,7 @@ pub async fn resolve_recipients<'a>(
                 let pool = pool.clone();
                 let name = alias_name.clone();
                 move || {
-                    let mut conn = pool.get().unwrap();
+                    let mut conn = pool.get().map_err(|e| (0, e.to_string()))?;
                     NotificationAlias::get_by_name(&name, &mut conn)
                 }
             })

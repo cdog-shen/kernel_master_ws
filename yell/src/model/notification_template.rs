@@ -118,10 +118,10 @@ impl NotificationTemplate {
         }
 
         match query.load::<NotificationTemplate>(conn) {
-            Ok(templates) => Ok(templates
+            Ok(templates) => templates
                 .into_iter()
-                .map(|t| serde_json::to_value(&t).unwrap())
-                .collect()),
+                .map(|t| serde_json::to_value(&t).map_err(|e| (UNKNOWN_ERROR_CODE, e.to_string())))
+                .collect(),
             Err(e) => Err((UNKNOWN_ERROR_CODE, e.to_string())),
         }
     }

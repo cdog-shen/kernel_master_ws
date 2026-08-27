@@ -80,10 +80,10 @@ impl ChannelConfig {
             .select(ChannelConfig::as_select())
             .load(conn)
         {
-            Ok(configs) => Ok(configs
+            Ok(configs) => configs
                 .into_iter()
-                .map(|c| serde_json::to_value(&c).unwrap())
-                .collect()),
+                .map(|c| serde_json::to_value(&c).map_err(|e| (UNKNOWN_ERROR_CODE, e.to_string())))
+                .collect(),
             Err(e) => Err((UNKNOWN_ERROR_CODE, e.to_string())),
         }
     }

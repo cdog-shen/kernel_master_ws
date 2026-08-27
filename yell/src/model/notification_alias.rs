@@ -63,10 +63,10 @@ impl NotificationAlias {
             .select(NotificationAlias::as_select())
             .load(conn)
         {
-            Ok(aliases) => Ok(aliases
+            Ok(aliases) => aliases
                 .into_iter()
-                .map(|a| serde_json::to_value(&a).unwrap())
-                .collect()),
+                .map(|a| serde_json::to_value(&a).map_err(|e| (UNKNOWN_ERROR_CODE, e.to_string())))
+                .collect(),
             Err(e) => Err((UNKNOWN_ERROR_CODE, e.to_string())),
         }
     }

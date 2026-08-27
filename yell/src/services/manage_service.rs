@@ -30,7 +30,7 @@ pub async fn get_templates<'a>(
     let result = web::block({
         let pool = pool.clone();
         move || {
-            let mut conn = pool.get().unwrap();
+            let mut conn = pool.get().map_err(|e| (0, e.to_string()))?;
             NotificationTemplate::get_with_filter(&filter, &mut conn)
         }
     })
@@ -61,7 +61,7 @@ pub async fn create_template<'a>(
     let result = web::block({
         let pool = pool.clone();
         move || {
-            let mut conn = pool.get().unwrap();
+            let mut conn = pool.get().map_err(|e| (0, e.to_string()))?;
             NotificationTemplate::create(&new_template, &mut conn)
         }
     })
@@ -93,7 +93,7 @@ pub async fn update_template<'a>(
     let result = web::block({
         let pool = pool.clone();
         move || {
-            let mut conn = pool.get().unwrap();
+            let mut conn = pool.get().map_err(|e| (0, e.to_string()))?;
             NotificationTemplate::update(template_id, &update, &mut conn)
         }
     })
@@ -124,7 +124,7 @@ pub async fn delete_template<'a>(
     let result = web::block({
         let pool = pool.clone();
         move || {
-            let mut conn = pool.get().unwrap();
+            let mut conn = pool.get().map_err(|e| (0, e.to_string()))?;
             NotificationTemplate::delete(template_id, &mut conn)
         }
     })
@@ -157,7 +157,7 @@ pub async fn get_records<'a>(
     let result = web::block({
         let pool = pool.clone();
         move || {
-            let mut conn = pool.get().unwrap();
+            let mut conn = pool.get().map_err(|e| (0, e.to_string()))?;
             NotificationRecord::get_with_filter(&filter, &mut conn)
         }
     })
@@ -184,7 +184,7 @@ pub async fn get_channel_configs<'a>(
     let result = web::block({
         let pool = pool.clone();
         move || {
-            let mut conn = pool.get().unwrap();
+            let mut conn = pool.get().map_err(|e| (0, e.to_string()))?;
             ChannelConfig::get_all(&mut conn)
         }
     })
@@ -218,7 +218,7 @@ pub async fn update_channel_config<'a>(
     let result = web::block({
         let pool = pool.clone();
         move || {
-            let mut conn = pool.get().unwrap();
+            let mut conn = pool.get().map_err(|e| (0, e.to_string()))?;
             ChannelConfig::upsert(
                 &channel_type,
                 &instance_name,
@@ -256,7 +256,7 @@ pub async fn get_aliases<'a>(
     let result = web::block({
         let pool = pool.clone();
         move || {
-            let mut conn = pool.get().unwrap();
+            let mut conn = pool.get().map_err(|e| (0, e.to_string()))?;
             NotificationAlias::get_all(&mut conn)
         }
     })
@@ -282,7 +282,7 @@ pub async fn create_alias<'a>(
     let result = web::block({
         let pool = pool.clone();
         move || {
-            let mut conn = pool.get().unwrap();
+            let mut conn = pool.get().map_err(|e| (0, e.to_string()))?;
             NotificationAlias::create(&new_alias, &mut conn)
         }
     })
@@ -309,7 +309,7 @@ pub async fn update_alias<'a>(
     let result = web::block({
         let pool = pool.clone();
         move || {
-            let mut conn = pool.get().unwrap();
+            let mut conn = pool.get().map_err(|e| (0, e.to_string()))?;
             NotificationAlias::update(alias_id, &update, &mut conn)
         }
     })
@@ -335,7 +335,7 @@ pub async fn delete_alias<'a>(
     let result = web::block({
         let pool = pool.clone();
         move || {
-            let mut conn = pool.get().unwrap();
+            let mut conn = pool.get().map_err(|e| (0, e.to_string()))?;
             NotificationAlias::delete(alias_id, &mut conn)
         }
     })
