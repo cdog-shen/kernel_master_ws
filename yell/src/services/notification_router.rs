@@ -15,6 +15,7 @@ use crate::services::channel::{Channel, ChannelConfigs, ChannelResult, deliver_t
 use crate::services::gotify::service::GotifyChannel;
 use crate::services::mail::service::SmtpChannel;
 use crate::services::teams::service::TeamsChannel;
+use crate::services::teams_hook::service::TeamsHookChannel;
 use crate::services::template_render;
 use crate::services::webhook::service::WebhookChannel;
 
@@ -32,6 +33,7 @@ impl NotificationRouter {
         channels.insert("bark".to_string(), Arc::new(BarkChannel::new()));
         channels.insert("gotify".to_string(), Arc::new(GotifyChannel::new()));
         channels.insert("teams".to_string(), Arc::new(TeamsChannel::new()));
+        channels.insert("teams_hook".to_string(), Arc::new(TeamsHookChannel::new()));
         channels.insert("webhook".to_string(), Arc::new(WebhookChannel::new()));
 
         // TODO: 注册更多渠道

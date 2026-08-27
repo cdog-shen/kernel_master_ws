@@ -187,6 +187,7 @@ fn channel_display_name(channel_type: &str) -> &str {
         "bark" => "Bark",
         "gotify" => "Gotify",
         "teams" => "Teams",
+        "teams_hook" => "TeamsHook",
         "webhook" => "Webhook",
         other => other,
     }
