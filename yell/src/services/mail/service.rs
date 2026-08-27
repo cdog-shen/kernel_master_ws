@@ -9,7 +9,7 @@ use std::str::FromStr;
 use tokio::sync::Mutex;
 
 use crate::model::channel_config::SmtpConfig;
-use crate::services::channel::{Channel, DispatchError, NotificationRequest};
+use crate::services::channel::{Channel, DispatchError};
 
 /// SMTP 渠道实现
 pub struct SmtpChannel {
@@ -113,60 +113,6 @@ impl Channel for SmtpChannel {
     /// 发送前确保 SMTP transport 已初始化
     async fn preflight(&self, config: &Value) -> Result<(), String> {
         self.init_transport(config).await
-    }
-
-    async fn dispatch(
-        &self,
-        config: &Value,
-        recipient: &str,
-        request: &NotificationRequest,
-    ) -> Result<(), DispatchError> {
-        let smtp_config: SmtpConfig = serde_json::from_value(config.clone())
-            .map_err(|e| DispatchError::Abort(format!("Invalid SMTP config: {}", e)))?;
-
-        let transport = self.transport().await?;
-        let addresses = Self::parse_addresses(recipient)?;
-
-        let content_type = if request.format == "html" {
-            ContentType::TEXT_HTML
-        } else {
-            ContentType::TEXT_PLAIN
-        };
-
-        let email = Self::build_email(
-            &smtp_config.from,
-            &addresses,
-            &request.title,
-            content_type,
-            &request.body,
-        )?;
-
-        match transport.send(email).await {
-            Ok(_) => Ok(()),
-            Err(e) => Err(DispatchError::Failed(format!("SMTP send error: {}", e))),
-        }
-    }
-
-    fn template_request(&self, payload: &Value, template_id: Option<i32>) -> NotificationRequest {
-        NotificationRequest {
-            title: payload
-                .get("subject")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            body: payload
-                .get("body")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            format: "text".to_string(),
-            priority: "normal".to_string(),
-            tags: vec![],
-            url: None,
-            mentions: vec![],
-            template_id,
-            params: Value::Null,
-        }
     }
 
     async fn dispatch_template(

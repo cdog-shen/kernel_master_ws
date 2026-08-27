@@ -14,7 +14,6 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
             // Unified notification APIs
             .service(
                 web::scope("/notify")
-                    .service(web::resource("/send").route(web::post().to(notify::send)))
                     .service(
                         web::resource("/template")
                             .route(web::post().to(notify::send_with_template)),

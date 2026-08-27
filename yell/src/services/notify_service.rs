@@ -17,14 +17,13 @@ use crate::model::notification_alias::NotificationAlias;
 use crate::model::notification_template::NotificationTemplate;
 use crate::services::channel::ChannelConfigs;
 
-/// 解析 recipients 字段，支持 String（alias）和 Array 两种格式
+/// 解析 recipients 字段，仅支持 String（alias）格式
 pub async fn resolve_recipients<'a>(
     recipients_value: Option<&Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<Vec<(String, String, String)>, MailManErr<'a, String>> {
     match recipients_value {
         Some(Value::String(alias_name)) => {
-            // String 格式：查找 alias
             let alias_name = alias_name.clone();
             let result = web::block({
                 let pool = pool.clone();
@@ -63,11 +62,19 @@ pub async fn resolve_recipients<'a>(
                 )),
             }
         }
-        Some(Value::Array(arr)) => parse_recipients_array(arr),
+        Some(Value::Array(_)) => Err(MailManErr::new(
+            400,
+            "Bad Request",
+            Some(
+                "'recipients' only supports an alias name string; raw recipient arrays are no longer accepted"
+                    .to_string(),
+            ),
+            1,
+        )),
         _ => Err(MailManErr::new(
             400,
             "Bad Request",
-            Some("Missing 'recipients' field (must be an array or alias name string)".to_string()),
+            Some("Missing 'recipients' field (must be an alias name string)".to_string()),
             1,
         )),
     }

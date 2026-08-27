@@ -55,17 +55,11 @@ pub enum DispatchError {
 
 /// 渠道 trait —— 所有通知渠道必须实现
 /// 渠道只负责"外呼"本身；配置获取与通知记录生命周期由本模块的
-/// 统一骨架（deliver / deliver_template）管理
+/// 统一骨架（deliver_template）管理
 #[async_trait]
 pub trait Channel: Send + Sync {
     /// 渠道类型标识
     fn channel_type(&self) -> &'static str;
-
-    /// 发送前适配请求内容（默认不修改）
-    /// 简单推送渠道（Bark/Gotify 等）可覆写此方法，对 HTML 等不适配格式做降级处理
-    fn prepare_request(&self, request: NotificationRequest) -> NotificationRequest {
-        request
-    }
 
     /// 外呼前置准备（默认无操作）
     /// 在创建通知记录之前调用；返回 Err 时中止发送，不创建记录。
@@ -75,77 +69,48 @@ pub trait Channel: Send + Sync {
         Ok(())
     }
 
-    /// 直接发送的外呼实现 —— 只负责把 request 投递到渠道
-    /// config 为按 channel_type + instance_name 从注入配置中取出的 config_json
-    async fn dispatch(
-        &self,
-        config: &Value,
-        recipient: &str,
-        request: &NotificationRequest,
-    ) -> Result<(), DispatchError>;
-
-    /// 由渲染后的模板 payload 构造落库用的请求视图
-    /// 默认实现：从 payload 提取 title/body/message 构造 NotificationRequest
-    fn template_request(&self, payload: &Value, template_id: Option<i32>) -> NotificationRequest {
-        NotificationRequest {
-            title: payload
-                .get("title")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            body: payload
-                .get("body")
-                .or_else(|| payload.get("message"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            format: "text".to_string(),
-            priority: "normal".to_string(),
-            tags: vec![],
-            url: payload
-                .get("url")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string()),
-            mentions: vec![],
-            template_id,
-            params: payload.clone(),
-        }
-    }
-
-    /// 模板发送的外呼实现 —— 默认经 template_request 回退到 dispatch
-    /// 各渠道可覆写此方法以直接使用 payload JSON 构造请求
+    /// 模板发送的外呼实现 —— 各渠道的核心发送方法
+    /// config 为按 channel_type + instance_name 从注入配置中取出的 config_json，
+    /// payload 为渲染后的模板 JSON
     async fn dispatch_template(
         &self,
         config: &Value,
         recipient: &str,
         payload: &Value,
         template_id: Option<i32>,
-    ) -> Result<(), DispatchError> {
-        let request = self.template_request(payload, template_id);
-        self.dispatch(config, recipient, &request).await
+    ) -> Result<(), DispatchError>;
+}
+
+/// 由渲染后的模板 payload 构造落库用的请求视图
+/// 从 payload 提取 title/body/message，其余字段取默认值
+fn record_view_from_payload(payload: &Value, template_id: Option<i32>) -> NotificationRequest {
+    NotificationRequest {
+        title: payload
+            .get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        body: payload
+            .get("body")
+            .or_else(|| payload.get("message"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        format: "text".to_string(),
+        priority: "normal".to_string(),
+        tags: vec![],
+        url: payload
+            .get("url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        mentions: vec![],
+        template_id,
+        params: payload.clone(),
     }
 }
 
-/// 统一发送流程骨架（直接发送）：
+/// 统一发送流程骨架（模板发送）：
 /// 取注入的配置 → preflight → create_record(pending) → 渠道外呼 → update_record(sent/failed)
-pub async fn deliver(
-    channel: &Arc<dyn Channel>,
-    recipient: &str,
-    instance_name: &str,
-    request: &NotificationRequest,
-    channel_configs: &ChannelConfigs,
-    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-) -> Result<ChannelResult, String> {
-    let config = resolve_config(channel_configs, channel.channel_type(), instance_name)?;
-    channel.preflight(config).await?;
-
-    let record_id = create_record(channel.channel_type(), recipient, request, pool).await?;
-
-    let outcome = channel.dispatch(config, recipient, request).await;
-    finalize_delivery(outcome, channel.channel_type(), record_id, pool).await
-}
-
-/// 统一发送流程骨架（模板发送）：流程同 deliver，外呼走 dispatch_template
 pub async fn deliver_template(
     channel: &Arc<dyn Channel>,
     recipient: &str,
@@ -161,7 +126,7 @@ pub async fn deliver_template(
     let record_id = create_record(
         channel.channel_type(),
         recipient,
-        &channel.template_request(payload, template_id),
+        &record_view_from_payload(payload, template_id),
         pool,
     )
     .await?;

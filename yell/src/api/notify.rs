@@ -1,4 +1,3 @@
-#![allow(unused_imports)]
 use actix_web::{HttpResponse, web};
 use diesel::{
     PgConnection,
@@ -20,41 +19,6 @@ use crate::{
 };
 
 // ==================== 统一通知发送 API ====================
-
-/// POST /api/notify/send - 统一发送接口
-///
-/// recipients 格式: [{"channel_type": "smtp", "recipient": "user@example.com"}, ...]
-pub async fn send(
-    req: web::Json<Map<String, Value>>,
-    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
-) -> Result<HttpResponse, MailManErrResponser> {
-    let request = filter::SendRequestInput::from_map(&req).into_notification_request();
-
-    let recipients = match notify_service::resolve_recipients(req.get("recipients"), &pool).await {
-        Ok(recipients) => recipients,
-        Err(err) => return Err(MailManErrResponser::mapping_from_mme(err)),
-    };
-
-    // recipients 为空时 router 直接返回，保持不查渠道配置的原行为
-    let channel_configs = if recipients.is_empty() {
-        HashMap::new()
-    } else {
-        match notify_service::load_channel_configs(&pool).await {
-            Ok(configs) => configs,
-            Err(err) => return Err(MailManErrResponser::mapping_from_mme(err)),
-        }
-    };
-
-    let router = NotificationRouter::new();
-
-    match router
-        .send_to_channels(request, recipients, channel_configs, &pool)
-        .await
-    {
-        Ok(data) => Ok(HttpResponse::Ok().json(data)),
-        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
-    }
-}
 
 /// POST /api/notify/template - 使用模板发送
 pub async fn send_with_template(
