@@ -19,13 +19,13 @@ jc-commander/.cargo/config.toml
 **/log
 
 # config files
-watchman-backend/watchman.toml
-cmdb-backend/cmdb.toml
-cloud-api/cloud_api.toml
-jc-commander/job_center_commander.toml
-jc-worker/job_center_worker.toml
-file-agent/file_agent.toml
-yell/yell_backend.toml
+**/watchman.toml
+**/cmdb.toml
+**/cloud_api.toml
+**/job_center_commander.toml
+**/job_center_worker.toml
+**/file_agent.toml
+**/yell_backend.toml
 
 # business script
 **/script/business
