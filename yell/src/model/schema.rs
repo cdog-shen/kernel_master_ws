@@ -29,31 +29,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    notification_group_members (id) {
-        id -> Int4,
-        group_id -> Int4,
-        #[max_length = 32]
-        channel_type -> Varchar,
-        #[max_length = 512]
-        recipient -> Varchar,
-        created_at -> Nullable<Timestamp>,
-    }
-}
-
-diesel::table! {
-    notification_groups (id) {
-        id -> Int4,
-        #[max_length = 128]
-        name -> Varchar,
-        #[max_length = 512]
-        description -> Nullable<Varchar>,
-        is_enabled -> Nullable<Bool>,
-        created_at -> Nullable<Timestamp>,
-        updated_at -> Nullable<Timestamp>,
-    }
-}
-
-diesel::table! {
     notification_records (id) {
         id -> Int4,
         #[max_length = 32]
@@ -93,13 +68,9 @@ diesel::table! {
     }
 }
 
-diesel::joinable!(notification_group_members -> notification_groups (group_id));
-
 diesel::allow_tables_to_appear_in_same_query!(
     channel_configs,
     notification_aliases,
-    notification_group_members,
-    notification_groups,
     notification_records,
     notification_templates,
 );
