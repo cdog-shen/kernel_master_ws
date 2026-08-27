@@ -23,13 +23,20 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
             // Template management APIs
             .service(
                 web::scope("/template")
-                    .service(web::resource("/get").route(web::get().to(notify::get_templates)))
-                    .service(web::resource("/new").route(web::post().to(notify::create_template)))
                     .service(
-                        web::resource("/update").route(web::post().to(notify::update_template)),
+                        web::resource("/get").route(web::get().to(template_manage::get_templates)),
                     )
                     .service(
-                        web::resource("/delete").route(web::post().to(notify::delete_template)),
+                        web::resource("/new")
+                            .route(web::post().to(template_manage::create_template)),
+                    )
+                    .service(
+                        web::resource("/update")
+                            .route(web::post().to(template_manage::update_template)),
+                    )
+                    .service(
+                        web::resource("/delete")
+                            .route(web::post().to(template_manage::delete_template)),
                     )
                     .wrap(Authentication),
             )
@@ -43,21 +50,28 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
             .service(
                 web::scope("/channel")
                     .service(
-                        web::resource("/get").route(web::get().to(notify::get_channel_configs)),
+                        web::resource("/get")
+                            .route(web::get().to(channel_manage::get_channel_configs)),
                     )
                     .service(
                         web::resource("/update")
-                            .route(web::post().to(notify::update_channel_config)),
+                            .route(web::post().to(channel_manage::update_channel_config)),
                     )
                     .wrap(Authentication),
             )
             // Alias management APIs
             .service(
                 web::scope("/alias")
-                    .service(web::resource("/get").route(web::get().to(notify::get_aliases)))
-                    .service(web::resource("/new").route(web::post().to(notify::create_alias)))
-                    .service(web::resource("/update").route(web::post().to(notify::update_alias)))
-                    .service(web::resource("/delete").route(web::post().to(notify::delete_alias)))
+                    .service(web::resource("/get").route(web::get().to(alias_manage::get_aliases)))
+                    .service(
+                        web::resource("/new").route(web::post().to(alias_manage::create_alias)),
+                    )
+                    .service(
+                        web::resource("/update").route(web::post().to(alias_manage::update_alias)),
+                    )
+                    .service(
+                        web::resource("/delete").route(web::post().to(alias_manage::delete_alias)),
+                    )
                     .wrap(Authentication),
             ),
     );
