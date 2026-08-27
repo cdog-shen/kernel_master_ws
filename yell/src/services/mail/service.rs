@@ -5,6 +5,7 @@ use lettre::{
     transport::smtp::authentication::Credentials,
 };
 use serde_json::Value;
+use std::collections::HashMap;
 use std::str::FromStr;
 use tokio::sync::Mutex;
 
@@ -13,26 +14,41 @@ use crate::services::channel::{Channel, DispatchError};
 
 /// SMTP 渠道实现
 pub struct SmtpChannel {
-    transport: Mutex<Option<AsyncSmtpTransport<lettre::Tokio1Executor>>>,
+    /// 按实例配置缓存 transport，避免多实例时错误复用同一连接
+    transports: Mutex<HashMap<String, AsyncSmtpTransport<lettre::Tokio1Executor>>>,
 }
 
 impl SmtpChannel {
     pub fn new() -> Self {
         Self {
-            transport: Mutex::new(None),
+            transports: Mutex::new(HashMap::new()),
         }
     }
 
-    /// 初始化 SMTP 客户端（懒加载，第一次发送时初始化）
+    /// 由连接相关的配置字段生成缓存 key（配置不变则 key 稳定）
+    fn transport_key(smtp_config: &SmtpConfig) -> String {
+        format!(
+            "{}:{}:{}:{}:{}",
+            smtp_config.host,
+            smtp_config.port,
+            smtp_config.username,
+            smtp_config.password,
+            smtp_config.use_tls
+        )
+    }
+
+    /// 初始化 SMTP 客户端（懒加载，该实例第一次发送时初始化）
     async fn init_transport(&self, config: &Value) -> Result<(), String> {
-        let mut transport_lock = self.transport.lock().await;
-
-        if transport_lock.is_some() {
-            return Ok(());
-        }
-
         let smtp_config: SmtpConfig = serde_json::from_value(config.clone())
             .map_err(|e| format!("Invalid SMTP config: {}", e))?;
+
+        let key = Self::transport_key(&smtp_config);
+
+        let mut transport_lock = self.transports.lock().await;
+
+        if transport_lock.contains_key(&key) {
+            return Ok(());
+        }
 
         let creds = Credentials::new(smtp_config.username, smtp_config.password);
 
@@ -49,14 +65,17 @@ impl SmtpChannel {
                 .build()
         };
 
-        *transport_lock = Some(transport);
+        transport_lock.insert(key, transport);
         Ok(())
     }
 
-    /// 取已初始化的 transport（由 preflight 保证已初始化）
-    async fn transport(&self) -> Result<AsyncSmtpTransport<lettre::Tokio1Executor>, DispatchError> {
-        let lock = self.transport.lock().await;
-        lock.as_ref()
+    /// 取指定实例已初始化的 transport（由 preflight 保证已初始化）
+    async fn transport(
+        &self,
+        key: &str,
+    ) -> Result<AsyncSmtpTransport<lettre::Tokio1Executor>, DispatchError> {
+        let lock = self.transports.lock().await;
+        lock.get(key)
             .cloned()
             .ok_or_else(|| DispatchError::Abort("SMTP transport not initialized".to_string()))
     }
@@ -125,7 +144,7 @@ impl Channel for SmtpChannel {
         let smtp_config: SmtpConfig = serde_json::from_value(config.clone())
             .map_err(|e| DispatchError::Abort(format!("Invalid SMTP config: {}", e)))?;
 
-        let transport = self.transport().await?;
+        let transport = self.transport(&Self::transport_key(&smtp_config)).await?;
         let addresses = Self::parse_addresses(recipient)?;
 
         let subject = payload
