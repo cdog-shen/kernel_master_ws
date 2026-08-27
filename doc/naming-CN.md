@@ -164,4 +164,12 @@ listen_port = 8000
   历史写法，暂不统一。
 - `jc-commander/src/api/` 的 `cron_job.rs`、`job_log.rs` 与 `yell/src/api/` 的
   `notify.rs` 未带 `_manage` 后缀，新增 handler 文件不得效仿。
-- `yell/src/api/` 目前缺少 `system_manage.rs`，后续补充时必须使用该文件名。
+- `yell` 的 model 层不使用三结构体模式：`notification_template.rs` 按职责拆为
+  `NotificationTemplate`（Queryable/Selectable）/ `NewNotificationTemplate`
+  （Insertable）/ `UpdateNotificationTemplate`（AsChangeset）三个结构体，
+  没有 `XxxInputStream`/`XxxOutputStream`；模板无敏感字段，查询结果直接
+  `serde_json::to_value` 后以 `Vec<Value>` 返回（见
+  `yell/src/model/notification_template.rs` 的 `get_with_filter`）。
+  属已登记的合法变体，新增表仍优先按三结构体模式执行。
+- `yell/src/api/` 已补上 `system_manage.rs`（承载 `refresh_master`，与
+  file-agent 一样是向 watchman 刷新注册，并非 `/api/reload`）。

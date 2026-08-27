@@ -1,7 +1,7 @@
 # Yell
 
 yell 是 Kernel Master 项目的通知服务.
-它监听 **9005** 端口, 向多种渠道 (Bark / Gotify / Mail(SMTP) / Teams / Webhook)
+它监听 **9005** 端口, 向多种渠道 (Bark / Gotify / Mail(SMTP) / Teams / Teams Hook / Webhook)
 分发通知, 支持模板渲染、渠道多实例配置、收件人别名, 并将投递记录持久化到 PostgreSQL.
 
 ## 代码规则
@@ -10,8 +10,9 @@ yell 是 Kernel Master 项目的通知服务.
 
 - 所有渠道发送与管理逻辑放置在 ***services*** 目录下.
 
-    每个渠道 (`bark/`、`gotify/`、`mail/`、`teams/`、`webhook/`) 实现
-    `services/channel.rs` 中定义的 `Channel` trait. `notification_router.rs`
+    每个渠道 (`bark/`、`gotify/`、`mail/`、`teams/`、`teams_hook/`、`webhook/`) 实现
+    `services/channel.rs` 中定义的 `Channel` trait (`channel_type` / `preflight` /
+    `dispatch_template`). `notification_router.rs`
     负责把请求路由到指定的渠道实例并记录投递结果.
 
 - 与 API 响应相关的逻辑放置在 ***api*** 目录下的相应模块中.
@@ -21,7 +22,7 @@ yell 是 Kernel Master 项目的通知服务.
 
 ## APIs
 
-所有 API 以 `/api` 范围开头. 除 `/hey` 外, 所有 scope 都包裹了 `Authentication` 中间件.
+所有 API 以 `/api` 范围开头. 除 `/hey` 与 `/manage` 外, 所有 scope 都包裹了 `Authentication` 中间件.
 
 ### /hey
 
@@ -29,19 +30,26 @@ yell 是 Kernel Master 项目的通知服务.
 | :---: | :--------: | :------- | :----------------- |
 |   /   |   `POST`   | 健康检查 | 公开接口, 无需认证 |
 
+### /manage
+
+|      资源       | 支持的方法 | 功能                        | 备注                                          |
+| :-------------: | :--------: | :-------------------------- | :-------------------------------------------- |
+| /refresh_master |   `POST`   | 向 watchman 刷新本实例注册 | 公开接口, 无需认证; 实现于 `api/system_manage.rs` |
+
 ### /notify
 
 |   资源    | 支持的方法 | 功能           | 备注                                                                                  |
 | :-------: | :--------: | :------------- | :------------------------------------------------------------------------------------ |
-|   /send   |   `POST`   | 统一发送接口   | `recipients` 格式: `[{"channel_type": "smtp", "recipient": "user@example.com"}, ...]`; 别名会被解析为实际收件人 |
-| /template |   `POST`   | 使用模板发送   | 需要 `template_name` 与 `variables`                                                    |
+| /template |   `POST`   | 使用模板发送   | 需要 `template_name` 与 `variables`; `recipients` 只接受别名 (alias) 字符串, 经 `notification_aliases` 表解析为实际收件人 |
+
+原直接发送端点 `POST /api/notify/send` 已删除, 模板发送是唯一的发送路径.
 
 ### /template
 
 |  资源   | 支持的方法 | 功能         | 备注                                                              |
 | :-----: | :--------: | :----------- | :---------------------------------------------------------------- |
 |   /get  |   `GET`    | 获取模板列表 | 支持 query 过滤                                                   |
-|   /new  |   `POST`   | 创建模板     | 分渠道模板体: `smtp` / `bark` / `gotify` / `ntfy` / `teams` / `webhook` |
+|   /new  |   `POST`   | 创建模板     | 分渠道模板体: `smtp` / `bark` / `gotify` / `teams_hook` / `webhook` |
 | /update |   `POST`   | 更新模板     | 需要 `id`                                                         |
 | /delete |   `POST`   | 删除模板     | 需要 `id`                                                         |
 
@@ -69,13 +77,14 @@ yell 是 Kernel Master 项目的通知服务.
 
 ## 支持的渠道
 
-|  渠道   | `channel_type` | 备注                                                   |
-| :-----: | :------------: | :----------------------------------------------------- |
-|  Bark   |     `bark`     | 通过 Bark 服务器推送 iOS 通知                          |
-| Gotify  |    `gotify`    | 通过自托管 Gotify 服务器推送                           |
-|  Mail   |     `smtp`     | 通过 SMTP 发送邮件 (lettre)                            |
-|  Teams  |    `teams`     | 通过 webhook 发送到 Microsoft Teams (支持自定义 JSON 模板) |
-| Webhook |    `webhook`   | 通用 HTTP webhook; `params_template` 整体作为 payload  |
+|   渠道    | `channel_type` | 备注                                                                     |
+| :-------: | :------------: | :----------------------------------------------------------------------- |
+|   Bark    |     `bark`     | 通过 Bark 服务器推送 iOS 通知                                            |
+|  Gotify   |    `gotify`    | 通过自托管 Gotify 服务器推送                                             |
+|   Mail    |     `smtp`     | 通过 SMTP 发送邮件 (lettre)                                              |
+|   Teams   |    `teams`     | 通过 Incoming Webhook 发送 MessageCard; 仍在 router 注册, 但模板已无 `teams` 列 (改名为 `teams_hook`), 模板发送路径下实际不可达 |
+| Teams Hook |  `teams_hook`  | 通过 Incoming Webhook 发送到 Microsoft Teams; 逻辑同 `webhook`, 渲染后 payload 原样 POST |
+|  Webhook  |    `webhook`   | 通用 HTTP webhook; 渲染后的模板 payload 原样作为请求体发送                |
 
 每种渠道类型支持多实例配置 (按 `channel_type` + 实例 `name` 区分).
 

@@ -184,5 +184,14 @@ new code must not imitate them.
 - `cron_job.rs` and `job_log.rs` in `jc-commander/src/api/` and `notify.rs` in
   `yell/src/api/` lack the `_manage` suffix; new handler files must not imitate
   them.
-- `yell/src/api/` currently has no `system_manage.rs`; when it is added later,
-  it must use that file name.
+- `yell`'s model layer does not use the three-struct pattern:
+  `notification_template.rs` splits by responsibility into
+  `NotificationTemplate` (Queryable/Selectable), `NewNotificationTemplate`
+  (Insertable), and `UpdateNotificationTemplate` (AsChangeset), with no
+  `XxxInputStream`/`XxxOutputStream`; templates carry no sensitive fields, so
+  query results are returned directly as `Vec<Value>` via `serde_json::to_value`
+  (see `get_with_filter` in `yell/src/model/notification_template.rs`). This is
+  a registered legitimate variant; new tables should still prefer the
+  three-struct pattern.
+- `yell/src/api/` now has `system_manage.rs` (hosting `refresh_master` —
+  re-registering with watchman, like file-agent — not `/api/reload`).

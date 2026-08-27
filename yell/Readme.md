@@ -2,9 +2,9 @@
 
 Yell is the notification service of the Kernel Master project.
 It listens on port **9005** and dispatches notifications to multiple channels
-(Bark / Gotify / Mail(SMTP) / Teams / Webhook), with template rendering,
-channel instance configuration, recipient aliases, and delivery records
-persisted in PostgreSQL.
+(Bark / Gotify / Mail(SMTP) / Teams / Teams Hook / Webhook), with template
+rendering, channel instance configuration, recipient aliases, and delivery
+records persisted in PostgreSQL.
 
 ## Code Conventions
 
@@ -12,9 +12,11 @@ persisted in PostgreSQL.
 
 - All channel-sending and management logic belongs in the ***services*** directory.
 
-    Each channel (`bark/`, `gotify/`, `mail/`, `teams/`, `webhook/`) implements the
-    `Channel` trait defined in `services/channel.rs`. `notification_router.rs`
-    routes a request to the requested channel instances and records the delivery.
+    Each channel (`bark/`, `gotify/`, `mail/`, `teams/`, `teams_hook/`,
+    `webhook/`) implements the `Channel` trait defined in
+    `services/channel.rs` (`channel_type` / `preflight` / `dispatch_template`).
+    `notification_router.rs` routes a request to the requested channel
+    instances and records the delivery.
 
 - API-response–related logic goes into the corresponding API module under the ***api*** directory.
 
@@ -23,8 +25,8 @@ persisted in PostgreSQL.
 
 ## APIs
 
-All endpoints are prefixed with `/api`. Except `/hey`, every scope is wrapped
-by the `Authentication` middleware.
+All endpoints are prefixed with `/api`. Except `/hey` and `/manage`, every
+scope is wrapped by the `Authentication` middleware.
 
 ### /hey
 
@@ -32,19 +34,27 @@ by the `Authentication` middleware.
 | :------: | :---------------: | :------ | :---- |
 |    /     |      `POST`       | Health check | Public, no auth required |
 
+### /manage
+
+|     Resource      | Supported Methods | Purpose | Notes |
+| :---------------: | :---------------: | :------ | :---- |
+|  /refresh_master  |      `POST`       | Re-register this instance with watchman | Public, no auth required; implemented in `api/system_manage.rs` |
+
 ### /notify
 
 |  Resource  | Supported Methods | Purpose | Notes |
 | :--------: | :---------------: | :------ | :---- |
-|   /send    |      `POST`       | Unified send endpoint | `recipients` format: `[{"channel_type": "smtp", "recipient": "user@example.com"}, ...]`; alias names are resolved to concrete recipients |
-| /template  |      `POST`       | Send with a template | Requires `template_name` and `variables` |
+| /template  |      `POST`       | Send with a template | Requires `template_name` and `variables`; `recipients` only accepts an alias name string, which is resolved to concrete recipients via `notification_aliases` |
+
+The former direct-send endpoint `POST /api/notify/send` has been removed;
+template sending is the only send path now.
 
 ### /template
 
 | Resource | Supported Methods | Purpose | Notes |
 | :------: | :---------------: | :------ | :---- |
 |   /get   |       `GET`       | List templates | Query-string filters supported |
-|   /new   |      `POST`       | Create a template | Per-channel bodies: `smtp` / `bark` / `gotify` / `ntfy` / `teams` / `webhook` |
+|   /new   |      `POST`       | Create a template | Per-channel bodies: `smtp` / `bark` / `gotify` / `teams_hook` / `webhook` |
 | /update  |      `POST`       | Update a template | Requires `id` |
 | /delete  |      `POST`       | Delete a template | Requires `id` |
 
@@ -77,8 +87,9 @@ by the `Authentication` middleware.
 |  Bark   |     `bark`     | iOS push via Bark server |
 | Gotify  |    `gotify`    | Self-hosted push via Gotify server |
 |  Mail   |     `smtp`     | Email via SMTP (lettre) |
-|  Teams  |    `teams`     | Microsoft Teams via webhook (custom JSON template supported) |
-| Webhook |    `webhook`   | Generic HTTP webhook; `params_template` is used as the payload |
+|  Teams  |    `teams`     | Microsoft Teams MessageCard via Incoming Webhook; still registered, but templates no longer have a `teams` column (renamed to `teams_hook`), so it is currently unreachable via template sending |
+| Teams Hook | `teams_hook` | Microsoft Teams via Incoming Webhook; same logic as `webhook` — the rendered payload is POSTed as-is |
+| Webhook |    `webhook`   | Generic HTTP webhook; the rendered template payload is POSTed as-is |
 
 Multiple instances per channel type are supported (multi-instance channel
 configuration, keyed by `channel_type` + instance `name`).

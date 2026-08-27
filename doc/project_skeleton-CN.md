@@ -154,7 +154,7 @@ middleware、调度器等组件横切在 `api` → `service` → `model` 三层�
 
 - **jc-worker**：纯 MQ 消费者，无 `api/`、`middleware/`、`model/`。配置层为 `config/worker.rs`（`jc-worker/src/config/worker.rs`），启动链改为 `#[tokio::main]` + lapin 连接/建队/消费（`jc-worker/src/main.rs`），业务逻辑在 `service/task.rs`、`service/json_rpc.rs`。
 - **file-agent**：无数据库，`main.rs` 中 `mod model;` 整体注释掉，无 r2d2 池；multipart 上传逻辑在 `service/file_manage.rs`，文件系统原语收敛在 `util/file_op.rs`。
-- **yell**：业务层用复数目录 `services/`，按通知渠道（`bark/`、`gotify/`、`mail/`、`teams/`、`webhook/`、`wecom/`）分目录；`services/channel.rs` 定义所有渠道必须实现的 `Channel` trait（`channel_type` / `build_message` / `prepare_request` / `send` / `send_template`），`services/notification_router.rs` 的 `NotificationRouter` 统一注册与分发渠道。
+- **yell**：业务层用复数目录 `services/`，按通知渠道（`bark/`、`gotify/`、`mail/`、`teams/`、`teams_hook/`、`webhook/`）分目录；`services/channel.rs` 定义所有渠道必须实现的 `Channel` trait（`channel_type` / `preflight` / `dispatch_template`），`services/notification_router.rs` 的 `NotificationRouter` 统一注册与分发渠道。
 - **cmdb-backend**：`model/` 与 `service/` 先按子系统（`km/`、`cloudserver/`、`yell/` 等）再分一层目录，如 `cmdb-backend/src/model/km/cloud_account.rs`。
 - **jc-commander**：额外有 `util/scheduler.rs`（调度器），属 crate 私有组件，不算骨架变体。
 
@@ -172,7 +172,7 @@ middleware、调度器等组件横切在 `api` → `service` → `model` 三层�
 
 ## 现状与例外
 
-- `/api/reload` 端点目前只有 `watchman-backend` 在 `config/app.rs` 中注册（`watchman-backend/src/config/app.rs:20`）。其余 crate 的 `AllConfigs::reload()` 已实现并用于启动加载，但未暴露 HTTP 热重载端点；`file-agent` 的 `api/system_manage.rs` 承载的是 `refresh_master`（向 watchman 刷新注册），不是 reload。
+- `/api/reload` 端点目前只有 `watchman-backend` 在 `config/app.rs` 中注册（`watchman-backend/src/config/app.rs:20`）。其余 crate 的 `AllConfigs::reload()` 已实现并用于启动加载，但未暴露 HTTP 热重载端点；`file-agent` 与 `yell` 的 `api/system_manage.rs` 承载的是 `refresh_master`（向 watchman 刷新注册），不是 reload。
 - `/api/hey` 在 watchman-backend 同时注册 GET 与 POST，其余 crate 只注册了 POST（如 `file-agent/src/config/app.rs:11`），调用方应使用 POST 以保证兼容。
-- `yell` 历史上曾长期漏登记进 build 脚本与 docker-compose。当前 build 脚本已包含 `yell`，但 `docker-compose.yaml` 中仍无 `yell` 服务；`yell` 也缺少 `README.md` / `Readme_ZH-CN.md`。接入检查清单即为此类遗漏设立，补齐前部署 yell 需手动处理。
+- `yell` 历史上曾长期漏登记进 build 脚本与 docker-compose。当前 build 脚本已包含 `yell`，`docker-compose.yaml` 也已注册 `yell` 服务（`docker-compose.yaml:134`），`README.md` / `Readme_ZH-CN.md` 双语说明亦已补齐，该历史遗漏已闭环。
 - `middleware/auth_middleware.rs` 与 `config/server.rs` 各 crate 已按自身 model/配置分化，属有意的非公共代码，不纳入 share-lib。
