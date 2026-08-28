@@ -28,7 +28,7 @@ yell 是 Kernel Master 项目的通知服务.
 
 | 资源  | 支持的方法 | 功能     | 备注               |
 | :---: | :--------: | :------- | :----------------- |
-|   /   |   `POST`   | 健康检查 | 公开接口, 无需认证 |
+|   /   | `GET` `POST` | 健康检查 | 公开接口, 无需认证 |
 
 ### /manage
 
@@ -49,9 +49,37 @@ yell 是 Kernel Master 项目的通知服务.
 |  资源   | 支持的方法 | 功能         | 备注                                                              |
 | :-----: | :--------: | :----------- | :---------------------------------------------------------------- |
 |   /get  |   `GET`    | 获取模板列表 | 支持 query 过滤                                                   |
+|  /help  | `GET` `POST` | 获取指定模板的模拟渲染示例 | 见下文 [模板帮助](#模板帮助) |
 |   /new  |   `POST`   | 创建模板     | 分渠道模板体: `smtp` / `bark` / `gotify` / `teams_hook` / `webhook` |
 | /update |   `POST`   | 更新模板     | 需要 `id`                                                         |
 | /delete |   `POST`   | 删除模板     | 需要 `id`                                                         |
+
+#### 模板帮助
+
+`GET /api/template/help?name=<模板名>` 或
+`POST /api/template/help`, JSON body 为 `{"name": "<模板名>"}`.
+
+返回该模板按渠道分组的模拟渲染 JSON 示例. 渲染规则
+(实现于 `services/template_render.rs::render_example`):
+
+- 所有 `{{var}}` 占位符统一填充为字符串 `"TEST"`;
+- 模板中的数字 / 布尔字面量原样保留;
+- 响应中只包含模板实际配置的渠道列.
+
+错误响应: `name` 缺失或非字符串返回 `400`; 模板不存在或已禁用返回 `404`.
+
+示例 — `POST /api/template/help`, body 为 `{"name": "webhook_json"}`
+(迁移预置模板, 仅配置了 `webhook` 渠道):
+
+```json
+{
+    "webhook": {
+        "title": "TEST",
+        "body": "TEST",
+        "level": "TEST"
+    }
+}
+```
 
 ### /record
 

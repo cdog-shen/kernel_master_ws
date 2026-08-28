@@ -32,7 +32,7 @@ scope is wrapped by the `Authentication` middleware.
 
 | Resource | Supported Methods | Purpose | Notes |
 | :------: | :---------------: | :------ | :---- |
-|    /     |      `POST`       | Health check | Public, no auth required |
+|    /     |    `GET` `POST`   | Health check | Public, no auth required |
 
 ### /manage
 
@@ -54,9 +54,40 @@ template sending is the only send path now.
 | Resource | Supported Methods | Purpose | Notes |
 | :------: | :---------------: | :------ | :---- |
 |   /get   |       `GET`       | List templates | Query-string filters supported |
+|  /help   |    `GET` `POST`   | Mock-render example of a template | See [Template help](#template-help) below |
 |   /new   |      `POST`       | Create a template | Per-channel bodies: `smtp` / `bark` / `gotify` / `teams_hook` / `webhook` |
 | /update  |      `POST`       | Update a template | Requires `id` |
 | /delete  |      `POST`       | Delete a template | Requires `id` |
+
+#### Template help
+
+`GET /api/template/help?name=<template_name>` or
+`POST /api/template/help` with JSON body `{"name": "<template_name>"}`.
+
+Returns the template mock-rendered per channel as JSON. Rendering rules
+(implemented in `services/template_render.rs::render_example`):
+
+- every `{{var}}` placeholder is filled with the string `"TEST"`;
+- numeric / boolean literals in the template are kept as-is;
+- only the channel columns actually configured on the template appear in the
+  response.
+
+Error responses: `400` when `name` is missing or not a string; `404` when the
+template does not exist or is disabled.
+
+Example — `POST /api/template/help` with `{"name": "webhook_json"}` (a preset
+template installed by the migrations, whose only configured channel is
+`webhook`):
+
+```json
+{
+    "webhook": {
+        "title": "TEST",
+        "body": "TEST",
+        "level": "TEST"
+    }
+}
+```
 
 ### /record
 
