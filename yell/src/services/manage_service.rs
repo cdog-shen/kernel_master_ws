@@ -10,6 +10,7 @@ use diesel::{
 };
 use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
+use std::collections::HashMap;
 
 use crate::model::{
     channel_config::ChannelConfig,
@@ -19,6 +20,7 @@ use crate::model::{
         NewNotificationTemplate, NotificationTemplate, UpdateNotificationTemplate,
     },
 };
+use crate::services::{notify_service, template_render};
 
 // ==================== 模板管理 ====================
 
@@ -181,6 +183,15 @@ pub async fn delete_template<'a>(
             0,
         )),
     }
+}
+
+/// 获取指定模板的模拟渲染示例；模板不存在时返回 404
+pub async fn get_template_example<'a>(
+    template_name: &str,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<HashMap<String, Value>, MailManErr<'a, String>> {
+    let template = notify_service::get_template_by_name(template_name, pool).await?;
+    Ok(template_render::render_example(&template))
 }
 
 // ==================== 通知记录查询 ====================

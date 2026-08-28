@@ -27,6 +27,42 @@ pub async fn get_templates(
     }
 }
 
+/// GET /api/template/help - 获取指定模板的模拟渲染示例（query 传 name）
+pub async fn get_template_help(
+    query: web::Query<Map<String, Value>>,
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<HttpResponse, MailManErrResponser> {
+    template_help(query.get("name"), &pool).await
+}
+
+/// POST /api/template/help - 同上（body 传 name）
+pub async fn post_template_help(
+    req: web::Json<Map<String, Value>>,
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<HttpResponse, MailManErrResponser> {
+    template_help(req.get("name"), &pool).await
+}
+
+/// 清洗 name 参数（缺失或非字符串返回 400）并调用编排层获取模拟渲染示例
+async fn template_help(
+    name: Option<&Value>,
+    pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
+) -> Result<HttpResponse, MailManErrResponser> {
+    let name = name.and_then(|v| v.as_str()).ok_or_else(|| {
+        MailManErrResponser::mapping_from_mme(share_lib::data_structure::MailManErr::new(
+            400,
+            "Bad Request",
+            Some("Missing 'name' field".to_string()),
+            1,
+        ))
+    })?;
+
+    match manage_service::get_template_example(name, pool).await {
+        Ok(data) => Ok(HttpResponse::Ok().json(data)),
+        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
+    }
+}
+
 /// POST /api/template/new - 创建模板
 pub async fn create_template(
     req: web::Json<Map<String, Value>>,

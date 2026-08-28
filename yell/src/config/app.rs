@@ -35,6 +35,11 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                         web::resource("/get").route(web::get().to(template_manage::get_templates)),
                     )
                     .service(
+                        web::resource("/help")
+                            .route(web::get().to(template_manage::get_template_help))
+                            .route(web::post().to(template_manage::post_template_help)),
+                    )
+                    .service(
                         web::resource("/new")
                             .route(web::post().to(template_manage::create_template)),
                     )
