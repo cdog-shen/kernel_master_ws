@@ -2,9 +2,11 @@
 //!
 //! Each table has a whitelist of filter keys (mirroring the keys supported by
 //! the model's `get_*_with_filter`) together with the expected value type.
-//! Unknown keys and wrongly-typed values are stripped before the filter map is
-//! dispatched to the per-table service; this is semantically equivalent to the
-//! model's silent ignoring, so no 400 error is introduced.
+//! Although this endpoint takes a JSON body, string values of whitelisted int
+//! keys are still coerced to their native type for robustness. Unknown keys
+//! and wrongly-typed values (including failed coercions) are stripped before
+//! the filter map is dispatched to the per-table service; this is semantically
+//! equivalent to the model's silent ignoring, so no 400 error is introduced.
 
 use serde_json::{Map, Value};
 
@@ -16,10 +18,18 @@ enum FilterValueType {
 }
 
 impl FilterValueType {
-    fn matches(self, value: &Value) -> bool {
+    /// Normalize a value to the expected type: native-typed values pass
+    /// through; string values are coerced to the target type, i.e. numeric
+    /// strings -> i64; a failed coercion or type mismatch returns None and
+    /// the key is stripped (preserving the silent-ignore semantics).
+    fn coerce(self, value: Value) -> Option<Value> {
         match self {
-            FilterValueType::Str => value.is_string(),
-            FilterValueType::Int => value.as_i64().is_some(),
+            FilterValueType::Str => value.is_string().then_some(value),
+            FilterValueType::Int => match value {
+                Value::Number(ref n) if n.is_i64() => Some(value),
+                Value::String(ref s) => s.parse::<i64>().ok().map(|n| Value::Number(n.into())),
+                _ => None,
+            },
         }
     }
 }
@@ -152,9 +162,10 @@ const TABLE_FILTER_WHITELISTS: &[(&str, &[(&str, FilterValueType)])] = &[
     ),
 ];
 
-/// Strip filter keys outside the table's whitelist and values of the wrong
-/// type. Unknown tables are passed through unchanged (the dispatcher rejects
-/// them with 400 on its own).
+/// Strip filter keys outside the table's whitelist and coerce string-form int
+/// values to their native type; wrongly-typed values and failed coercions are
+/// stripped. Unknown tables are passed through unchanged (the dispatcher
+/// rejects them with 400 on its own).
 pub fn clean_query_filter(table_name: &str, query: Map<String, Value>) -> Map<String, Value> {
     let Some((_, whitelist)) = TABLE_FILTER_WHITELISTS
         .iter()
@@ -165,10 +176,12 @@ pub fn clean_query_filter(table_name: &str, query: Map<String, Value>) -> Map<St
 
     query
         .into_iter()
-        .filter(|(key, value)| {
+        .filter_map(|(key, value)| {
             whitelist
                 .iter()
-                .any(|(w_key, w_type)| *w_key == key && w_type.matches(value))
+                .find(|(w_key, _)| *w_key == key)
+                .and_then(|(_, w_type)| w_type.coerce(value))
+                .map(|coerced| (key, coerced))
         })
         .collect()
 }
