@@ -28,6 +28,10 @@ records persisted in PostgreSQL.
 All endpoints are prefixed with `/api`. Except `/hey` and `/manage`, every
 scope is wrapped by the `Authentication` middleware.
 
+All success responses are wrapped in `MailManOk` (`{code, key, data}`),
+including the query-style GET endpoints (`/template/get`, `/template/help`,
+`/record/get`, `/channel/get`, `/alias/get`), whose payload sits in `data`.
+
 ### /hey
 
 | Resource | Supported Methods | Purpose | Notes |
@@ -53,7 +57,7 @@ template sending is the only send path now.
 
 | Resource | Supported Methods | Purpose | Notes |
 | :------: | :---------------: | :------ | :---- |
-|   /get   |       `GET`       | List templates | Query-string filters supported |
+|   /get   |       `GET`       | List templates | Query-string filters supported; `is_enabled` takes `true`/`false` strings |
 |  /help   |    `GET` `POST`   | Mock-render example of a template | See [Template help](#template-help) below |
 |   /new   |      `POST`       | Create a template | Per-channel bodies: `smtp` / `bark` / `gotify` / `teams_hook` / `webhook` |
 | /update  |      `POST`       | Update a template | Requires `id` |
@@ -64,7 +68,8 @@ template sending is the only send path now.
 `GET /api/template/help?name=<template_name>` or
 `POST /api/template/help` with JSON body `{"name": "<template_name>"}`.
 
-Returns the template mock-rendered per channel as JSON. Rendering rules
+Returns the template mock-rendered per channel as JSON (wrapped in
+`MailManOk`, payload in `data`). Rendering rules
 (implemented in `services/template_render.rs::render_example`):
 
 - every `{{var}}` placeholder is filled with the string `"TEST"`;
@@ -81,10 +86,14 @@ template installed by the migrations, whose only configured channel is
 
 ```json
 {
-    "webhook": {
-        "title": "TEST",
-        "body": "TEST",
-        "level": "TEST"
+    "code": 200,
+    "key": "Template example rendered",
+    "data": {
+        "webhook": {
+            "title": "TEST",
+            "body": "TEST",
+            "level": "TEST"
+        }
     }
 }
 ```

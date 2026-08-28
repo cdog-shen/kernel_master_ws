@@ -115,7 +115,7 @@ paths:
   /api/template/get:
     get:
       summary: 获取模板列表
-      description: 支持过滤键 name（字符串）、is_enabled（布尔）；未知键静默忽略。
+      description: 支持过滤键 name（字符串）、is_enabled（布尔，query 中传 "true"/"false" 字符串即可，清洗层自动转换）；未知键静默忽略。
       parameters:
         - name: name
           in: query
@@ -129,13 +129,24 @@ paths:
             type: boolean
       responses:
         "200":
-          description: 模板数组（未经 MailMan 包装，直接为 JSON 数组）
+          description: 模板数组（MailManOk 包装，data 为 Template 数组）
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Template"
+                allOf:
+                  - $ref: "#/components/schemas/MailManOk"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Template"
+              example:
+                code: 200
+                key: "Templates fetched"
+                data:
+                  - id: 1
+                    name: "deploy_notice"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "500":
@@ -152,19 +163,27 @@ paths:
             type: string
       responses:
         "200":
-          description: 渠道类型 -> 模拟渲染后的 payload（占位符以 "TEST" 填充；未经 MailMan 包装）
+          description: 渠道类型 -> 模拟渲染后的 payload（占位符以 "TEST" 填充；MailManOk 包装，data 为 TemplateExample）
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TemplateExample"
+                allOf:
+                  - $ref: "#/components/schemas/MailManOk"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TemplateExample"
               example:
-                smtp:
-                  subject: "部署完成 TEST"
-                  body: "版本 TEST 已上线"
-                webhook:
-                  msgtype: "text"
-                  text:
-                    content: "TEST"
+                code: 200
+                key: "Template example rendered"
+                data:
+                  smtp:
+                    subject: "部署完成 TEST"
+                    body: "版本 TEST 已上线"
+                  webhook:
+                    msgtype: "text"
+                    text:
+                      content: "TEST"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -187,11 +206,16 @@ paths:
                   type: string
       responses:
         "200":
-          description: 渠道类型 -> 模拟渲染后的 payload（未经 MailMan 包装）
+          description: 渠道类型 -> 模拟渲染后的 payload（MailManOk 包装，data 为 TemplateExample）
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TemplateExample"
+                allOf:
+                  - $ref: "#/components/schemas/MailManOk"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TemplateExample"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -325,13 +349,22 @@ paths:
             type: string
       responses:
         "200":
-          description: 通知记录数组（未经 MailMan 包装）
+          description: 通知记录数组（MailManOk 包装，data 为 NotificationRecord 数组）
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/NotificationRecord"
+                allOf:
+                  - $ref: "#/components/schemas/MailManOk"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/NotificationRecord"
+              example:
+                code: 200
+                key: "Records fetched"
+                data: []
         "401":
           $ref: "#/components/responses/Unauthorized"
         "500":
@@ -343,13 +376,22 @@ paths:
       summary: 获取全部通道配置
       responses:
         "200":
-          description: 通道配置数组（未经 MailMan 包装）
+          description: 通道配置数组（MailManOk 包装，data 为 ChannelConfig 数组）
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ChannelConfig"
+                allOf:
+                  - $ref: "#/components/schemas/MailManOk"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/ChannelConfig"
+              example:
+                code: 200
+                key: "Channel configs fetched"
+                data: []
         "401":
           $ref: "#/components/responses/Unauthorized"
         "500":
@@ -412,13 +454,22 @@ paths:
       summary: 获取全部 alias
       responses:
         "200":
-          description: alias 数组（未经 MailMan 包装）
+          description: alias 数组（MailManOk 包装，data 为 Alias 数组）
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Alias"
+                allOf:
+                  - $ref: "#/components/schemas/MailManOk"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Alias"
+              example:
+                code: 200
+                key: "Aliases fetched"
+                data: []
         "401":
           $ref: "#/components/responses/Unauthorized"
         "500":

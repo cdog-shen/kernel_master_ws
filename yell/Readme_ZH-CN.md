@@ -24,6 +24,10 @@ yell 是 Kernel Master 项目的通知服务.
 
 所有 API 以 `/api` 范围开头. 除 `/hey` 与 `/manage` 外, 所有 scope 都包裹了 `Authentication` 中间件.
 
+所有成功响应均以 `MailManOk` (`{code, key, data}`) 包装返回, 包括查询类 GET
+端点 (`/template/get`、`/template/help`、`/record/get`、`/channel/get`、`/alias/get`),
+其载荷位于 `data` 字段.
+
 ### /hey
 
 | 资源  | 支持的方法 | 功能     | 备注               |
@@ -48,7 +52,7 @@ yell 是 Kernel Master 项目的通知服务.
 
 |  资源   | 支持的方法 | 功能         | 备注                                                              |
 | :-----: | :--------: | :----------- | :---------------------------------------------------------------- |
-|   /get  |   `GET`    | 获取模板列表 | 支持 query 过滤                                                   |
+|   /get  |   `GET`    | 获取模板列表 | 支持 query 过滤; `is_enabled` 传 `"true"`/`"false"` 字符串即可 |
 |  /help  | `GET` `POST` | 获取指定模板的模拟渲染示例 | 见下文 [模板帮助](#模板帮助) |
 |   /new  |   `POST`   | 创建模板     | 分渠道模板体: `smtp` / `bark` / `gotify` / `teams_hook` / `webhook` |
 | /update |   `POST`   | 更新模板     | 需要 `id`                                                         |
@@ -59,7 +63,7 @@ yell 是 Kernel Master 项目的通知服务.
 `GET /api/template/help?name=<模板名>` 或
 `POST /api/template/help`, JSON body 为 `{"name": "<模板名>"}`.
 
-返回该模板按渠道分组的模拟渲染 JSON 示例. 渲染规则
+返回该模板按渠道分组的模拟渲染 JSON 示例 (以 `MailManOk` 包装, 载荷在 `data` 字段). 渲染规则
 (实现于 `services/template_render.rs::render_example`):
 
 - 所有 `{{var}}` 占位符统一填充为字符串 `"TEST"`;
@@ -73,10 +77,14 @@ yell 是 Kernel Master 项目的通知服务.
 
 ```json
 {
-    "webhook": {
-        "title": "TEST",
-        "body": "TEST",
-        "level": "TEST"
+    "code": 200,
+    "key": "Template example rendered",
+    "data": {
+        "webhook": {
+            "title": "TEST",
+            "body": "TEST",
+            "level": "TEST"
+        }
     }
 }
 ```
