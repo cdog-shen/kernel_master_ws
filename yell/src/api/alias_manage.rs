@@ -18,7 +18,13 @@ pub async fn get_aliases(
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     match manage_service::get_aliases(&pool).await {
-        Ok(data) => Ok(HttpResponse::Ok().json(data)),
+        Ok(data) => Ok(
+            HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
+                200,
+                "Aliases fetched",
+                Some(data),
+            )),
+        ),
         Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }

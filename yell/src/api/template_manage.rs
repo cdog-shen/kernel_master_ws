@@ -22,7 +22,13 @@ pub async fn get_templates(
     match manage_service::get_templates(filter::clean_template_filter(query.into_inner()), &pool)
         .await
     {
-        Ok(data) => Ok(HttpResponse::Ok().json(data)),
+        Ok(data) => Ok(
+            HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
+                200,
+                "Templates fetched",
+                Some(data),
+            )),
+        ),
         Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }
@@ -58,7 +64,13 @@ async fn template_help(
     })?;
 
     match manage_service::get_template_example(name, pool).await {
-        Ok(data) => Ok(HttpResponse::Ok().json(data)),
+        Ok(data) => Ok(
+            HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
+                200,
+                "Template example rendered",
+                Some(data),
+            )),
+        ),
         Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }

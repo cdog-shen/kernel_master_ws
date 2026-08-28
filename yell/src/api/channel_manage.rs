@@ -15,7 +15,13 @@ pub async fn get_channel_configs(
     pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<HttpResponse, MailManErrResponser> {
     match manage_service::get_channel_configs(&pool).await {
-        Ok(data) => Ok(HttpResponse::Ok().json(data)),
+        Ok(data) => Ok(
+            HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
+                200,
+                "Channel configs fetched",
+                Some(data),
+            )),
+        ),
         Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }

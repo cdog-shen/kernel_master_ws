@@ -17,7 +17,13 @@ pub async fn get_records(
 ) -> Result<HttpResponse, MailManErrResponser> {
     match manage_service::get_records(filter::clean_record_filter(query.into_inner()), &pool).await
     {
-        Ok(data) => Ok(HttpResponse::Ok().json(data)),
+        Ok(data) => Ok(
+            HttpResponse::Ok().json(share_lib::data_structure::MailManOk::new(
+                200,
+                "Records fetched",
+                Some(data),
+            )),
+        ),
         Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
     }
 }
