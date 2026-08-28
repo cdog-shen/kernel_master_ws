@@ -10,6 +10,7 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")
             // Health check - public, no auth required
+            .service(web::resource("/hey").route(web::get().to(hey_hi_hello::hey)))
             .service(web::resource("/hey").route(web::post().to(hey_hi_hello::hey)))
             // System management APIs
             .service(
@@ -50,7 +51,7 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
             // Notification record APIs
             .service(
                 web::scope("/record")
-                    .service(web::resource("/get").route(web::get().to(notify::get_records)))
+                    .service(web::resource("/get").route(web::get().to(record_manage::get_records)))
                     .wrap(Authentication),
             )
             // Channel config APIs

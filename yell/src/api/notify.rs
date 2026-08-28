@@ -8,8 +8,7 @@ use share_lib::err_mapping::MailManErrResponser;
 use std::collections::HashMap;
 
 use crate::{
-    api::filter, services::manage_service, services::notification_router::NotificationRouter,
-    services::notify_service,
+    api::filter, services::notification_router::NotificationRouter, services::notify_service,
 };
 
 // ==================== 统一通知发送 API ====================
@@ -57,20 +56,6 @@ pub async fn send_with_template(
     match router
         .send_with_template(template, variables, recipients, channel_configs, &pool)
         .await
-    {
-        Ok(data) => Ok(HttpResponse::Ok().json(data)),
-        Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
-    }
-}
-
-// ==================== 通知记录查询 API ====================
-
-/// GET /api/record/get - 获取通知记录
-pub async fn get_records(
-    query: web::Query<Map<String, Value>>,
-    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
-) -> Result<HttpResponse, MailManErrResponser> {
-    match manage_service::get_records(filter::clean_record_filter(query.into_inner()), &pool).await
     {
         Ok(data) => Ok(HttpResponse::Ok().json(data)),
         Err(err) => Err(MailManErrResponser::mapping_from_mme(err)),
