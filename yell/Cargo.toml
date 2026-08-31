@@ -3,6 +3,10 @@ name = "yell"
 version.workspace = true
 edition.workspace = true
 
+[features]
+# 独立运行模式：编译为无需 watchman 的独立子系统（鉴权回退为 uuid 比对，裁掉回源鉴权与主关注册）
+individual = ["share-lib/individual"]
+
 [dependencies]
 # std dependencies
 once_cell.workspace = true
