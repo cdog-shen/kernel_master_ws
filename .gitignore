@@ -17,6 +17,7 @@ jc-commander/.cargo/config.toml
 # log files
 **/logs
 **/log
+**.log
 
 # config files
 **/watchman.toml
