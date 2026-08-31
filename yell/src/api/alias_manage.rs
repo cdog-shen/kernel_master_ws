@@ -8,7 +8,7 @@ use share_lib::err_mapping::MailManErrResponser;
 
 use crate::{
     model::notification_alias::{NewNotificationAlias, UpdateNotificationAlias},
-    services::manage_service,
+    services::{manage_service, notify_service},
 };
 
 // ==================== Alias 管理 API ====================
@@ -52,6 +52,12 @@ pub async fn create_alias(
         ))
     })?;
 
+    if let Err(msg) = notify_service::validate_recipients_shape(&recipients) {
+        return Err(MailManErrResponser::mapping_from_mme(
+            share_lib::data_structure::MailManErr::new(400, "Bad Request", Some(msg), 1),
+        ));
+    }
+
     let new_alias = NewNotificationAlias {
         name: name.to_string(),
         description: req
@@ -87,6 +93,14 @@ pub async fn update_alias(
             1,
         ))
     })? as i32;
+
+    if let Some(recipients) = req.get("recipients") {
+        if let Err(msg) = notify_service::validate_recipients_shape(recipients) {
+            return Err(MailManErrResponser::mapping_from_mme(
+                share_lib::data_structure::MailManErr::new(400, "Bad Request", Some(msg), 1),
+            ));
+        }
+    }
 
     let update = UpdateNotificationAlias {
         name: req
