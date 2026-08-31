@@ -52,15 +52,15 @@ impl Channel for GotifyChannel {
             .unwrap_or(5);
 
         let mut form_body = format!("title={}&message={}&priority={}", title, message, priority);
-        if let Some(url) = payload.get("url").and_then(|v| v.as_str()) {
-            if !url.is_empty() {
-                let extras = json!({
-                    "client::notification": {
-                        "click": { "url": url }
-                    }
-                });
-                form_body.push_str(&format!("&extras={}", extras));
-            }
+        if let Some(url) = payload.get("url").and_then(|v| v.as_str())
+            && !url.is_empty()
+        {
+            let extras = json!({
+                "client::notification": {
+                    "click": { "url": url }
+                }
+            });
+            form_body.push_str(&format!("&extras={}", extras));
         }
 
         let base_url = gotify_config.server_url.trim_end_matches('/').to_string();

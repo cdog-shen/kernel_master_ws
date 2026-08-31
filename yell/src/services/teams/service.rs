@@ -81,14 +81,14 @@ impl Channel for TeamsChannel {
             }
         }
 
-        if let Some(url) = payload.get("url").and_then(|v| v.as_str()) {
-            if !url.is_empty() {
-                teams_payload["potentialAction"] = json!([{
-                    "@type": "OpenUri",
-                    "name": "查看详情",
-                    "targets": [{ "os": "default", "uri": url }]
-                }]);
-            }
+        if let Some(url) = payload.get("url").and_then(|v| v.as_str())
+            && !url.is_empty()
+        {
+            teams_payload["potentialAction"] = json!([{
+                "@type": "OpenUri",
+                "name": "查看详情",
+                "targets": [{ "os": "default", "uri": url }]
+            }]);
         }
 
         let mut errors = Vec::new();

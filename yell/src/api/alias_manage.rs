@@ -94,12 +94,12 @@ pub async fn update_alias(
         ))
     })? as i32;
 
-    if let Some(recipients) = req.get("recipients") {
-        if let Err(msg) = notify_service::validate_recipients_shape(recipients) {
-            return Err(MailManErrResponser::mapping_from_mme(
-                share_lib::data_structure::MailManErr::new(400, "Bad Request", Some(msg), 1),
-            ));
-        }
+    if let Some(recipients) = req.get("recipients")
+        && let Err(msg) = notify_service::validate_recipients_shape(recipients)
+    {
+        return Err(MailManErrResponser::mapping_from_mme(
+            share_lib::data_structure::MailManErr::new(400, "Bad Request", Some(msg), 1),
+        ));
     }
 
     let update = UpdateNotificationAlias {

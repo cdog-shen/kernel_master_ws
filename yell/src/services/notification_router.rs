@@ -62,29 +62,28 @@ impl NotificationRouter {
             // 只向模板中配置了对应字段的渠道发送
             if let Some(template_json) =
                 template_render::get_channel_json(&template, &target.channel_type)
+                && let Some(channel) = self.channels.get(&target.channel_type)
             {
-                if let Some(channel) = self.channels.get(&target.channel_type) {
-                    let channel = Arc::clone(channel);
-                    let template_json = template_json.clone();
-                    let variables = variables.clone();
-                    let configs = channel_configs.clone();
-                    let pool = pool.clone();
+                let channel = Arc::clone(channel);
+                let template_json = template_json.clone();
+                let variables = variables.clone();
+                let configs = channel_configs.clone();
+                let pool = pool.clone();
 
-                    let task = tokio::spawn(async move {
-                        deliver_template(
-                            &channel,
-                            &target,
-                            &template_json,
-                            &variables,
-                            Some(template_id),
-                            &configs,
-                            &pool,
-                        )
-                        .await
-                    });
+                let task = tokio::spawn(async move {
+                    deliver_template(
+                        &channel,
+                        &target,
+                        &template_json,
+                        &variables,
+                        Some(template_id),
+                        &configs,
+                        &pool,
+                    )
+                    .await
+                });
 
-                    tasks.push(task);
-                }
+                tasks.push(task);
             }
         }
 
