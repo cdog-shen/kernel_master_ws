@@ -12,7 +12,7 @@ yell 是 Kernel Master 项目的通知服务.
 
     每个渠道 (`bark/`、`gotify/`、`mail/`、`teams/`、`teams_hook/`、`webhook/`) 实现
     `services/channel.rs` 中定义的 `Channel` trait (`channel_type` / `preflight` /
-    `dispatch_template`). `notification_router.rs`
+    `render` / `send`). `notification_router.rs`
     负责把请求路由到指定的渠道实例并记录投递结果.
 
 - 与 API 响应相关的逻辑放置在 ***api*** 目录下的相应模块中.
@@ -107,7 +107,7 @@ yell 是 Kernel Master 项目的通知服务.
 |  资源   | 支持的方法 | 功能         | 备注                        |
 | :-----: | :--------: | :----------- | :-------------------------- |
 |   /get  |   `GET`    | 获取所有别名 |                             |
-|   /new  |   `POST`   | 创建别名     | 需要 `name` 和 `recipients` |
+|   /new  |   `POST`   | 创建别名     | 需要 `name` 和 `recipients`; 每个元素的 `recipient` 必须是非空数组 (元素类型按渠道定: string, `teams_hook` 为对象) |
 | /update |   `POST`   | 更新别名     | 需要 `id`                   |
 | /delete |   `POST`   | 删除别名     | 需要 `id`                   |
 
@@ -119,7 +119,7 @@ yell 是 Kernel Master 项目的通知服务.
 |  Gotify   |    `gotify`    | 通过自托管 Gotify 服务器推送                                             |
 |   Mail    |     `smtp`     | 通过 SMTP 发送邮件 (lettre)                                              |
 |   Teams   |    `teams`     | 通过 Incoming Webhook 发送 MessageCard; 仍在 router 注册, 但模板已无 `teams` 列 (改名为 `teams_hook`), 模板发送路径下实际不可达 |
-| Teams Hook |  `teams_hook`  | 通过 Incoming Webhook 发送到 Microsoft Teams; 逻辑同 `webhook`, 渲染后 payload 原样 POST |
+| Teams Hook |  `teams_hook`  | 通过 Incoming Webhook 发送到 Microsoft Teams; recipient 元素为对象 (`user` / `group_id` / `team_id` / `channel_id`, 至少一个), 其字段 merge 进模板 variables 后逐元素渲染, POST 到实例配置的 webhook URL |
 |  Webhook  |    `webhook`   | 通用 HTTP webhook; 渲染后的模板 payload 原样作为请求体发送                |
 
 每种渠道类型支持多实例配置 (按 `channel_type` + 实例 `name` 区分).

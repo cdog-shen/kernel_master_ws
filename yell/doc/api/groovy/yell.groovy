@@ -12,8 +12,8 @@
  *          title: '系统告警',
  *          body: 'CPU 使用率超过 90%',
  *          recipients: [
- *              [channelType: 'bark', instance: 'bark-main', recipient: 'DEVICE_KEY'],
- *              [channelType: 'smtp', instance: 'smtp-main', recipient: 'ops@example.com']
+ *              [channelType: 'bark', instance: 'bark-main', recipient: ['DEVICE_KEY']],
+ *              [channelType: 'smtp', instance: 'smtp-main', recipient: ['ops@example.com']]
  *          ]
  *      )
  *
@@ -33,9 +33,9 @@
  *          templateName: 'urgent_alert',
  *          variables: [level: '严重', service: 'CMDB', message: '连接超时', group: 'cmdb-alerts', url: 'https://monitor.example.com/alert/1'],
  *          recipients: [
- *              [channelType: 'bark', instance: 'bark-main', recipient: 'DEVICE_KEY'],
- *              [channelType: 'gotify', instance: 'gotify-main', recipient: 'APP_TOKEN'],
- *              [channelType: 'teams', instance: 'teams-main', recipient: '']
+ *              [channelType: 'bark', instance: 'bark-main', recipient: ['DEVICE_KEY']],
+ *              [channelType: 'gotify', instance: 'gotify-main', recipient: ['APP_TOKEN']],
+ *              [channelType: 'teams', instance: 'teams-main', recipient: ['']]
  *          ]
  *      )
  *
@@ -46,7 +46,7 @@
  *          templateName: 'bark_silent',
  *          variables: [title: '日报提醒', message: '今日日报尚未提交', group: 'daily-report'],
  *          recipients: [
- *              [channelType: 'bark', instance: 'bark-main', recipient: 'DEVICE_KEY']
+ *              [channelType: 'bark', instance: 'bark-main', recipient: ['DEVICE_KEY']]
  *          ]
  *      )
  *
@@ -57,11 +57,11 @@
  *          templateName: 'all_channels_alert',
  *          variables: [level: '严重', service: 'CMDB', message: '连接超时', group: 'cmdb-alerts', url: 'https://monitor.example.com/alert/1'],
  *          recipients: [
- *              [channelType: 'smtp', instance: 'smtp-main', recipient: 'ops@example.com'],
- *              [channelType: 'bark', instance: 'bark-main', recipient: 'DEVICE_KEY'],
- *              [channelType: 'gotify', instance: 'gotify-main', recipient: 'APP_TOKEN'],
- *              [channelType: 'teams', instance: 'teams-main', recipient: ''],
- *              [channelType: 'webhook', instance: 'webhook-main', recipient: '']
+ *              [channelType: 'smtp', instance: 'smtp-main', recipient: ['ops@example.com']],
+ *              [channelType: 'bark', instance: 'bark-main', recipient: ['DEVICE_KEY']],
+ *              [channelType: 'gotify', instance: 'gotify-main', recipient: ['APP_TOKEN']],
+ *              [channelType: 'teams', instance: 'teams-main', recipient: ['']],
+ *              [channelType: 'webhook', instance: 'webhook-main', recipient: ['']]
  *          ]
  *      )
  *
@@ -96,7 +96,9 @@ class YellClient implements Serializable {
      *   - url:        关联链接（可选）
      *   - mentions:   提醒列表（可选）
      *   - recipients: 接收者列表（必填）
-     *       每个元素: [channelType: '...', instance: '...', recipient: '...']
+     *       每个元素: [channelType: '...', instance: '...', recipient: ['...']]
+     *       recipient 为非空数组；元素类型按渠道定（string，teams_hook 为对象，
+     *       如 [user: 'zhangsan', group_id: 'G-001']）
      *   - yellUrl:    覆盖全局 URL（可选）
      *   - token:      覆盖全局 Token（可选）
      */

@@ -490,7 +490,7 @@ paths:
               is_enabled: true
               recipients:
                 - channel_type: "smtp"
-                  recipient: "ops@example.com"
+                  recipient: ["ops@example.com"]
                   instance: "corp_mail"
       responses:
         "200":
@@ -679,8 +679,10 @@ components:
         channel_type:
           $ref: "#/components/schemas/ChannelType"
         recipient:
-          type: string
-          description: 目标地址（邮件地址 / device key / 用户标识等，随渠道而定）
+          type: array
+          minItems: 1
+          items: {}
+          description: 接收目标数组（非空）；元素类型按渠道定——smtp/bark/gotify/teams/webhook 为 string（邮件地址 / device key / app token / webhook URL，空串元素表示回退到实例配置），teams_hook 为对象 {user, group_id, team_id, channel_id}（至少一个 key）
         instance:
           type: string
           description: 通道配置实例名（对应 channel_config.name）

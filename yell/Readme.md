@@ -14,7 +14,7 @@ records persisted in PostgreSQL.
 
     Each channel (`bark/`, `gotify/`, `mail/`, `teams/`, `teams_hook/`,
     `webhook/`) implements the `Channel` trait defined in
-    `services/channel.rs` (`channel_type` / `preflight` / `dispatch_template`).
+    `services/channel.rs` (`channel_type` / `preflight` / `render` / `send`).
     `notification_router.rs` routes a request to the requested channel
     instances and records the delivery.
 
@@ -116,7 +116,7 @@ template installed by the migrations, whose only configured channel is
 | Resource | Supported Methods | Purpose | Notes |
 | :------: | :---------------: | :------ | :---- |
 |   /get   |       `GET`       | List all aliases | |
-|   /new   |      `POST`       | Create an alias | Requires `name` and `recipients` |
+|   /new   |      `POST`       | Create an alias | Requires `name` and `recipients`; each element's `recipient` must be a non-empty array (element type depends on the channel: string, or an object for `teams_hook`) |
 | /update  |      `POST`       | Update an alias | Requires `id` |
 | /delete  |      `POST`       | Delete an alias | Requires `id` |
 
@@ -128,7 +128,7 @@ template installed by the migrations, whose only configured channel is
 | Gotify  |    `gotify`    | Self-hosted push via Gotify server |
 |  Mail   |     `smtp`     | Email via SMTP (lettre) |
 |  Teams  |    `teams`     | Microsoft Teams MessageCard via Incoming Webhook; still registered, but templates no longer have a `teams` column (renamed to `teams_hook`), so it is currently unreachable via template sending |
-| Teams Hook | `teams_hook` | Microsoft Teams via Incoming Webhook; same logic as `webhook` — the rendered payload is POSTed as-is |
+| Teams Hook | `teams_hook` | Microsoft Teams via Incoming Webhook; recipient elements are objects (`user` / `group_id` / `team_id` / `channel_id`, at least one) whose fields are merged into the template variables and rendered per element, then POSTed to the instance-configured webhook URL |
 | Webhook |    `webhook`   | Generic HTTP webhook; the rendered template payload is POSTed as-is |
 
 Multiple instances per channel type are supported (multi-instance channel

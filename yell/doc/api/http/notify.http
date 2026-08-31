@@ -16,8 +16,8 @@ Content-Type: application/json
     "url": "https://example.com",
     "mentions": ["user1", "user2"],
     "recipients": [
-        {"channel_type": "smtp", "instance": "smtp-main", "recipient": "admin@example.com"},
-        {"channel_type": "smtp", "instance": "smtp-main", "recipient": "ops@example.com"}
+        {"channel_type": "smtp", "instance": "smtp-main", "recipient": ["admin@example.com"]},
+        {"channel_type": "smtp", "instance": "smtp-main", "recipient": ["ops@example.com"]}
     ]
 }
 
@@ -32,7 +32,7 @@ Content-Type: application/json
     "format": "text",
     "priority": "urgent",
     "recipients": [
-        {"channel_type": "bark", "instance": "bark-prod", "recipient": "PROD_DEVICE_KEY"}
+        {"channel_type": "bark", "instance": "bark-prod", "recipient": ["PROD_DEVICE_KEY"]}
     ]
 }
 
@@ -47,7 +47,7 @@ Content-Type: application/json
     "format": "html",
     "priority": "urgent",
     "recipients": [
-        {"channel_type": "smtp", "instance": "smtp-main", "recipient": "oncall@example.com"}
+        {"channel_type": "smtp", "instance": "smtp-main", "recipient": ["oncall@example.com"]}
     ]
 }
 
@@ -62,7 +62,7 @@ Content-Type: application/json
     "format": "text",
     "priority": "normal",
     "recipients": [
-        {"channel_type": "smtp", "instance": "smtp-main", "recipient": "user1@example.com, user2@example.com; user3@example.com"}
+        {"channel_type": "smtp", "instance": "smtp-main", "recipient": ["user1@example.com", "user2@example.com", "user3@example.com"]}
     ]
 }
 
@@ -79,7 +79,7 @@ Content-Type: application/json
     "tags": ["test"],
     "url": "https://example.com",
     "recipients": [
-        {"channel_type": "bark", "instance": "bark-main", "recipient": "YOUR_DEVICE_KEY"}
+        {"channel_type": "bark", "instance": "bark-main", "recipient": ["YOUR_DEVICE_KEY"]}
     ]
 }
 
@@ -98,9 +98,27 @@ Content-Type: application/json
         "url": "https://monitor.example.com/alert/1"
     },
     "recipients": [
-        {"channel_type": "bark", "instance": "bark-main", "recipient": "YOUR_DEVICE_KEY"},
-        {"channel_type": "gotify", "instance": "gotify-main", "recipient": "YOUR_APP_TOKEN"},
-        {"channel_type": "teams", "instance": "teams-main", "recipient": ""}
+        {"channel_type": "bark", "instance": "bark-main", "recipient": ["YOUR_DEVICE_KEY"]},
+        {"channel_type": "gotify", "instance": "gotify-main", "recipient": ["YOUR_APP_TOKEN"]},
+        {"channel_type": "teams", "instance": "teams-main", "recipient": [""]}
+    ]
+}
+
+### send Teams Hook with template (recipient 元素为对象，逐元素 merge variables 渲染)
+POST {{baseurl}}/template HTTP/1.1
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+    "template_name": "urgent_alert",
+    "variables": {
+        "level": "严重",
+        "service": "CMDB",
+        "message": "数据库连接超时",
+        "url": "https://monitor.example.com/alert/1"
+    },
+    "recipients": [
+        {"channel_type": "teams_hook", "instance": "teams-main", "recipient": [{"user": "zhangsan", "group_id": "G-001"}, {"user": "lisi"}]}
     ]
 }
 
@@ -149,7 +167,7 @@ Content-Type: application/json
         "url": "https://monitor.example.com/alert/123"
     },
     "recipients": [
-        {"channel_type": "bark", "instance": "cdog_main_bark", "recipient": "YOUR_DEVICE_KEY"}
+        {"channel_type": "bark", "instance": "cdog_main_bark", "recipient": ["YOUR_DEVICE_KEY"]}
     ]
 }
 
@@ -166,7 +184,7 @@ Content-Type: application/json
         "group": "daily-report"
     },
     "recipients": [
-        {"channel_type": "bark", "instance": "cdog_main_bark", "recipient": "YOUR_DEVICE_KEY"}
+        {"channel_type": "bark", "instance": "cdog_main_bark", "recipient": ["YOUR_DEVICE_KEY"]}
     ]
 }
 
@@ -182,7 +200,7 @@ Content-Type: application/json
     "priority": "normal",
     "url": "https://example.com",
     "recipients": [
-        {"channel_type": "gotify", "instance": "gotify-main", "recipient": "YOUR_APP_TOKEN"}
+        {"channel_type": "gotify", "instance": "gotify-main", "recipient": ["YOUR_APP_TOKEN"]}
     ]
 }
 
@@ -200,7 +218,7 @@ Content-Type: application/json
         "url": "https://monitor.example.com/alert/123"
     },
     "recipients": [
-        {"channel_type": "gotify", "instance": "gotify-main", "recipient": "YOUR_APP_TOKEN"}
+        {"channel_type": "gotify", "instance": "gotify-main", "recipient": ["YOUR_APP_TOKEN"]}
     ]
 }
 
@@ -217,7 +235,7 @@ Content-Type: application/json
         "url": "https://example.com"
     },
     "recipients": [
-        {"channel_type": "gotify", "instance": "gotify-main", "recipient": "YOUR_APP_TOKEN"}
+        {"channel_type": "gotify", "instance": "gotify-main", "recipient": ["YOUR_APP_TOKEN"]}
     ]
 }
 
@@ -233,7 +251,7 @@ Content-Type: application/json
     "priority": "normal",
     "url": "https://example.com",
     "recipients": [
-        {"channel_type": "teams", "instance": "teams-main", "recipient": ""}
+        {"channel_type": "teams", "instance": "teams-main", "recipient": [""]}
     ]
 }
 
@@ -251,7 +269,7 @@ Content-Type: application/json
         "url": "https://monitor.example.com/alert/123"
     },
     "recipients": [
-        {"channel_type": "teams", "instance": "teams-main", "recipient": ""}
+        {"channel_type": "teams", "instance": "teams-main", "recipient": [""]}
     ]
 }
 
@@ -268,7 +286,7 @@ Content-Type: application/json
         "url": "https://example.com"
     },
     "recipients": [
-        {"channel_type": "teams", "instance": "teams-main", "recipient": ""}
+        {"channel_type": "teams", "instance": "teams-main", "recipient": [""]}
     ]
 }
 
@@ -285,7 +303,7 @@ Content-Type: application/json
         "level": "critical"
     },
     "recipients": [
-        {"channel_type": "webhook", "instance": "webhook-main", "recipient": ""}
+        {"channel_type": "webhook", "instance": "webhook-main", "recipient": [""]}
     ]
 }
 
@@ -302,7 +320,7 @@ Content-Type: application/json
     "tags": ["test"],
     "url": "https://example.com",
     "recipients": [
-        {"channel_type": "webhook", "instance": "webhook-main", "recipient": ""}
+        {"channel_type": "webhook", "instance": "webhook-main", "recipient": [""]}
     ]
 }
 
@@ -320,7 +338,7 @@ Content-Type: application/json
         "url": "https://monitor.example.com/alert/123"
     },
     "recipients": [
-        {"channel_type": "smtp", "instance": "smtp-main", "recipient": "ops@example.com"}
+        {"channel_type": "smtp", "instance": "smtp-main", "recipient": ["ops@example.com"]}
     ]
 }
 
@@ -339,10 +357,10 @@ Content-Type: application/json
         "url": "https://monitor.example.com/alert/456"
     },
     "recipients": [
-        {"channel_type": "smtp", "instance": "smtp-main", "recipient": "ops@example.com"},
-        {"channel_type": "bark", "instance": "bark-main", "recipient": "YOUR_DEVICE_KEY"},
-        {"channel_type": "gotify", "instance": "gotify-main", "recipient": "YOUR_APP_TOKEN"},
-        {"channel_type": "teams", "instance": "teams-main", "recipient": ""},
-        {"channel_type": "webhook", "instance": "webhook-main", "recipient": ""}
+        {"channel_type": "smtp", "instance": "smtp-main", "recipient": ["ops@example.com"]},
+        {"channel_type": "bark", "instance": "bark-main", "recipient": ["YOUR_DEVICE_KEY"]},
+        {"channel_type": "gotify", "instance": "gotify-main", "recipient": ["YOUR_APP_TOKEN"]},
+        {"channel_type": "teams", "instance": "teams-main", "recipient": [""]},
+        {"channel_type": "webhook", "instance": "webhook-main", "recipient": [""]}
     ]
 }
