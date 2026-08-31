@@ -6,9 +6,11 @@ authors.workspace = true
 
 [features]
 default = []
-web = ["dep:actix-web"]
+web = ["dep:actix-web", "dep:actix-service", "dep:futures"]
 http = ["dep:ureq"]
 mq = ["dep:lapin"]
+# 独立运行模式：编译为无需 watchman 的独立子系统（鉴权中间件仅保留 uuid 比对分支）
+individual = ["web"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
@@ -18,5 +20,7 @@ chrono.workspace = true
 log = { workspace = true, features = ["std"] }
 toml.workspace = true
 actix-web = { workspace = true, optional = true }
+actix-service = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
 ureq = { workspace = true, optional = true }
 lapin = { workspace = true, optional = true }

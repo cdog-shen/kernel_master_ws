@@ -4,3 +4,5 @@ pub mod data_structure;
 pub mod err_mapping;
 pub mod infrastructure;
 pub mod logger;
+#[cfg(feature = "web")]
+pub mod middleware;
