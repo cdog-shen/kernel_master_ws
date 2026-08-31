@@ -55,9 +55,10 @@ impl Channel for BarkChannel {
             }
 
             let url = push_url.clone();
-            let result =
-                run_http_call("Bark", move || http_client::post_json(&url, &[], &[], &push_payload))
-                    .await;
+            let result = run_http_call("Bark", move || {
+                http_client::post_json(&url, &[], &[], &push_payload)
+            })
+            .await;
             if let Err(e) = result {
                 errors.push(format!("device_key '{}': {}", key, e.into_msg()));
             }

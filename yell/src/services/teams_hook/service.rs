@@ -88,9 +88,10 @@ impl Channel for TeamsHookChannel {
         for (i, payload) in payloads.iter().enumerate() {
             let url = hook_config.webhook_url.clone();
             let body = payload.clone();
-            let result =
-                run_http_call("TeamsHook", move || http_client::post_json(&url, &[], &[], &body))
-                    .await;
+            let result = run_http_call("TeamsHook", move || {
+                http_client::post_json(&url, &[], &[], &body)
+            })
+            .await;
             if let Err(e) = result {
                 errors.push(format!("element {}: {}", i, e.into_msg()));
             }
