@@ -9,6 +9,6 @@ master_addr = "127.0.0.1"
 master_port = 8000
 workers = 8
 allowed_origin_list = ["http://localhost:3000", "http://127.0.0.1:3000"]
-authenticate_bypass = ["/api/refresh_master"]
+authenticate_bypass = ["/api/hey", "/api/manage/refresh_master"]
 root = "./"
 file_size_limit = 0

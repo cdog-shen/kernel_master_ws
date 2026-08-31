@@ -14,6 +14,7 @@ use futures::FutureExt;
 
 // share-lib import
 use share_lib::data_structure::MailManOk;
+use share_lib::middleware::user_auth::{UserAuth, UserAuthConfig};
 use share_lib::{log_info, logger};
 
 // local import
@@ -22,7 +23,6 @@ use config::server;
 // local modules
 mod api;
 mod config;
-mod middleware;
 // mod model;
 mod service;
 mod util;
@@ -90,8 +90,19 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(root.clone()))
             // wrap default logger
             .wrap(actix_web::middleware::Logger::default())
-            // Comment this line if you want to integrate with yew-address-book-frontend
-            // .wrap(crate::middleware::auth_middleware::Authentication)
+            // 统一鉴权中间件（share-lib）：OPTIONS/白名单放行，Bearer 回源 watchman 鉴权，
+            // uuid 旧链路比对本机 uuid（individual 模式下无回源字段，仅保留 uuid 比对）
+            .wrap(UserAuth::new({
+                let config = server::GLOBAL_CONFIG.read().unwrap();
+                UserAuthConfig {
+                    #[cfg(not(feature = "individual"))]
+                    master_addr: config.master_addr.clone(),
+                    #[cfg(not(feature = "individual"))]
+                    master_port: config.master_port,
+                    subsys_uuid: config.subsys_uuid.clone(),
+                    authenticate_bypass: config.authenticate_bypass.clone(),
+                }
+            }))
             .wrap_fn(|req, srv| srv.call(req).map(|res| res))
             .configure(config::app::config_services)
     })

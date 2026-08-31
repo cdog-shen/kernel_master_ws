@@ -25,3 +25,7 @@ serde_json.workspace = true
 uuid.workspace = true
 # share-lib utils
 share-lib = { workspace = true, features = ["web", "http"] }
+
+[features]
+# 独立运行模式：无需 watchman，鉴权中间件仅保留 uuid 比对分支
+individual = ["share-lib/individual"]
