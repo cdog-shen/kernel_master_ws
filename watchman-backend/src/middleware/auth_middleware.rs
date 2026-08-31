@@ -16,16 +16,23 @@ use futures::future::{LocalBoxFuture, Ready, ok};
 
 use share_lib::data_structure::MailManErr;
 
-use crate::{
-    model::{
-        access::AccessModel,
-        group::GroupModel,
-        service::ServiceModel,
-        user::UserModel,
-        user_token::{TokenModel, UserToken},
-    },
-    server::GLOBAL_CONFIG,
-};
+use crate::{server::GLOBAL_CONFIG, service::auth_service};
+
+/// 把 MailManErr 按 code 映射为 HTTP 错误响应（中间件短路返回用）
+fn mme_into_response<B>(
+    req: ServiceRequest,
+    err: MailManErr<String>,
+) -> ServiceResponse<EitherBody<B>> {
+    let (req, _) = req.into_parts();
+    let resp = match err.code {
+        400 => HttpResponse::BadRequest().json(err),
+        401 => HttpResponse::Unauthorized().json(err),
+        403 => HttpResponse::Forbidden().json(err),
+        _ => HttpResponse::InternalServerError().json(err),
+    }
+    .map_into_right_body();
+    ServiceResponse::new(req, resp)
+}
 
 // ---------- JWTAuth ----------
 pub struct JwtAuth;
@@ -98,74 +105,46 @@ where
         };
 
         Box::pin(async move {
-            let uid = {
+            // 取 Bearer token 并调共用认证逻辑
+            let auth_res = {
                 let hdr = match req.headers().get("authorization") {
                     Some(h) => h,
                     None => {
-                        let (req, _) = req.into_parts();
-                        let resp = HttpResponse::Unauthorized()
-                            .json(MailManErr::<String>::new(
+                        return Ok(mme_into_response(
+                            req,
+                            MailManErr::new(
                                 401,
                                 "Unauthorized",
                                 Some("missing authorization header".into()),
                                 1,
-                            ))
-                            .map_into_right_body();
-                        return Ok(ServiceResponse::new(req, resp));
+                            ),
+                        ));
                     }
                 };
                 let tok = match hdr.to_str() {
                     Ok(s) if s.starts_with("Bearer ") => &s[7..],
                     _ => {
-                        let (req, _) = req.into_parts();
-                        let resp = HttpResponse::Unauthorized()
-                            .json(MailManErr::<String>::new(
+                        return Ok(mme_into_response(
+                            req,
+                            MailManErr::new(
                                 401,
                                 "Unauthorized",
                                 Some("invalid bearer format".into()),
                                 1,
-                            ))
-                            .map_into_right_body();
-                        return Ok(ServiceResponse::new(req, resp));
+                            ),
+                        ));
                     }
                 };
-                let claims = match UserToken::decode_token(tok.to_string()) {
-                    Ok(c) => c,
-                    Err(_) => {
-                        let (req, _) = req.into_parts();
-                        let resp = HttpResponse::Unauthorized()
-                            .json(MailManErr::<String>::new(
-                                401,
-                                "Unauthorized",
-                                Some("invalid or expired token".into()),
-                                1,
-                            ))
-                            .map_into_right_body();
-                        return Ok(ServiceResponse::new(req, resp));
-                    }
-                };
-                let mut conn = pool.get().unwrap();
-                let username = match TokenModel::token_ckeck(&claims, &mut conn) {
-                    Ok(u) => u,
-                    Err(_) => {
-                        let (req, _) = req.into_parts();
-                        let resp = HttpResponse::Unauthorized()
-                            .json(MailManErr::<String>::new(
-                                401,
-                                "Unauthorized",
-                                Some("token not found in store".into()),
-                                1,
-                            ))
-                            .map_into_right_body();
-                        return Ok(ServiceResponse::new(req, resp));
-                    }
-                };
-                let user = UserModel::get_user_by_username(&username, &mut conn).unwrap();
-                user.id.unwrap()
+                auth_service::authenticate(tok, &pool).await
+            };
+
+            let identity = match auth_res {
+                Ok(i) => i,
+                Err(e) => return Ok(mme_into_response(req, e)),
             };
 
             // 把 uid 塞进 extensions，下游中间件或 handler 都能拿到
-            req.extensions_mut().insert(uid);
+            req.extensions_mut().insert(identity.uid);
 
             svc.call(req).await.map(ServiceResponse::map_into_left_body)
         })
@@ -265,42 +244,11 @@ where
         let path = req.uri().path().to_string();
 
         Box::pin(async move {
-            let mut conn = pool.get().unwrap();
-            let gids = GroupModel::get_groups_by_uid(uid, &mut conn).unwrap_or_default();
-            let gid_vec: Vec<i32> = gids.into_iter().map(|g| g.id).collect();
-            let sids = ServiceModel::get_sids_by_route(&path, &mut conn).unwrap_or_default();
-
-            let perm = match AccessModel::get_max_permission(&gid_vec, &sids, &mut conn) {
-                Ok(p) => p,
-                Err(e) => {
-                    let (req, _) = req.into_parts();
-                    let resp = HttpResponse::InternalServerError()
-                        .json(MailManErr::new(500, "Internal Server Error", Some(e.1), 1))
-                        .map_into_right_body();
-                    return Ok(ServiceResponse::new(req, resp));
-                }
-            };
-
-            let allowed = match perm {
-                2 => true,
-                1 => method == Method::GET,
-                _ => false,
-            };
-
-            if !allowed {
-                let (req, _) = req.into_parts();
-                let resp = HttpResponse::Forbidden()
-                    .json(MailManErr::<String>::new(
-                        403,
-                        "Forbidden",
-                        Some("User has no permissions on the resource".into()),
-                        1,
-                    ))
-                    .map_into_right_body();
-                return Ok(ServiceResponse::new(req, resp));
+            // 调共用权限判定逻辑
+            match auth_service::authorize(uid, &path, &method, &pool).await {
+                Ok(_) => svc.call(req).await.map(ServiceResponse::map_into_left_body),
+                Err(e) => Ok(mme_into_response(req, e)),
             }
-
-            svc.call(req).await.map(ServiceResponse::map_into_left_body)
         })
     }
 }

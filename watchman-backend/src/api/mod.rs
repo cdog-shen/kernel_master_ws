@@ -1,5 +1,6 @@
 pub mod access_manage;
 pub mod account_manage;
+pub mod auth_manage;
 pub mod filter;
 pub mod group_manage;
 pub mod hey_hi_hello;

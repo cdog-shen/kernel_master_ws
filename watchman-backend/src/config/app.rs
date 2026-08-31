@@ -7,6 +7,13 @@ use crate::middleware::auth_middleware::{JwtAuth, PermissionCheck};
 
 pub fn config_services(cfg: &mut web::ServiceConfig) {
     log_info!("Configuring routes...");
+
+    // 子系统回源鉴权端点（POST /api/auth/verify）
+    // 必须注册在 /api scope 之前：actix 路由按注册顺序命中，/api scope 前缀命中后
+    // 内部失配不会回退到同级条目；且该端点自带子系统 uuid 调用方认证，
+    // 不能经过 /api scope 上挂的 JwtAuth / PermissionCheck 中间件。
+    cfg.service(web::resource("/api/auth/verify").route(web::post().to(auth_manage::verify)));
+
     cfg.service(
         // API scope
         web::scope("/api")

@@ -118,6 +118,26 @@ impl SubsysModel {
         }
     }
 
+    /// get enable subsystem by token (subsys uuid)
+    pub fn get_enable_by_token(
+        subsys_uuid: &uuid::Uuid,
+        conn: &mut PgConnection,
+    ) -> Result<Self, (u8, String)> {
+        match subsystem_table
+            .filter(is_enable.eq(true))
+            .filter(token.eq(subsys_uuid))
+            .select(SubsysModel::as_select())
+            .get_result::<SubsysModel>(conn)
+        {
+            Ok(subsys_info) => Ok(subsys_info),
+            Err(NotFound) => Err((
+                BAD_REQUEST_CODE,
+                format!("can NOT find subsystem uuid: {}.", &subsys_uuid),
+            )),
+            Err(e) => Err((UNKNOW_ERROR_CODE, format!("Unknow Error: {e}."))),
+        }
+    }
+
     pub fn get_enable_by_name(
         name: &String,
         conn: &mut PgConnection,
