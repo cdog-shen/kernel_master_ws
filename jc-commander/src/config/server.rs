@@ -20,9 +20,13 @@ pub struct AllConfigs {
     pub allowed_origin_list: Vec<String>,
 
     pub subsys_uuid: String,
-    pub register_name: String,
 
+    // individual 模式下无 watchman，主关地址与注册名编译期裁掉
+    #[cfg(not(feature = "individual"))]
+    pub register_name: String,
+    #[cfg(not(feature = "individual"))]
     pub master_addr: String,
+    #[cfg(not(feature = "individual"))]
     pub master_port: u16,
 
     pub authenticate_bypass: Vec<String>,
@@ -45,9 +49,12 @@ impl AllConfigs {
             allowed_origin_list: vec![],
 
             subsys_uuid: String::new(),
-            register_name: String::new(),
 
+            #[cfg(not(feature = "individual"))]
+            register_name: String::new(),
+            #[cfg(not(feature = "individual"))]
             master_addr: String::new(),
+            #[cfg(not(feature = "individual"))]
             master_port: 8000,
 
             authenticate_bypass: vec![],
@@ -120,19 +127,23 @@ impl AllConfigs {
             })
             .to_string();
 
-        self.register_name = config["server_config"]["register_name"]
-            .as_str()
-            .expect("Config path server_config:register_name (string) not found")
-            .to_string();
+        // individual 模式下无 watchman，主关注册名与地址配置编译期裁掉
+        #[cfg(not(feature = "individual"))]
+        {
+            self.register_name = config["server_config"]["register_name"]
+                .as_str()
+                .expect("Config path server_config:register_name (string) not found")
+                .to_string();
 
-        self.master_addr = config["server_config"]["master_addr"]
-            .as_str()
-            .expect("Config path server_config:master_addr (string) not found")
-            .to_string();
-        self.master_port = config["server_config"]["master_port"]
-            .as_u64()
-            .expect("Config path server_config:master_port (u16) not found")
-            as u16;
+            self.master_addr = config["server_config"]["master_addr"]
+                .as_str()
+                .expect("Config path server_config:master_addr (string) not found")
+                .to_string();
+            self.master_port = config["server_config"]["master_port"]
+                .as_u64()
+                .expect("Config path server_config:master_port (u16) not found")
+                as u16;
+        }
 
         self.authenticate_bypass = match &config["server_config"]["authenticate_bypass"] {
             Value::Array(vec) => vec
