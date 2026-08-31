@@ -8,8 +8,9 @@ use crate::services::template_render;
 
 /// Teams Hook 推送渠道实现
 /// 是通用 webhook 的一层封装：recipient 元素为对象，
-/// 每个元素的字段（user/group_id/team_id/channel_id）merge 进模板 variables，
-/// 逐元素渲染出定制 payload 后 POST 到配置中的 webhook_url
+/// 模板用原始 variables 渲染一次（不感知接收人信息），
+/// 每个元素的字段（user/group_id/team_id/channel_id）再 merge 到渲染结果的顶层，
+/// 逐元素 POST 到配置中的 webhook_url
 pub struct TeamsHookChannel;
 
 /// recipient 元素对象允许的 key
@@ -53,23 +54,28 @@ impl Channel for TeamsHookChannel {
         Ok(())
     }
 
-    /// 逐元素 merge variables 后渲染；payloads[i] 与 recipients[i] 一一对应
+    /// 先用原始 variables 渲染出基础 payload（模板不感知接收人信息），
+    /// 再把每个元素的字段 merge 到渲染结果的顶层；payloads[i] 与 recipients[i] 一一对应
     fn render(
         &self,
         recipients: &[Value],
         template_json: &Value,
         variables: &Map<String, Value>,
     ) -> Result<Vec<Value>, DispatchError> {
+        let base = template_render::render_channel(template_json, variables);
         let mut payloads = Vec::with_capacity(recipients.len());
         for v in recipients {
             let obj = v.as_object().ok_or_else(|| {
                 DispatchError::Abort("TeamsHook recipient elements must be objects".to_string())
             })?;
-            let mut merged = variables.clone();
+            let mut payload = base.clone();
+            let map = payload.as_object_mut().ok_or_else(|| {
+                DispatchError::Abort("TeamsHook rendered payload must be a JSON object".to_string())
+            })?;
             for (k, val) in obj {
-                merged.insert(k.clone(), val.clone());
+                map.insert(k.clone(), val.clone());
             }
-            payloads.push(template_render::render_channel(template_json, &merged));
+            payloads.push(payload);
         }
         Ok(payloads)
     }

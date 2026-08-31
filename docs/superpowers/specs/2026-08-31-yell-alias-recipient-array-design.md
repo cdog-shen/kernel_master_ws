@@ -19,8 +19,9 @@ device_key，gotify 是单个 app_token，webhook/teams_hook 是单个 URL。
 ]}
 ```
 
-teams_hook 的每个元素对象会 merge 进模板 variables，逐元素渲染出定制 payload 后
-POST 到 teams webhook（接收端靠 `user`/`team_id`/`channel_id` 做 @mention / 频道路由）。
+teams_hook 先用原始 variables 渲染出基础 payload（模板完全不体现接收人信息），
+再把每个元素对象的字段 merge 到渲染结果的顶层，逐元素 POST 到 teams webhook
+（接收端靠 `user`/`team_id`/`channel_id` 做 @mention / 频道路由）。
 
 ## 关键决策（brainstorming 结论）
 
@@ -69,8 +70,8 @@ alias `recipients` 元素结构：
 - `preflight(config, recipients)` — 校验配置 + 元素 schema；不合法返回 `DispatchError::Abort`
   （不写记录，错误直接上抛）；
 - `render(recipients, template_json, variables) -> Result<Vec<Value>, _>` —
-  普通渠道恒返回 1 个 payload；teams_hook 逐元素 merge variables 后渲染，返回 N 个，
-  `payloads[i]` 与 `recipients[i]` 按下标一一对应；
+  普通渠道恒返回 1 个 payload；teams_hook 模板渲染一次后逐元素把字段 merge 到
+  渲染结果顶层，返回 N 个，`payloads[i]` 与 `recipients[i]` 按下标一一对应；
 - `send(config, recipients, payloads)` — 执行外呼。元素间互不阻断，全部尝试完毕后，
   有错才返回 `DispatchError::Failed`（错误信息汇总并标注失败元素）。
 
@@ -90,7 +91,8 @@ alias `recipients` 元素结构：
 - **bark / gotify**：渲染一次，逐 device_key / app_token POST；
 - **webhook**：渲染一次，逐 URL POST；空字符串元素回退用配置里的 `webhook_url`
   （沿用现有"非空覆盖"语义）；
-- **teams_hook**：逐元素 merge `variables`（元素字段注入/覆盖）→ 渲染 →
+- **teams_hook**：模板用原始 variables 渲染一次（模板不体现接收人信息）→
+  逐元素把元素字段 merge 到渲染结果顶层（元素字段覆盖同名 key）→
   POST 到配置的 `webhook_url`；普通 webhook 不做 merge，直接转发 vars 渲染结果；
 - **teams**（旧渠道）：模板无 `teams` 列，三元组照旧被跳过，仅做 trait 签名适配。
 
@@ -135,3 +137,9 @@ alias `recipients` 元素结构：
   `build/fmt_all_ws.sh -- --check` 必须通过；
 - 用 `yell/doc/api/http/` 示例做手工验证清单：新格式 alias 的创建、
   smtp 多 To、bark 多 key、teams_hook 对象元素 merge 渲染、旧格式 string 被拒（400）。
+
+## 变更记录
+
+- 2026-08-31（实现后修正）：teams_hook 的 merge 语义由"元素字段 merge 进 variables 再渲染"
+  改为"模板用原始 variables 渲染一次，元素字段 merge 到渲染结果顶层"。
+  原因：模板不应体现接收人信息（否则必须写 `{{user}}` 等占位符才能带出字段）。

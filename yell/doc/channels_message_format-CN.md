@@ -291,10 +291,11 @@ MessageCard 对每个 URL 元素各 POST 一次。
   `user` / `group_id` / `team_id` / `channel_id`（`ALLOWED_KEYS`，
   `teams_hook/service.rs:16`），均为可选但至少出现一个、值必须为 string，
   由 `preflight` 校验（`teams_hook/service.rs:31-54`）。
-- 渲染逐元素进行（`render`，`teams_hook/service.rs:57-75`）：每个元素的
-  字段 merge 进模板 variables（元素字段覆盖同名变量），再对模板
-  `teams_hook` 列渲染出该元素专属的 payload；`payloads[i]` 与
-  `recipients[i]` 一一对应。
+- 渲染分两步（`render`，`teams_hook/service.rs:57-82`）：先用原始 variables
+  对模板 `teams_hook` 列渲染出基础 payload（**模板不感知接收人信息**），
+  再把每个元素的字段 merge 到渲染结果的**顶层**（元素字段覆盖同名 key）；
+  `payloads[i]` 与 `recipients[i]` 一一对应。渲染结果非 JSON 对象时报
+  `Abort`。
 - HTTP POST JSON 到**实例配置中的** `WebhookConfig { webhook_url }`
   （`send`，`teams_hook/service.rs:78-99`）：每个元素渲染出的 payload 原样
   各 POST 一次，URL 不随元素变化。
@@ -310,7 +311,8 @@ MessageCard 对每个 URL 元素各 POST 一次。
 
 元素为对象 `{"user": "...", "group_id": "...", "team_id": "...",
 "channel_id": "..."}`：四个 key 均可选但至少一个，值必须为 string；
-每个对象的字段 merge 进模板 variables 后逐元素渲染。示例：
+模板先用原始 variables 渲染一次，每个对象的字段再 merge 到渲染结果的
+顶层后逐元素发送。示例：
 
 ```json
 { "channel_type": "teams_hook", "instance": "teams-main",
@@ -361,7 +363,7 @@ MessageCard 对每个 URL 元素各 POST 一次。
 | bark | HTTP POST JSON `{server_url}/push` | 无（device_key 在 body） | device_key string；空串回退配置（再空则广播） | payload 原样 + device_key，逐元素发送 | — |
 | gotify | HTTP POST form `{server_url}/message?token=` | query token（app token） | app token string；空串回退配置 | 取 title/message/priority/url，逐元素发送 | form 手工拼接未转义；priority 仅接受 JSON 数字 |
 | teams | HTTP POST JSON webhook URL | URL 本身 | webhook URL string；空串回退配置 | MessageCard + 未知字段→facts，逐元素发送 | 模板已无 teams 列，当前不可达 |
-| teams_hook | HTTP POST JSON webhook URL（实例配置） | URL 本身 | 对象 `{user, group_id, team_id, channel_id}`（至少一个 key） | 元素字段 merge 进 variables 后逐元素渲染 | 唯一按元素定制 payload 的渠道 |
+| teams_hook | HTTP POST JSON webhook URL（实例配置） | URL 本身 | 对象 `{user, group_id, team_id, channel_id}`（至少一个 key） | 模板渲染一次，元素字段 merge 到渲染结果顶层后逐元素发送 | 唯一按元素定制 payload 的渠道 |
 | webhook | HTTP POST JSON webhook URL | 无 | webhook URL string；空串回退配置 | payload 完全原样发送，逐元素发送 | 完全由模板作者控制 payload 的通用通道 |
 
 ## 9. 备注与已知缺口
