@@ -10,12 +10,6 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
         web::scope("/api")
             .service(web::resource("/hey").route(web::post().to(hey_hi_hello::hey)))
             .service(
-                web::scope("/manage").service(
-                    web::resource("/refresh_master")
-                        .route(web::post().to(system_manage::refresh_master)),
-                ),
-            )
-            .service(
                 web::scope("/table")
                     .service(
                         web::resource("/query").route(web::post().to(table_manage::query_table)),
@@ -29,6 +23,12 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                     ),
             ),
     );
+
+    // 与 watchman 交互的管理路由，individual 独立运行模式下裁掉
+    #[cfg(not(feature = "individual"))]
+    cfg.service(web::scope("/api/manage").service(
+        web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master)),
+    ));
 }
 
 //         .service(

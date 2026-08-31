@@ -7,6 +7,8 @@ authors.workspace = true
 [features]
 default = []
 full-schema = []
+# 独立运行模式：编译为无需 watchman 的独立子系统（鉴权中间件仅保留 uuid 比对分支）
+individual = ["share-lib/individual"]
 
 [dependencies]
 # std dependencies
