@@ -19,15 +19,19 @@ pub fn render_template(
     let mut result = HashMap::new();
     for col in CHANNEL_COLUMNS {
         if let Some(json_val) = get_channel_json(template, col) {
-            let rendered = render_value(json_val, variables);
-            result.insert(col.to_string(), rendered);
+            result.insert(col.to_string(), render_channel(json_val, variables));
         }
     }
     result
 }
 
+/// 渲染单个渠道 JSONB 列中的 {{var}} 占位符
+pub fn render_channel(template_json: &Value, variables: &Map<String, Value>) -> Value {
+    render_value(template_json, variables)
+}
+
 /// 获取指定渠道的 JSONB 字段
-fn get_channel_json<'t>(template: &'t NotificationTemplate, col: &str) -> Option<&'t Value> {
+pub fn get_channel_json<'t>(template: &'t NotificationTemplate, col: &str) -> Option<&'t Value> {
     match col {
         "smtp" => template.smtp.as_ref(),
         "bark" => template.bark.as_ref(),
