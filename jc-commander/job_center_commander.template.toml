@@ -10,7 +10,7 @@ uuid = "x"
 master_addr = "127.0.0.1"
 master_port = 8000
 allowed_origin_list = ["http://localhost:3000", "http://127.0.0.1:3000"]
-authenticate_bypass = ["/api/refresh_master"]
+authenticate_bypass = ["/api/hey", "/api/refresh_master"]
 
 [db_config]
 db_str = "postgres://postgres:password@localhost:5432/job_center"

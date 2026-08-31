@@ -3,6 +3,10 @@ name = "jc-commander"
 version.workspace = true
 edition.workspace = true
 
+[features]
+# 独立运行模式：不依赖 watchman 回源鉴权，仅保留 uuid 旧链路校验
+individual = ["share-lib/individual"]
+
 [dependencies]
 # std dependencies
 once_cell.workspace = true
