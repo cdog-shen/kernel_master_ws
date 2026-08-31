@@ -33,8 +33,7 @@ diesel::table! {
         id -> Int4,
         #[max_length = 32]
         channel_type -> Varchar,
-        #[max_length = 512]
-        recipient -> Varchar,
+        recipient -> Text,
         #[max_length = 512]
         subject -> Nullable<Varchar>,
         content -> Text,
