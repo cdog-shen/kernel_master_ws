@@ -11,7 +11,9 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 
 use crate::model::notification_template::NotificationTemplate;
 use crate::services::bark::service::BarkChannel;
-use crate::services::channel::{Channel, ChannelConfigs, ChannelResult, deliver_template};
+use crate::services::channel::{
+    Channel, ChannelConfigs, ChannelResult, RecipientTarget, deliver_template,
+};
 use crate::services::gotify::service::GotifyChannel;
 use crate::services::mail::service::SmtpChannel;
 use crate::services::teams::service::TeamsChannel;
@@ -39,39 +41,41 @@ impl NotificationRouter {
         Self { channels }
     }
 
-    /// 使用模板发送 — 渲染各渠道 JSON，只向模板中有对应字段的渠道发送
+    /// 使用模板发送 — 只向模板中有对应字段的渠道发送
     ///
     /// template: 由编排层按名称查询后注入的模板对象
     /// channel_configs: 由编排层注入的渠道配置（channel_type -> instance_name -> config_json）
+    /// 渲染已下沉到各渠道（Channel::render），本函数只负责路由与任务编排
     pub async fn send_with_template<'a>(
         &self,
         template: NotificationTemplate,
         variables: serde_json::Map<String, Value>,
-        recipients: Vec<(String, String, String)>,
+        recipients: Vec<RecipientTarget>,
         channel_configs: ChannelConfigs,
         pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
     ) -> Result<MailManOk<'a, Vec<ChannelResult>>, MailManErr<'a, String>> {
-        // 渲染各渠道 JSON: HashMap<channel_type, rendered_payload>
-        let rendered = template_render::render_template(&template, &variables);
         let template_id = template.id;
 
         let mut tasks = Vec::new();
 
-        for (channel_type, recipient, instance) in recipients {
+        for target in recipients {
             // 只向模板中配置了对应字段的渠道发送
-            if let Some(payload) = rendered.get(&channel_type) {
-                if let Some(channel) = self.channels.get(&channel_type) {
+            if let Some(template_json) =
+                template_render::get_channel_json(&template, &target.channel_type)
+            {
+                if let Some(channel) = self.channels.get(&target.channel_type) {
                     let channel = Arc::clone(channel);
-                    let payload = payload.clone();
+                    let template_json = template_json.clone();
+                    let variables = variables.clone();
                     let configs = channel_configs.clone();
                     let pool = pool.clone();
 
                     let task = tokio::spawn(async move {
                         deliver_template(
                             &channel,
-                            &recipient,
-                            &instance,
-                            &payload,
+                            &target,
+                            &template_json,
+                            &variables,
                             Some(template_id),
                             &configs,
                             &pool,

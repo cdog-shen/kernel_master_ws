@@ -3,7 +3,9 @@ use serde_json::{Value, json};
 use share_lib::infrastructure::http_client;
 
 use crate::model::channel_config::GotifyConfig;
-use crate::services::channel::{Channel, DispatchError, run_http_call};
+use crate::services::channel::{
+    Channel, DispatchError, collect_failures, run_http_call, string_elements,
+};
 
 /// Gotify 推送渠道实现
 pub struct GotifyChannel;
@@ -20,22 +22,25 @@ impl Channel for GotifyChannel {
         "gotify"
     }
 
-    async fn dispatch_template(
+    /// 校验配置与 string 元素（空串元素合法，表示回退到配置中的 app_token）
+    async fn preflight(&self, config: &Value, recipients: &[Value]) -> Result<(), String> {
+        serde_json::from_value::<GotifyConfig>(config.clone())
+            .map_err(|e| format!("Invalid Gotify config: {}", e))?;
+        string_elements(recipients, "Gotify")?;
+        Ok(())
+    }
+
+    async fn send(
         &self,
         config: &Value,
-        recipient: &str,
-        payload: &Value,
-        _template_id: Option<i32>,
+        recipients: &[Value],
+        payloads: &[Value],
     ) -> Result<(), DispatchError> {
         let gotify_config: GotifyConfig = serde_json::from_value(config.clone())
             .map_err(|e| DispatchError::Abort(format!("Invalid Gotify config: {}", e)))?;
+        let tokens = string_elements(recipients, "Gotify").map_err(DispatchError::Abort)?;
 
-        let app_token = if !recipient.is_empty() {
-            recipient.to_string()
-        } else {
-            gotify_config.app_token.clone()
-        };
-
+        let payload = &payloads[0];
         let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or("");
         let message = payload
             .get("message")
@@ -58,22 +63,32 @@ impl Channel for GotifyChannel {
             }
         }
 
-        let push_url = format!(
-            "{}/message?token={}",
-            gotify_config.server_url.trim_end_matches('/'),
-            app_token
-        );
-        run_http_call("Gotify", move || {
-            http_client::post_raw(
-                &push_url,
-                &[(
-                    "Content-Type".to_string(),
-                    "application/x-www-form-urlencoded".to_string(),
-                )],
-                &[],
-                &form_body,
-            )
-        })
-        .await
+        let base_url = gotify_config.server_url.trim_end_matches('/').to_string();
+        let mut errors = Vec::new();
+        for token in tokens {
+            let app_token = if !token.is_empty() {
+                token.to_string()
+            } else {
+                gotify_config.app_token.clone()
+            };
+            let push_url = format!("{}/message?token={}", base_url, app_token);
+            let body = form_body.clone();
+            let result = run_http_call("Gotify", move || {
+                http_client::post_raw(
+                    &push_url,
+                    &[(
+                        "Content-Type".to_string(),
+                        "application/x-www-form-urlencoded".to_string(),
+                    )],
+                    &[],
+                    &body,
+                )
+            })
+            .await;
+            if let Err(e) = result {
+                errors.push(format!("app_token '{}': {}", token, e.into_msg()));
+            }
+        }
+        collect_failures(errors)
     }
 }

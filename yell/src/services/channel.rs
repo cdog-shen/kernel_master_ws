@@ -9,7 +9,7 @@ use diesel::{
     r2d2::{ConnectionManager, Pool},
 };
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Map, Value};
 use share_lib::data_structure::MailManErr;
 
 use crate::model::notification_record::{
@@ -44,6 +44,15 @@ pub struct ChannelResult {
 /// 渠道内不再自行查询 ChannelConfig
 pub type ChannelConfigs = HashMap<String, HashMap<String, Value>>;
 
+/// 单个接收目标：alias recipients 数组中一个元素解析后的结果
+/// recipients 为原始 JSON 元素数组，元素 schema 由各渠道自行定义与校验
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RecipientTarget {
+    pub channel_type: String,
+    pub instance: String,
+    pub recipients: Vec<Value>,
+}
+
 /// 渠道外呼失败类型
 #[derive(Debug)]
 pub enum DispatchError {
@@ -53,8 +62,17 @@ pub enum DispatchError {
     Failed(String),
 }
 
+impl DispatchError {
+    /// 提取错误文本（元素级失败聚合时使用）
+    pub fn into_msg(self) -> String {
+        match self {
+            DispatchError::Abort(m) | DispatchError::Failed(m) => m,
+        }
+    }
+}
+
 /// 渠道 trait —— 所有通知渠道必须实现
-/// 渠道只负责"外呼"本身；配置获取与通知记录生命周期由本模块的
+/// 渠道只负责"校验/渲染/外呼"本身；配置获取与通知记录生命周期由本模块的
 /// 统一骨架（deliver_template）管理
 #[async_trait]
 pub trait Channel: Send + Sync {
@@ -63,21 +81,36 @@ pub trait Channel: Send + Sync {
 
     /// 外呼前置准备（默认无操作）
     /// 在创建通知记录之前调用；返回 Err 时中止发送，不创建记录。
-    /// 渠道可在此校验注入的配置、初始化惰性资源（如 SMTP transport）
-    async fn preflight(&self, config: &Value) -> Result<(), String> {
-        let _ = config;
+    /// 渠道在此校验注入的配置、recipient 元素 schema、初始化惰性资源（如 SMTP transport）
+    async fn preflight(&self, config: &Value, recipients: &[Value]) -> Result<(), String> {
+        let _ = (config, recipients);
         Ok(())
     }
 
-    /// 模板发送的外呼实现 —— 各渠道的核心发送方法
-    /// config 为按 channel_type + instance_name 从注入配置中取出的 config_json，
-    /// payload 为渲染后的模板 JSON
-    async fn dispatch_template(
+    /// 渲染本渠道 payload（默认实现：与 recipient 元素无关，渲染一次）
+    /// template_json 为本渠道在模板中的 JSONB 列内容；
+    /// 返回的 payloads[i] 与 recipients[i] 按下标一一对应（默认实现恒为 1 个）
+    fn render(
+        &self,
+        recipients: &[Value],
+        template_json: &Value,
+        variables: &Map<String, Value>,
+    ) -> Result<Vec<Value>, DispatchError> {
+        let _ = recipients;
+        Ok(vec![crate::services::template_render::render_channel(
+            template_json,
+            variables,
+        )])
+    }
+
+    /// 执行外呼 —— 各渠道的核心发送方法
+    /// config 为按 channel_type + instance_name 从注入配置中取出的 config_json；
+    /// 元素间互不阻断，全部尝试完毕后有错才返回 Failed（错误信息汇总并标注失败元素）
+    async fn send(
         &self,
         config: &Value,
-        recipient: &str,
-        payload: &Value,
-        template_id: Option<i32>,
+        recipients: &[Value],
+        payloads: &[Value],
     ) -> Result<(), DispatchError>;
 }
 
@@ -110,30 +143,34 @@ fn record_view_from_payload(payload: &Value, template_id: Option<i32>) -> Notifi
 }
 
 /// 统一发送流程骨架（模板发送）：
-/// 取注入的配置 → preflight → create_record(pending) → 渠道外呼 → update_record(sent/failed)
+/// 取注入的配置 → preflight（校验配置与元素 schema）→ render →
+/// 创建记录(pending) → send → update_record(sent/failed)
 pub async fn deliver_template(
     channel: &Arc<dyn Channel>,
-    recipient: &str,
-    instance_name: &str,
-    payload: &Value,
+    target: &RecipientTarget,
+    template_json: &Value,
+    variables: &Map<String, Value>,
     template_id: Option<i32>,
     channel_configs: &ChannelConfigs,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<ChannelResult, String> {
-    let config = resolve_config(channel_configs, channel.channel_type(), instance_name)?;
-    channel.preflight(config).await?;
+    let config = resolve_config(channel_configs, channel.channel_type(), &target.instance)?;
+    channel.preflight(config, &target.recipients).await?;
+    let payloads = channel
+        .render(&target.recipients, template_json, variables)
+        .map_err(DispatchError::into_msg)?;
 
+    let recipient_text = serde_json::to_string(&target.recipients)
+        .map_err(|e| format!("Failed to serialize recipients: {}", e))?;
     let record_id = create_record(
         channel.channel_type(),
-        recipient,
-        &record_view_from_payload(payload, template_id),
+        &recipient_text,
+        &record_view_from_payload(&payloads[0], template_id),
         pool,
     )
     .await?;
 
-    let outcome = channel
-        .dispatch_template(config, recipient, payload, template_id)
-        .await;
+    let outcome = channel.send(config, &target.recipients, &payloads).await;
     finalize_delivery(outcome, channel.channel_type(), record_id, pool).await
 }
 
@@ -178,6 +215,28 @@ fn resolve_config<'c>(
         .get(channel_type)
         .and_then(|instances| instances.get(instance_name))
         .ok_or_else(|| format!("{} config not found", channel_display_name(channel_type)))
+}
+
+/// 提取 string 类型的 recipient 元素；任一元素非 string 时返回错误信息
+/// prefix 为渠道显示名（如 "Bark"）。空串元素原样保留，语义由各渠道解释
+/// （bark/gotify/webhook/teams 中空串表示"回退到实例配置"）
+pub fn string_elements<'r>(recipients: &'r [Value], prefix: &str) -> Result<Vec<&'r str>, String> {
+    recipients
+        .iter()
+        .map(|v| {
+            v.as_str()
+                .ok_or_else(|| format!("{} recipient elements must be strings", prefix))
+        })
+        .collect()
+}
+
+/// 汇总元素级失败：无错误返回 Ok，否则 Failed（"; " 连接全部错误）
+pub fn collect_failures(errors: Vec<String>) -> Result<(), DispatchError> {
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(DispatchError::Failed(errors.join("; ")))
+    }
 }
 
 /// 渠道显示名（用于 "Xxx config not found" 错误信息，保持与原各渠道实现一致）

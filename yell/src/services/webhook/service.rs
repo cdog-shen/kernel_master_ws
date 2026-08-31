@@ -3,7 +3,9 @@ use serde_json::Value;
 use share_lib::infrastructure::http_client;
 
 use crate::model::channel_config::WebhookConfig;
-use crate::services::channel::{Channel, DispatchError, run_http_call};
+use crate::services::channel::{
+    Channel, DispatchError, collect_failures, run_http_call, string_elements,
+};
 
 /// 通用 Webhook 推送渠道实现
 pub struct WebhookChannel;
@@ -20,41 +22,41 @@ impl Channel for WebhookChannel {
         "webhook"
     }
 
-    async fn dispatch_template(
+    /// 校验配置与 string 元素（空串元素合法，表示回退到配置中的 webhook_url）
+    async fn preflight(&self, config: &Value, recipients: &[Value]) -> Result<(), String> {
+        serde_json::from_value::<WebhookConfig>(config.clone())
+            .map_err(|e| format!("Invalid Webhook config: {}", e))?;
+        string_elements(recipients, "Webhook")?;
+        Ok(())
+    }
+
+    /// 渲染后的 payload 原样 POST 到每个 URL 元素；空串元素回退用配置中的 webhook_url
+    async fn send(
         &self,
         config: &Value,
-        recipient: &str,
-        payload: &Value,
-        _template_id: Option<i32>,
+        recipients: &[Value],
+        payloads: &[Value],
     ) -> Result<(), DispatchError> {
-        dispatch_webhook("Webhook", config, recipient, payload).await
+        let webhook_config: WebhookConfig = serde_json::from_value(config.clone())
+            .map_err(|e| DispatchError::Abort(format!("Invalid Webhook config: {}", e)))?;
+        let urls = string_elements(recipients, "Webhook").map_err(DispatchError::Abort)?;
+
+        let mut errors = Vec::new();
+        for url in urls {
+            let webhook_url = if !url.is_empty() {
+                url.to_string()
+            } else {
+                webhook_config.webhook_url.clone()
+            };
+            let webhook_payload = payloads[0].clone();
+            let result = run_http_call("Webhook", move || {
+                http_client::post_json(&webhook_url, &[], &[], &webhook_payload)
+            })
+            .await;
+            if let Err(e) = result {
+                errors.push(format!("url '{}': {}", url, e.into_msg()));
+            }
+        }
+        collect_failures(errors)
     }
-}
-
-/// Webhook 核心发送实现（webhook 与 teams_hook 渠道共用）：
-/// recipient 非空时优先作为目标 URL，否则取配置中的 webhook_url；
-/// 渲染后的 payload 原样 POST 到目标 URL。
-/// prefix 为渠道显示名，用于 "Invalid Xxx config" / "Xxx request error" 错误信息
-pub(crate) async fn dispatch_webhook(
-    prefix: &str,
-    config: &Value,
-    recipient: &str,
-    payload: &Value,
-) -> Result<(), DispatchError> {
-    let webhook_config: WebhookConfig = serde_json::from_value(config.clone())
-        .map_err(|e| DispatchError::Abort(format!("Invalid {} config: {}", prefix, e)))?;
-
-    let webhook_url = if !recipient.is_empty() {
-        recipient.to_string()
-    } else {
-        webhook_config.webhook_url.clone()
-    };
-
-    // Webhook 固定使用 JSON 格式，渲染后的 payload 原样发送
-    let webhook_payload = payload.clone();
-
-    run_http_call(prefix, move || {
-        http_client::post_json(&webhook_url, &[], &[], &webhook_payload)
-    })
-    .await
 }

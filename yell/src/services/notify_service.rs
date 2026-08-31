@@ -15,13 +15,13 @@ use std::collections::HashMap;
 use crate::model::channel_config::ChannelConfig;
 use crate::model::notification_alias::NotificationAlias;
 use crate::model::notification_template::NotificationTemplate;
-use crate::services::channel::ChannelConfigs;
+use crate::services::channel::{ChannelConfigs, RecipientTarget};
 
 /// 解析 recipients 字段，仅支持 String（alias）格式
 pub async fn resolve_recipients<'a>(
     recipients_value: Option<&Value>,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
-) -> Result<Vec<(String, String, String)>, MailManErr<'a, String>> {
+) -> Result<Vec<RecipientTarget>, MailManErr<'a, String>> {
     match recipients_value {
         Some(Value::String(alias_name)) => {
             let alias_name = alias_name.clone();
@@ -80,10 +80,10 @@ pub async fn resolve_recipients<'a>(
     }
 }
 
-/// 解析 recipients JSON 数组为 Vec<(channel_type, recipient, instance)>
+/// 解析 recipients JSON 数组为 Vec<RecipientTarget>
 fn parse_recipients_array(
     arr: &[Value],
-) -> Result<Vec<(String, String, String)>, MailManErr<'static, String>> {
+) -> Result<Vec<RecipientTarget>, MailManErr<'static, String>> {
     let mut recipients = Vec::new();
     for v in arr {
         let obj = v.as_object().ok_or_else(|| {
@@ -105,17 +105,6 @@ fn parse_recipients_array(
                     1,
                 )
             })?;
-        let recipient = obj
-            .get("recipient")
-            .and_then(|v| v.as_str())
-            .ok_or_else(|| {
-                MailManErr::new(
-                    400,
-                    "Bad Request",
-                    Some("Missing 'recipient' in recipient".to_string()),
-                    1,
-                )
-            })?;
         let instance = obj
             .get("instance")
             .and_then(|v| v.as_str())
@@ -127,13 +116,53 @@ fn parse_recipients_array(
                     1,
                 )
             })?;
-        recipients.push((
-            channel_type.to_string(),
-            recipient.to_string(),
-            instance.to_string(),
-        ));
+        let recipient_arr = obj
+            .get("recipient")
+            .and_then(|v| v.as_array())
+            .filter(|a| !a.is_empty())
+            .ok_or_else(|| {
+                MailManErr::new(
+                    400,
+                    "Bad Request",
+                    Some(
+                        "Field 'recipient' must be a non-empty array (plain string recipients are no longer supported)"
+                            .to_string(),
+                    ),
+                    1,
+                )
+            })?;
+        recipients.push(RecipientTarget {
+            channel_type: channel_type.to_string(),
+            instance: instance.to_string(),
+            recipients: recipient_arr.clone(),
+        });
     }
     Ok(recipients)
+}
+
+/// 校验 recipients 字段的结构（alias 写入侧使用）：
+/// 顶层数组、每个元素为对象、channel_type/instance 为 string、recipient 为非空数组
+pub fn validate_recipients_shape(value: &Value) -> Result<(), String> {
+    let arr = value
+        .as_array()
+        .ok_or_else(|| "'recipients' must be an array".to_string())?;
+    for v in arr {
+        let obj = v
+            .as_object()
+            .ok_or_else(|| "Each recipient must be an object".to_string())?;
+        for key in ["channel_type", "instance"] {
+            if obj.get(key).and_then(|v| v.as_str()).is_none() {
+                return Err(format!("Missing or non-string '{}' in recipient", key));
+            }
+        }
+        match obj.get("recipient").and_then(|v| v.as_array()) {
+            Some(a) if !a.is_empty() => {}
+            _ => {
+                return Err("Field 'recipient' must be a non-empty array".to_string());
+            }
+        }
+    }
+    Ok(())
 }
 
 /// 加载所有启用的渠道配置，返回 channel_type -> instance_name -> config_json 嵌套表

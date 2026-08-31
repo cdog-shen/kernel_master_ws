@@ -10,7 +10,7 @@ use std::str::FromStr;
 use tokio::sync::Mutex;
 
 use crate::model::channel_config::SmtpConfig;
-use crate::services::channel::{Channel, DispatchError};
+use crate::services::channel::{Channel, DispatchError, string_elements};
 
 /// SMTP 渠道实现
 pub struct SmtpChannel {
@@ -80,18 +80,16 @@ impl SmtpChannel {
             .ok_or_else(|| DispatchError::Abort("SMTP transport not initialized".to_string()))
     }
 
-    /// 解析收件人地址列表（逗号/分号分隔）
-    fn parse_addresses(recipient: &str) -> Result<Vec<&str>, DispatchError> {
-        let addresses: Vec<&str> = recipient
-            .split(|c| c == ',' || c == ';')
+    /// 提取并清洗收件地址元素（string 元素，去空白、去空串；全空报错）
+    fn address_elements(recipients: &[Value]) -> Result<Vec<&str>, String> {
+        let elements = string_elements(recipients, "SMTP")?;
+        let addresses: Vec<&str> = elements
+            .into_iter()
             .map(|s| s.trim())
             .filter(|s| !s.is_empty())
             .collect();
-
         if addresses.is_empty() {
-            return Err(DispatchError::Abort(
-                "No valid recipient addresses provided".to_string(),
-            ));
+            return Err("No valid recipient addresses provided".to_string());
         }
         Ok(addresses)
     }
@@ -129,24 +127,30 @@ impl Channel for SmtpChannel {
         "smtp"
     }
 
-    /// 发送前确保 SMTP transport 已初始化
-    async fn preflight(&self, config: &Value) -> Result<(), String> {
-        self.init_transport(config).await
+    /// 发送前确保 SMTP transport 已初始化，且全部收件地址合法
+    async fn preflight(&self, config: &Value, recipients: &[Value]) -> Result<(), String> {
+        self.init_transport(config).await?;
+        let addresses = Self::address_elements(recipients)?;
+        for addr in &addresses {
+            Mailbox::from_str(addr)
+                .map_err(|e| format!("Invalid recipient address '{}': {}", addr, e))?;
+        }
+        Ok(())
     }
 
-    async fn dispatch_template(
+    async fn send(
         &self,
         config: &Value,
-        recipient: &str,
-        payload: &Value,
-        _template_id: Option<i32>,
+        recipients: &[Value],
+        payloads: &[Value],
     ) -> Result<(), DispatchError> {
         let smtp_config: SmtpConfig = serde_json::from_value(config.clone())
             .map_err(|e| DispatchError::Abort(format!("Invalid SMTP config: {}", e)))?;
 
         let transport = self.transport(&Self::transport_key(&smtp_config)).await?;
-        let addresses = Self::parse_addresses(recipient)?;
+        let addresses = Self::address_elements(recipients).map_err(DispatchError::Abort)?;
 
+        let payload = &payloads[0];
         let subject = payload
             .get("subject")
             .and_then(|v| v.as_str())

@@ -3,7 +3,9 @@ use serde_json::{Value, json};
 use share_lib::infrastructure::http_client;
 
 use crate::model::channel_config::TeamsConfig;
-use crate::services::channel::{Channel, DispatchError, run_http_call};
+use crate::services::channel::{
+    Channel, DispatchError, collect_failures, run_http_call, string_elements,
+};
 
 /// Microsoft Teams 推送渠道实现（通过 Incoming Webhook）
 pub struct TeamsChannel;
@@ -20,25 +22,28 @@ impl Channel for TeamsChannel {
         "teams"
     }
 
-    async fn dispatch_template(
+    /// 校验配置与 string 元素（空串元素合法，表示回退到配置中的 webhook_url）
+    async fn preflight(&self, config: &Value, recipients: &[Value]) -> Result<(), String> {
+        serde_json::from_value::<TeamsConfig>(config.clone())
+            .map_err(|e| format!("Invalid Teams config: {}", e))?;
+        string_elements(recipients, "Teams")?;
+        Ok(())
+    }
+
+    async fn send(
         &self,
         config: &Value,
-        recipient: &str,
-        payload: &Value,
-        _template_id: Option<i32>,
+        recipients: &[Value],
+        payloads: &[Value],
     ) -> Result<(), DispatchError> {
         let teams_config: TeamsConfig = serde_json::from_value(config.clone())
             .map_err(|e| DispatchError::Abort(format!("Invalid Teams config: {}", e)))?;
-
-        let webhook_url = if !recipient.is_empty() {
-            recipient.to_string()
-        } else {
-            teams_config.webhook_url.clone()
-        };
+        let urls = string_elements(recipients, "Teams").map_err(DispatchError::Abort)?;
 
         // Teams 固定使用 MessageCard 格式
         // 已知字段：title, text/body, url
         // 其余字段自动放入 facts 数组
+        let payload = &payloads[0];
         let known_keys: &[&str] = &["title", "text", "body", "url"];
         let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or("");
         let body = payload
@@ -86,9 +91,22 @@ impl Channel for TeamsChannel {
             }
         }
 
-        run_http_call("Teams", move || {
-            http_client::post_json(&webhook_url, &[], &[], &teams_payload)
-        })
-        .await
+        let mut errors = Vec::new();
+        for url in urls {
+            let webhook_url = if !url.is_empty() {
+                url.to_string()
+            } else {
+                teams_config.webhook_url.clone()
+            };
+            let body = teams_payload.clone();
+            let result = run_http_call("Teams", move || {
+                http_client::post_json(&webhook_url, &[], &[], &body)
+            })
+            .await;
+            if let Err(e) = result {
+                errors.push(format!("url '{}': {}", url, e.into_msg()));
+            }
+        }
+        collect_failures(errors)
     }
 }
