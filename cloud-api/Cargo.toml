@@ -3,6 +3,9 @@ name = "cloud-api"
 version.workspace = true
 edition.workspace = true
 
+[features]
+individual = ["share-lib/individual"]
+
 [dependencies]
 # std dependencies
 once_cell.workspace = true

@@ -13,6 +13,7 @@ use diesel::r2d2::ConnectionManager;
 
 // share-lib import
 use share_lib::data_structure::MailManOk;
+use share_lib::middleware::user_auth::{UserAuth, UserAuthConfig};
 use share_lib::{log_info, logger};
 
 // local import
@@ -21,7 +22,6 @@ use config::server;
 // local modules
 mod api;
 mod config;
-mod middleware;
 mod model;
 mod service;
 
@@ -70,6 +70,20 @@ async fn main() -> std::io::Result<()> {
 
     log_info!("HTTP start");
     HttpServer::new(move || {
+        // 从全局配置快照构造统一鉴权中间件
+        // （individual 模式下 UserAuthConfig 无 master 字段，仅保留 uuid 校验链路）
+        let user_auth = UserAuth::new({
+            let config = server::GLOBAL_CONFIG.read().unwrap();
+            UserAuthConfig {
+                #[cfg(not(feature = "individual"))]
+                master_addr: config.master_addr.clone(),
+                #[cfg(not(feature = "individual"))]
+                master_port: config.master_port,
+                subsys_uuid: config.subsys_uuid.clone(),
+                authenticate_bypass: config.authenticate_bypass.clone(),
+            }
+        });
+
         App::new()
             .wrap(
                 Cors::default() // allowed_origin return access-control-allow-origin: * by default
@@ -89,7 +103,7 @@ async fn main() -> std::io::Result<()> {
             // wrap default logger
             .wrap(actix_web::middleware::Logger::default())
             // Comment this line if you want to integrate with yew-address-book-frontend
-            .wrap(crate::middleware::auth_middleware::Authentication)
+            .wrap(user_auth)
             .wrap_fn(|req, srv| srv.call(req).map(|res| res))
             .configure(config::app::config_services)
     })
