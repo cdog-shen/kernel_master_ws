@@ -62,17 +62,6 @@ fn mme_into_response<B>(
     ServiceResponse::new(req, resp)
 }
 
-/// 从 http_client 的错误 msg 中还原回源响应的 HTTP 状态码
-///
-/// http_client 把非 2xx 响应归并进 msg（"返回非 2xx 状态码: {code}"），
-/// 网络层失败（连接失败/超时等）的 msg 不含该字样，返回 None
-#[cfg(all(feature = "http", not(feature = "individual")))]
-fn extract_status_code(mme: &MailManErr<'static, String>) -> Option<u16> {
-    let msg = mme.msg.as_ref()?;
-    let idx = msg.rfind("状态码: ")? + "状态码: ".len();
-    msg[idx..].trim().parse().ok()
-}
-
 // ---------- UserAuth ----------
 
 /// 子系统统一鉴权中间件（Transform 入口）
@@ -209,28 +198,59 @@ where
             return Box::pin(async move {
                 // ureq 为同步阻塞实现，回源调用丢到 blocking 线程池，避免卡住 actix worker
                 let verify_res = actix_web::web::block(move || {
-                    crate::infrastructure::http_client::post_json(&url, &headers, &[], &body)
+                    crate::infrastructure::http_client::post_json_with_status(
+                        &url,
+                        &headers,
+                        &[],
+                        &body,
+                    )
                 })
                 .await;
 
-                // 回源结果清洗：成功取响应体；失败按状态码/网络错误映射
+                // 回源结果清洗：2xx 取响应体；401/403 原样映射；其余非 2xx 与网络错误按 503
                 let resp_text = match verify_res {
-                    Ok(Ok(text)) => text,
+                    Ok(Ok((status, text))) => match status {
+                        200..=299 => text,
+                        401 => {
+                            return Ok(mme_into_response(
+                                req,
+                                MailManErr::new(
+                                    401,
+                                    "Unauthorized",
+                                    Some("token invalid or expired".to_string()),
+                                    1,
+                                ),
+                            ));
+                        }
+                        403 => {
+                            return Ok(mme_into_response(
+                                req,
+                                MailManErr::new(
+                                    403,
+                                    "Forbidden",
+                                    Some("permission denied by master".to_string()),
+                                    1,
+                                ),
+                            ));
+                        }
+                        _ => {
+                            return Ok(mme_into_response(
+                                req,
+                                MailManErr::new(
+                                    503,
+                                    "Service Unavailable",
+                                    Some(format!(
+                                        "master verify unavailable: upstream status {status}"
+                                    )),
+                                    1,
+                                ),
+                            ));
+                        }
+                    },
                     Ok(Err(mme)) => {
-                        let err = match extract_status_code(&mme) {
-                            Some(401) => MailManErr::new(
-                                401,
-                                "Unauthorized",
-                                Some("token invalid or expired".to_string()),
-                                1,
-                            ),
-                            Some(403) => MailManErr::new(
-                                403,
-                                "Forbidden",
-                                Some("permission denied by master".to_string()),
-                                1,
-                            ),
-                            _ => MailManErr::new(
+                        return Ok(mme_into_response(
+                            req,
+                            MailManErr::new(
                                 503,
                                 "Service Unavailable",
                                 Some(format!(
@@ -239,8 +259,7 @@ where
                                 )),
                                 1,
                             ),
-                        };
-                        return Ok(mme_into_response(req, err));
+                        ));
                     }
                     Err(e) => {
                         return Ok(mme_into_response(
