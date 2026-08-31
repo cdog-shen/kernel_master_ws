@@ -1,0 +1,2 @@
+-- 不可逆：序列对齐前的 last_value 无从得知，且回退序列只会重新引入主键冲突。
+-- 本迁移的 down 为空操作（仅注释），diesel migration revert 不会改动序列。
