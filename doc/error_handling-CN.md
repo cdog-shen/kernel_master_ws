@@ -168,5 +168,7 @@ use share_lib::err_mapping::MailManErrResponser;
 - `watchman-backend/src/service/account_service.rs` 的 `login` 中存在
   "构造后丢弃 `MailManOk` 仅借其副作用记日志"的写法（更新登录时间、保存 token
   两处），违反本文第二节规约，属历史遗留。
-- 各 crate 的 `middleware/auth_middleware.rs` 与本规范相关的错误返回已分化
-  （依赖自身 model），暂未收敛进 share-lib，改动时需逐 crate 同步评估。
+- 各子系统 crate 的本地 `middleware/auth_middleware.rs` 已删除，鉴权失败（401/403/503）
+  的短路返回统一由 share-lib `middleware/user_auth.rs` 产生——body 为 `MailManErr`
+  序列化 JSON，code → HTTP 状态码的映射在中间件内部自带（不经过
+  `MailManErrResponser`）。仅 watchman-backend 保留本地 `JwtAuth`/`PermissionCheck`。

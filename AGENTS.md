@@ -5,9 +5,12 @@
 
 ## 项目概述
 
-kernel master 是一个 Rust 微服务式项目（毕业设计）。`watchman-backend` 是 IAM 与调度中枢，
-各子系统通过 `POST watchman/api/subsystem_call/{subsystem_name}/{operate}` 被中枢调用。
-公共能力收敛在 `share-lib`（配置读取、日志、MailMan 消息结构、web 错误响应映射）。
+kernel master 是一个 Rust 微服务式项目（毕业设计）。`watchman-backend` 是 IAM 与调度中枢。
+调用模型双链路并存（过渡期，设计见 `doc/design_subsystem_direct_auth-CN.md`）：
+用户持 JWT **直连子系统**，子系统向 watchman `POST /api/auth/verify` **回源鉴权**后本地执行；
+旧的 `POST watchman/api/subsystem_call/{subsystem_name}/{operate}` 中枢转发链路在调用方
+迁移完成前保留，最终下线。公共能力收敛在 `share-lib`（配置读取、日志、MailMan 消息结构、
+web 错误响应映射、统一鉴权中间件）。
 
 ## 仓库布局（Cargo workspace）
 
@@ -58,13 +61,24 @@ docker-compose --profile run up -d     # 启动全部服务（先备好 MQ 与 D
 任何环境都无需安装 OpenSSL 开发包即可编译；代价是 PG 连接不支持 TLS（`sslmode=require`
 不可用），如需加密连接请改回 `bundled` 并配置 OpenSSL/vcpkg。
 
+各子系统 crate（cmdb-backend / cloud-api / jc-commander / yell / file-agent）另有
+`individual` feature（`xxx = ["share-lib/individual"]`），开启后编译为脱离 watchman 的
+独立运行模式：鉴权中间件编译期裁剪为仅 uuid 比对分支，refresh_master 路由一并裁掉。
+workspace 级无该 feature，验证时需逐 crate 指定：
+
+```sh
+cargo check -p cmdb-backend --features individual
+```
+
 ## 开发铁律
 
 1. **错误必须走 MailMan 体系**：`MailManOk` / `MailManErr`（share-lib）→
    `MailManErrResponser`（share-lib `web` feature）转 HTTP 响应。细节见
    `doc/error_handling-CN.md`。
 2. **公共代码优先进 share-lib**，禁止跨 crate 复制粘贴。历史教训：`err_mapping.rs`
-   曾在 6 个 crate 逐字节重复，已收敛；`middleware/auth_middleware.rs` 与
+   曾在 6 个 crate 逐字节重复，已收敛；鉴权中间件已收敛——子系统鉴权的唯一来源是
+   `share-lib/src/middleware/user_auth.rs`（各子系统本地 `auth_middleware.rs` 已删除；
+   watchman-backend 是鉴权源，保留本地 `JwtAuth`/`PermissionCheck`）；
    `config/server.rs` 各 crate 已分化（依赖自身 model），暂不抽取，改动时逐 crate 同步评估。
 3. **新增 crate 必须完成全部登记**：根 `Cargo.toml` members、依赖走 workspace 继承、
    `build/*.sh` 的 DIRS/BINS、`docker-compose.yaml`（历史教训：yell 曾长期漏登记）。

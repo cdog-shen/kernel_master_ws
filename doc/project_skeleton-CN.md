@@ -15,7 +15,7 @@ src/
 ├── api/                 # HTTP handler 层
 ├── service/             # 业务逻辑层
 ├── model/               # diesel 数据层（含 schema.rs）
-└── middleware/          # auth_middleware.rs
+└── middleware/          # auth_middleware.rs（仅 watchman-backend；子系统统一用 share-lib 鉴权中间件，无本地文件）
 ```
 
 各层调用方向必须是单向的：`api` → `service` → `model`。禁止 handler 直接访问 diesel，禁止 model 反向依赖 api/service。
@@ -108,9 +108,16 @@ pub static GLOBAL_CONFIG: Lazy<RwLock<AllConfigs>> = Lazy::new(|| RwLock::new(Al
    静默忽略等价，不得因此新增 400 错误）。filter key → 数据库列的映射逻辑留在
    model 的 `get_*_with_filter` 中，属 model 的原子职责，不上移。
 
-### middleware/auth_middleware.rs
+### middleware/ 鉴权中间件
 
-提供 `JwtAuth` 与 `PermissionCheck` 两个 actix Transform，在 `config/app.rs` 中按需 wrap。该文件各 crate 因依赖自身 model 已分化，修改时必须逐 crate 同步评估。
+鉴权中间件按 crate 角色分两类：
+
+- **watchman-backend（鉴权源）**：本地 `middleware/auth_middleware.rs` 提供 `JwtAuth` 与
+  `PermissionCheck` 两个 actix Transform，在 `config/app.rs` 中按需 wrap；其鉴权逻辑与
+  `service/auth_service.rs`（`/api/auth/verify` 回源鉴权接口）共用同一实现，两处语义必须一致。
+- **子系统 crate**：统一使用 share-lib 的 `UserAuth` 中间件
+  （`share-lib/src/middleware/user_auth.rs`），本地 `auth_middleware.rs` 已全部删除，
+  详见下文「横切组件」一节。
 
 ## 非 DB 原子操作层
 
@@ -129,7 +136,23 @@ pub static GLOBAL_CONFIG: Lazy<RwLock<AllConfigs>> = Lazy::new(|| RwLock::new(Al
 
 middleware、调度器等组件横切在 `api` → `service` → `model` 三层之外，不占用任何一层，但必须遵守相同的职责与 IO 收敛约束：
 
-- **鉴权 middleware**：属三层之外的横切层，允许直接调用 model 做鉴权查询（JWT 解析、权限校验），但不得承载业务编排。各 crate 的 `auth_middleware.rs` 已因依赖自身 model/配置而分化，属有意的非公共代码，暂不抽取进 share-lib；修改时必须逐 crate 同步评估（见上文「middleware/auth_middleware.rs」一节）。
+- **鉴权 middleware**：属三层之外的横切层，不得承载业务编排。子系统鉴权中间件已统一收敛进
+  share-lib，唯一来源为 `share-lib/src/middleware/user_auth.rs`（`UserAuth`/`UserAuthConfig`，
+  feature `web` + `http`），语义如下：
+  - **配置来源**：share-lib 不持有各 crate 的 `GLOBAL_CONFIG`，由调用方在 `main.rs`
+    构造 `UserAuthConfig` 时注入——`master_addr`/`master_port`（回源地址，复用
+    refresh_master 同款配置，individual 模式下字段裁掉）、本机 `subsys_uuid`、
+    `authenticate_bypass` 白名单（path 前缀命中即放行，连同 OPTIONS 预检）；
+  - **Bearer/uuid 双分支**（按 `Authorization` header scheme，大小写不敏感）：
+    `Bearer <jwt>` 为用户直连新链路——向 watchman `POST /api/auth/verify` 回源鉴权
+    （回源自证携带本机 uuid），401/403 原样映射，网络失败/超时及其余非 2xx 按 503，
+    通过后把 `uid`（i32）写入 request extensions 放行；`uuid <subsys_uuid>` 为 watchman
+    转发旧链路——与本机配置比对即放行（过渡期保留，旧链路下线时删除该分支）；
+  - **`individual` 条件编译**：feature `individual` 开启时回源（Bearer）分支编译期裁掉，
+    仅保留 uuid 比对分支，子系统可脱离 watchman 独立运行；非 individual 且未开 `http`
+    feature 时直接 `compile_error!` 拒绝编译；
+  - watchman-backend 是鉴权源，保留本地 `JwtAuth`/`PermissionCheck`（允许直接调 model 做
+    JWT 解析与权限查询），不接入该中间件。
 - **调度器**：`jc-commander` 的 `util/scheduler.rs`（时间轮调度器）定位为独立的调度器组件，不属于三层中的任何一层。其约束与编排层一致：DB 调用必须走 `model/`，MQ 调用必须走 `share_lib::infrastructure::mq_client` 原子模块，禁止在调度器内直接内联 diesel 或 lapin 代码。
 - **其余 crate 特有的横切组件**（如 file-agent 的 SegQueue 内存队列）参照同一原则：IO 一律走原子层（model 或 share-lib infrastructure），禁止在组件内内联实现。
 
@@ -175,4 +198,5 @@ middleware、调度器等组件横切在 `api` → `service` → `model` 三层�
 - `/api/reload` 端点目前只有 `watchman-backend` 在 `config/app.rs` 中注册（`watchman-backend/src/config/app.rs:20`）。其余 crate 的 `AllConfigs::reload()` 已实现并用于启动加载，但未暴露 HTTP 热重载端点；`file-agent` 与 `yell` 的 `api/system_manage.rs` 承载的是 `refresh_master`（向 watchman 刷新注册），不是 reload。
 - `/api/hey` 在 watchman-backend 同时注册 GET 与 POST，其余 crate 只注册了 POST（如 `file-agent/src/config/app.rs:11`），调用方应使用 POST 以保证兼容。
 - `yell` 历史上曾长期漏登记进 build 脚本与 docker-compose。当前 build 脚本已包含 `yell`，`docker-compose.yaml` 也已注册 `yell` 服务（`docker-compose.yaml:134`），`README.md` / `Readme_ZH-CN.md` 双语说明亦已补齐，该历史遗漏已闭环。
-- `middleware/auth_middleware.rs` 与 `config/server.rs` 各 crate 已按自身 model/配置分化，属有意的非公共代码，不纳入 share-lib。
+- 各子系统 crate 的本地 `middleware/auth_middleware.rs` 已删除并接入 share-lib 统一鉴权中间件（`share-lib/src/middleware/user_auth.rs`）；仅 `config/server.rs` 仍按 crate 分化（依赖自身 model/配置），属有意的非公共代码，不纳入 share-lib。
+- `refresh_master` 路由在各 crate 不一致：cmdb-backend / yell / file-agent 为 `/api/manage/refresh_master`，cloud-api / jc-commander 为 `/api/refresh_master`；各 crate 的 `authenticate_bypass` 白名单已按实际路由配置。该路由在 `individual` 模式下经 cfg 门控裁掉。

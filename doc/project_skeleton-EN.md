@@ -15,7 +15,7 @@ src/
 ├── api/                 # HTTP handler layer
 ├── service/             # business logic layer
 ├── model/               # diesel data layer (incl. schema.rs)
-└── middleware/          # auth_middleware.rs
+└── middleware/          # auth_middleware.rs (watchman-backend only; subsystem crates use the shared share-lib auth middleware and have no local file)
 ```
 
 Calls must flow in one direction only: `api` → `service` → `model`. Handlers must not touch diesel directly, and model must not depend back on api/service.
@@ -103,9 +103,12 @@ The cleaning layer means the api handlers and their same-layer helper modules. T
 1. **The `from_map` cleaning functions stay in the model files** and are not moved to the api layer. Rationale: they are naturally cohesive with the three-struct definitions, and moving them would cause repo-wide churn with no payoff. If new code needs complex cleaning logic, a dedicated cleaning module may be created in the api layer.
 2. **Whitelist validation of GET filter keys and value-type validation belong to the cleaning layer**: before passing a filter map through, the handler strips unknown keys and wrongly-typed values against a per-table whitelist (stripping is semantically equivalent to the model's silent ignoring, so no new 400 error may be introduced). The filter-key-to-column mapping stays in the model's `get_*_with_filter` as part of the model's atomic responsibility and is not hoisted.
 
-### middleware/auth_middleware.rs
+### middleware/ Auth Middleware
 
-Provides the two actix Transforms `JwtAuth` and `PermissionCheck`, applied on demand in `config/app.rs`. This file has diverged across crates because it depends on each crate's own model; any change must be evaluated crate by crate.
+Auth middleware falls into two categories by crate role:
+
+- **watchman-backend (the authentication source)**: its local `middleware/auth_middleware.rs` provides the two actix Transforms `JwtAuth` and `PermissionCheck`, applied on demand in `config/app.rs`; their logic shares one implementation with `service/auth_service.rs` (the `/api/auth/verify` origin-auth endpoint), and the two must stay semantically identical.
+- **Subsystem crates**: all use the share-lib `UserAuth` middleware (`share-lib/src/middleware/user_auth.rs`); the local `auth_middleware.rs` files have been deleted. See the "Cross-Cutting Components" section below.
 
 ## The Non-DB Atomic Operations Layer
 
@@ -124,7 +127,11 @@ All atomic operations report errors through the MailMan system (`MailManErr::new
 
 Components such as middleware and schedulers cut across the `api` → `service` → `model` layers without belonging to any of them, but they must obey the same responsibility and IO-consolidation constraints:
 
-- **Auth middleware**: a cross-cutting layer outside the three layers. It may call model directly for authentication queries (JWT parsing, permission checks), but must not carry business orchestration. Each crate's `auth_middleware.rs` has diverged because it depends on its own model/config; this is intentional non-shared code and is not moved into share-lib. Any change must be evaluated crate by crate (see the "middleware/auth_middleware.rs" section above).
+- **Auth middleware**: a cross-cutting layer outside the three layers; it must not carry business orchestration. Subsystem auth middleware has been consolidated into share-lib — the single source is `share-lib/src/middleware/user_auth.rs` (`UserAuth`/`UserAuthConfig`, features `web` + `http`):
+  - **Config source**: share-lib does not hold any crate's `GLOBAL_CONFIG`; the caller injects a `UserAuthConfig` when constructing the middleware in `main.rs` — `master_addr`/`master_port` (origin-auth address, reusing the same config keys as refresh_master; the fields are compiled out in individual mode), the local `subsys_uuid`, and the `authenticate_bypass` whitelist (any path-prefix match passes, as do OPTIONS preflights);
+  - **Bearer/uuid dual branch** (by `Authorization` header scheme, case-insensitive): `Bearer <jwt>` is the new direct-connection path — origin authentication via `POST /api/auth/verify` on watchman (carrying the local uuid as caller credential); upstream 401/403 are mapped through as-is, network failures/timeouts and any other non-2xx become 503, and on success the `uid` (i32) is written into the request extensions before passing through. `uuid <subsys_uuid>` is the legacy watchman-forwarded path — it is compared against the local config and passed (kept for the transition; delete this branch when the legacy link is retired);
+  - **`individual` conditional compilation**: with feature `individual` enabled, the origin-auth (Bearer) branch is compiled out and only the uuid-comparison branch remains, so a subsystem can run standalone without watchman; without `individual` and without feature `http`, compilation is rejected outright via `compile_error!`;
+  - watchman-backend is the authentication source and keeps its local `JwtAuth`/`PermissionCheck` (which may call model directly for JWT parsing and permission queries); it does not adopt this middleware.
 - **Scheduler**: `jc-commander`'s `util/scheduler.rs` (a timing-wheel scheduler) is positioned as a standalone scheduler component that belongs to none of the three layers. Its constraints match the orchestration layer's: DB calls must go through `model/`, and MQ calls must go through the `share_lib::infrastructure::mq_client` atomic module — inlining diesel or lapin code inside the scheduler is forbidden.
 - **Other crate-specific cross-cutting components** (e.g. file-agent's SegQueue in-memory queue) follow the same principle: all IO goes through the atomic layer (model or share-lib infrastructure) and must not be inlined inside the component.
 
@@ -170,4 +177,5 @@ When adding a crate, every item below must be completed — none may be skipped:
 - The `/api/reload` endpoint is currently registered only by `watchman-backend` in `config/app.rs` (`watchman-backend/src/config/app.rs:20`). The other crates implement `AllConfigs::reload()` and use it for startup loading, but expose no HTTP hot-reload endpoint; `file-agent`'s and `yell`'s `api/system_manage.rs` host `refresh_master` (re-registering with watchman), not reload.
 - `/api/hey` is registered for both GET and POST in watchman-backend, but only for POST in the other crates (e.g. `file-agent/src/config/app.rs:11`); callers should use POST for compatibility.
 - `yell` was historically left out of the build scripts and docker-compose for a long time. The build scripts now include `yell`, `docker-compose.yaml` registers the `yell` service (`docker-compose.yaml:134`), and the bilingual `README.md` / `Readme_ZH-CN.md` are in place — this historical omission is closed.
-- `middleware/auth_middleware.rs` and `config/server.rs` have diverged per crate according to their own model/config; this is intentional non-shared code and is not moved into share-lib.
+- The local `middleware/auth_middleware.rs` files of all subsystem crates have been deleted in favor of the shared share-lib auth middleware (`share-lib/src/middleware/user_auth.rs`); only `config/server.rs` still diverges per crate (it depends on each crate's own model/config), which is intentional non-shared code and is not moved into share-lib.
+- The `refresh_master` route is inconsistent across crates: `/api/manage/refresh_master` in cmdb-backend / yell / file-agent, but `/api/refresh_master` in cloud-api / jc-commander; each crate's `authenticate_bypass` whitelist matches its actual route. This route is cfg-gated out in `individual` mode.

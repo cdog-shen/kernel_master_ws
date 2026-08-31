@@ -186,6 +186,9 @@ code will be brought into line gradually:
   cases of "constructing and discarding a `MailManOk` purely for its logging side
   effect" (updating last-login time and saving the token), which violates the
   rule in the second section above and is a historical leftover.
-- The error returns in each crate's `middleware/auth_middleware.rs` have diverged
-  (they depend on their own models) and have not been consolidated into share-lib;
-  any change to them requires a per-crate synchronized review.
+- The local `middleware/auth_middleware.rs` files of all subsystem crates have been
+  deleted; the short-circuit error returns for auth failures (401/403/503) are now
+  produced uniformly by share-lib `middleware/user_auth.rs` — the body is a serialized
+  `MailManErr` JSON, and the code → HTTP status mapping lives inside the middleware
+  (it does not go through `MailManErrResponser`). Only watchman-backend keeps its
+  local `JwtAuth`/`PermissionCheck`.
