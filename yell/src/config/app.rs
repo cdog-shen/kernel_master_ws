@@ -14,6 +14,9 @@ fn user_auth() -> UserAuth {
         master_addr: config.master_addr.clone(),
         #[cfg(not(feature = "individual"))]
         master_port: config.master_port,
+        // 回源自证用子系统名（individual 模式下无 master，编译期裁掉）
+        #[cfg(not(feature = "individual"))]
+        subsys_name: config.register_name.clone(),
         subsys_uuid: config.subsys_uuid.clone(),
         authenticate_bypass: config.authenticate_bypass.clone(),
     })
@@ -25,9 +28,12 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
     log_info!("Configuring routes...");
 
     // System management APIs（individual 模式下无 master，主关注册端点编译期裁掉）
+    // register_help 响应含 subsys_uuid（子系统凭证），必须过 UserAuth 鉴权，不得进白名单
     #[cfg(not(feature = "individual"))]
     cfg.service(web::scope("/api/manage")
-        .service(web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master))));
+        .service(web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master)))
+        .service(web::resource("/register_help").route(web::get().to(system_manage::register_help))
+            .wrap(user_auth())));
 
     cfg.service(
         web::scope("/api")
