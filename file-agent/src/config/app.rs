@@ -10,11 +10,12 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
     log_info!("Configuring routes...");
     let api_scope = web::scope("/api")
         .service(web::resource("/hey").route(web::post().to(hey_hi_hello::hey)));
-    // individual 模式下无 watchman 回源，裁掉 refresh_master 路由
+    // individual 模式下无 watchman 回源，裁掉 refresh_master / register_help 路由
     #[cfg(not(feature = "individual"))]
     let api_scope = api_scope
         .service(web::scope("/manage")
-            .service(web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master))));
+            .service(web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master)))
+            .service(web::resource("/register_help").route(web::get().to(system_manage::register_help))));
     let api_scope = api_scope
         .service(web::scope("/token")
             .service(web::resource("/gen").route(web::post().to(token::generate))))
