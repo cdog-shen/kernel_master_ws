@@ -35,7 +35,7 @@ pub async fn declare_quorum_queue(
 
     channel
         .queue_declare(
-            name,
+            name.into(),
             lapin::options::QueueDeclareOptions {
                 durable: true,
                 ..Default::default()
@@ -72,8 +72,8 @@ pub async fn publish_json(
 
     channel
         .basic_publish(
-            "",
-            queue,
+            "".into(),
+            queue.into(),
             lapin::options::BasicPublishOptions::default(),
             &body,
             lapin::BasicProperties::default()

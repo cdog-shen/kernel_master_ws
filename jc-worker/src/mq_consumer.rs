@@ -85,8 +85,8 @@ pub async fn run() {
     log_info!("SYNC Consumer init");
     let sync_consumer = match channel
         .basic_consume(
-            &sync_queue,
-            "sync",
+            sync_queue.as_str().into(),
+            "sync".into(),
             BasicConsumeOptions::default(),
             lapin::types::FieldTable::default(),
         )
@@ -106,8 +106,8 @@ pub async fn run() {
     log_info!("ASYNC Consumer init");
     let async_consumer = match channel
         .basic_consume(
-            &async_queue,
-            "async",
+            async_queue.as_str().into(),
+            "async".into(),
             BasicConsumeOptions::default(),
             lapin::types::FieldTable::default(),
         )
