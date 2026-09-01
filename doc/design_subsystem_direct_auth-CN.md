@@ -36,40 +36,52 @@
                 (share-lib 鉴权中间件)                     (复用现有鉴权逻辑)
 ```
 
-## 3. watchman 侧：新增 `POST /api/auth/verify`
+## 3. watchman 侧：`POST /api/auth/verify`（v2，2026-09-01 修订）
+
+> 修订说明：初版为"uuid 作 header + token 放 body"；现改为子系统**原样转发用户 JWT**
+> 作为 Authorization header，watchman 侧直接由 JwtAuth 中间件验签，handler 内再做
+> 子系统 name+uuid 匹配与权限判定。
 
 ### 接口定义
 
-- 请求方身份：仅允许已注册子系统调用，调用方携带 `Authorization: uuid <subsys_uuid>`
-  自证（与现有子系统间信任机制一致）；该接口不面向终端用户
+- 请求方身份：子系统将**用户的 JWT** 原样放入 `Authorization: Bearer <jwt>` header
+  转发；端点挂在 `/api` scope 内，由 `JwtAuth` 中间件完成用户身份验证
+  （uid 注入 extensions）；`/api/auth/verify` 加入 `permit_bypass`
+  （权限判定针对 body 中的目标 path，而非本端点自身）
 - 请求体：
 
 ```json
 {
-  "token": "<用户 JWT>",
+  "subsys_name": "cmdb",
+  "subsys_uuid": "<子系统 uuid>",
   "path": "/api/table/new",
   "method": "POST"
 }
 ```
 
+- handler 逻辑：清洗四字段 → 从 extensions 取 uid（JwtAuth 已验）→
+  `authenticate_subsys` 校验 subsys_name 对应已启用子系统且 uuid 匹配（不符 401）→
+  `authorize(uid, path, method)` 权限判定（无权限 403）
 - 响应（MailMan 体系）：
   - 通过：`200 {code:200, key:"...", data:{"uid": 1, "username": "...", "permission": 2}}`
-  - token 无效/过期/不在 token 表：`401`
+  - JWT 无效/过期/不在 token 表：`401`（JwtAuth）；uuid 与 name 不匹配：`401`
   - 用户对该资源无权限：`403`
 
 ### 实现要点
 
-- 复用 `JwtAuth` 中间件的现有逻辑（`UserToken::decode_token` + `TokenModel::token_ckeck`
-  查 token 表）与 `PermissionCheck` 的权限判定（`GroupModel::get_groups_by_uid` →
-  `ServiceModel::get_sids_by_route` → `AccessModel::get_max_permission`），
-  抽取为 `service/auth_service.rs` 的 `verify(token, path, method)` 编排函数，
-  中间件与 verify 接口共用同一实现，消除目前中间件与 service 的逻辑重复
+- `auth_service` 拆为 `authenticate`（验 token，供 JwtAuth）、`authorize`（uid+path+method
+  权限判定，供 PermissionCheck 与 verify）、`authenticate_subsys`（name+uuid 匹配）、
+  `verify`（组合入口）四个函数，中间件与 verify 接口共用同一实现
 - **权限粒度（MVP 简化）**：现有权限模型按"路由→service 记录"匹配。子系统路由
   数量多且不由 watchman 管理，MVP 采用**子系统级粒度**：每个子系统在 service 表
   对应一条记录，`service_point` 存子系统路由前缀（如 cmdb 的 `/api/table`），
   `get_sids_by_route` 前缀匹配即命中。权限语义不变：2=读写、1=只读（GET 放行）
-- 路由注册：`/api/auth/verify` 加入 watchman 路由表；对子系统 uuid 的校验
-  不走 bypass，走"子系统认证"（校验 uuid 是否存在于已启用子系统表）
+
+### 配套：子系统注册辅助端点
+
+每个子系统提供 `GET /api/manage/register_help`（需鉴权，响应含 subsys_uuid），
+返回按 watchman `POST /api/subsystem`（new_subsys）所需字段预填的注册 JSON
+（subsys_name/url/token/relate_service_id/is_enable），供运维部署时直接取用。
 
 ## 4. 子系统侧：share-lib 统一鉴权中间件
 
@@ -80,14 +92,16 @@
 
 1. OPTIONS 与 `authenticate_bypass` 白名单放行（沿用现有语义）
 2. 取 `Authorization` header：
-   - `Bearer <jwt>`（新链路，用户直连）→ 调 watchman verify 回源鉴权，
-     通过则把 `uid` 写入 request extensions 放行
+   - `Bearer <jwt>`（新链路，用户直连）→ 将用户 JWT **原样**作为 Authorization
+     转发给 watchman verify，body 携带 `{subsys_name, subsys_uuid, path, method}`
+     自证子系统身份；通过则把 `uid` 写入 request extensions 放行
    - `uuid <subsys_uuid>`（旧链路，watchman 转发）→ 按各 crate 现有逻辑
      校验本机 subsys_uuid 放行（过渡期保留，下线时删除该分支）
-3. 失败按 MailMan 体系返回 401/403
+3. 失败按 MailMan 体系返回 401/403；回源网络失败/超时 → 503
 
 配置：watchman 地址复用现有 `master_addr`/`master_port`（refresh_master 同款配置，
-无需新增配置项）；verify 超时建议 3-5s，超时按 503 处理。
+无需新增配置项）；`UserAuthConfig` 另需 `subsys_name`（取 `register_name`）用于回源自证；
+http_client 全局超时连接 3s/整体 5s，超时按 503 处理。
 
 各 crate 接入点：
 
