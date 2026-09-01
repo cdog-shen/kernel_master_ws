@@ -23,9 +23,9 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
 
     // refresh_master 依赖向 master 回源注册，individual 模式下裁掉
     #[cfg(not(feature = "individual"))]
-    let api_scope = api_scope.service(
+    let api_scope = api_scope.service(web::scope("/manage").service(
         web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master)),
-    );
+    ));
 
     cfg.service(api_scope);
 }

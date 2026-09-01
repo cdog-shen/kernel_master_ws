@@ -10,9 +10,9 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
         web::scope("/api").service(web::resource("/hey").route(web::post().to(hey_hi_hello::hey)));
     // individual 独立运行模式无 master 可刷新，裁掉 refresh_master 路由
     #[cfg(not(feature = "individual"))]
-    let api_scope = api_scope.service(
+    let api_scope = api_scope.service(web::scope("/manage").service(
         web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master)),
-    );
+    ));
     cfg.service(
         api_scope
             .service(

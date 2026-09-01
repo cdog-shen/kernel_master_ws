@@ -157,7 +157,10 @@ impl AllConfigs {
                     Some("server_config:authenticate_bypass (Array[string]) not found, Using default".to_string()),
                     0,
                 );
-                vec!["/api/hey".to_string(), "/api/refresh_master".to_string()]
+                vec![
+                    "/api/hey".to_string(),
+                    "/api/manage/refresh_master".to_string(),
+                ]
             }
         };
 
