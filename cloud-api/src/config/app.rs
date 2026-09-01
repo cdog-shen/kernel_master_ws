@@ -23,7 +23,8 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
     #[cfg(not(feature = "individual"))]
     let api_scope = api_scope
         .service(web::scope("/manage")
-            .service(web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master))));
+            .service(web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master)))
+            .service(web::resource("/register_help").route(web::get().to(system_manage::register_help))));
 
     cfg.service(api_scope);
 }

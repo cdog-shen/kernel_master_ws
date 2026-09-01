@@ -79,6 +79,9 @@ async fn main() -> std::io::Result<()> {
                 master_addr: config.master_addr.clone(),
                 #[cfg(not(feature = "individual"))]
                 master_port: config.master_port,
+                // 回源自证用的子系统名，与注册名一致（individual 模式无该字段）
+                #[cfg(not(feature = "individual"))]
+                subsys_name: config.register_name.clone(),
                 subsys_uuid: config.subsys_uuid.clone(),
                 authenticate_bypass: config.authenticate_bypass.clone(),
             }
