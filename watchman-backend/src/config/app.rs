@@ -16,13 +16,17 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
     // 不能经过 /api scope 上挂的 JwtAuth / PermissionCheck 中间件。
     cfg.service(web::resource("/api/auth/verify").route(web::post().to(auth_manage::verify)));
 
+    // 健康检查（GET/POST /api/hey）：公开端点，单独注册在 /api scope 之外，
+    // 不经过鉴权中间件（compose 健康检查与负载均衡探活依赖它）
     cfg.service(
-        // API scope
+        web::resource("/api/hey")
+            .route(web::get().to(hey_hi_hello::hey))
+            .route(web::post().to(hey_hi_hello::hey)),
+    );
+
+    cfg.service(
+        // API scope（以下路由全部经过 JwtAuth + PermissionCheck）
         web::scope("/api")
-            // healthy check
-            .service(web::resource("/hey")
-                .route(web::get().to(hey_hi_hello::hey))
-                .route(web::post().to(hey_hi_hello::hey)))
             // Hot reload
             .service(web::resource("/reload").route(web::post().to(system_manage::reload_config)))
             // Auth
