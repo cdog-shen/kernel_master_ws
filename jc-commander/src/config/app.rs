@@ -10,11 +10,13 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
     log_info!("Configuring routes...");
     let api_scope = web::scope("/api")
         .service(web::resource("/hey").route(web::post().to(hey_hi_hello::hey)));
-    // individual 独立运行模式无 master 可刷新，裁掉 refresh_master 路由
+    // individual 独立运行模式无 master 可刷新/注册，裁掉 manage 路由组
     #[cfg(not(feature = "individual"))]
     let api_scope = api_scope
         .service(web::scope("/manage")
-            .service(web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master))));
+            .service(web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master)))
+            // register_help 响应含 subsys_uuid，必须过 UserAuth 鉴权，不得加入 authenticate_bypass
+            .service(web::resource("/register_help").route(web::get().to(system_manage::register_help))));
     cfg.service(
         api_scope
             .service(web::scope("/log")
