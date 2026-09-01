@@ -21,7 +21,8 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
     // 与 watchman 交互的管理路由，individual 独立运行模式下裁掉
     #[cfg(not(feature = "individual"))]
     cfg.service(web::scope("/api/manage")
-        .service(web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master))));
+        .service(web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master)))
+        .service(web::resource("/register_help").route(web::get().to(system_manage::register_help))));
 }
 
 //         .service(
