@@ -166,9 +166,10 @@ pub async fn authorize(
 
 /// 调用方子系统认证（供 /api/auth/verify 使用）
 ///
-/// 校验 `Authorization: uuid <subsys_uuid>` 中的 uuid 是否属于已注册且启用的子系统；
-/// 不存在、未启用或格式非法均返回 401
+/// 校验 subsys_name 是否对应已注册且启用的子系统，且 subsys_uuid 与其
+/// token 一致；子系统不存在、未启用或 uuid 不符均返回 401
 pub async fn authenticate_subsys(
+    subsys_name: &str,
     subsys_uuid: &str,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<SubsysModel, MailManErr<'static, String>> {
@@ -196,41 +197,59 @@ pub async fn authenticate_subsys(
         }
     };
 
-    match SubsysModel::get_enable_by_token(&parsed, &mut conn) {
-        Ok(subsys) => Ok(subsys),
+    let subsys = match SubsysModel::get_enable_by_name(&subsys_name.to_string(), &mut conn) {
+        Ok(subsys) => subsys,
         Err(msg) => match msg.0 {
-            1 => Err(MailManErr::new(
-                401,
-                "Unauthorized",
-                Some("subsystem not found or disabled".to_string()),
-                1,
-            )),
-            _ => Err(MailManErr::new(
-                500,
-                "Internal Server Error",
-                Some(msg.1),
-                1,
-            )),
+            1 => {
+                return Err(MailManErr::new(
+                    401,
+                    "Unauthorized",
+                    Some("subsystem not found or disabled".to_string()),
+                    1,
+                ));
+            }
+            _ => {
+                return Err(MailManErr::new(
+                    500,
+                    "Internal Server Error",
+                    Some(msg.1),
+                    1,
+                ));
+            }
         },
+    };
+
+    if subsys.token != parsed {
+        return Err(MailManErr::new(
+            401,
+            "Unauthorized",
+            Some("subsystem uuid does not match name".to_string()),
+            1,
+        ));
     }
+
+    Ok(subsys)
 }
 
-/// 回源鉴权：token 认证 + 资源权限判定（供 /api/auth/verify 使用）
+/// 回源鉴权：目标资源权限判定 + 结果组装（供 /api/auth/verify 使用）
+///
+/// 用户 token 认证已由 JwtAuth 中间件完成、子系统 name/uuid 匹配已由
+/// handler 完成，此处仅对 body 内目标 path/method 做权限判定
 pub async fn verify<'a>(
-    token: &str,
+    uid: i32,
+    username: String,
     path: &str,
     method: &Method,
     pool: &web::Data<Pool<ConnectionManager<PgConnection>>>,
 ) -> Result<MailManOk<'a, VerifyResult>, MailManErr<'a, String>> {
-    let identity = authenticate(token, pool).await?;
-    let permission = authorize(identity.uid, path, method, pool).await?;
+    let permission = authorize(uid, path, method, pool).await?;
 
     Ok(MailManOk::new(
         200,
         "Service: Auth - verify",
         Some(VerifyResult {
-            uid: identity.uid,
-            username: identity.username,
+            uid,
+            username,
             permission,
         }),
     ))

@@ -21,6 +21,8 @@ permit_bypass = [
     "/api/auth/me",
     "/api/auth/login",
     "/api/auth/signup",
+    # 回源鉴权端点自身跳过权限判定（JWT 仍须验）：真正判定的是 body 里的目标 path
+    "/api/auth/verify",
     "/api/subsystem_control/all_subsystem",
     "/api/subsystem_control/update_subsystem",
 ]

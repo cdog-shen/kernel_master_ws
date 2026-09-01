@@ -10,12 +10,6 @@ use crate::middleware::auth_middleware::{JwtAuth, PermissionCheck};
 pub fn config_services(cfg: &mut web::ServiceConfig) {
     log_info!("Configuring routes...");
 
-    // 子系统回源鉴权端点（POST /api/auth/verify）
-    // 必须注册在 /api scope 之前：actix 路由按注册顺序命中，/api scope 前缀命中后
-    // 内部失配不会回退到同级条目；且该端点自带子系统 uuid 调用方认证，
-    // 不能经过 /api scope 上挂的 JwtAuth / PermissionCheck 中间件。
-    cfg.service(web::resource("/api/auth/verify").route(web::post().to(auth_manage::verify)));
-
     // 健康检查（GET/POST /api/hey）：公开端点，单独注册在 /api scope 之外，
     // 不经过鉴权中间件（compose 健康检查与负载均衡探活依赖它）
     cfg.service(
@@ -33,6 +27,11 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
             .service(web::scope("/auth")
                 .service(web::resource("/login").route(web::post().to(account_manage::login)))
                 .service(web::resource("/logout").route(web::post().to(account_manage::logout)))
+                // 子系统回源鉴权（POST /api/auth/verify）：调用方直接把用户 JWT 作为
+                // Authorization Bearer 携带，由 scope 级 JwtAuth 完成用户认证（uid 注入
+                // extensions）；PermissionCheck 经 permit_bypass 白名单跳过——真正做权限
+                // 判定的是 handler 内 body 携带的目标 path/method
+                .service(web::resource("/verify").route(web::post().to(auth_manage::verify)))
                 // UID check (No need to check permission)
                 .service(web::resource("/me/{id}").route(web::get().to(account_manage::get_me))))
             // user management
@@ -79,7 +78,7 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                     .route(web::post().to(webhook_manage::post_webhook))
                     .route(web::get().to(webhook_manage::get_webhook))))
             // scope 级中间件对整个 /api scope 生效，与挂载位置无关；只挂一对。
-            // 后注册的先执行（洋葱模型）：JwtAuth 最外层先验 token 并注入 uid，
+            // 后注册的先执行（洋葱模型）：JwtAuth 最外层先验 token 并注入身份，
             // PermissionCheck 内层后执行读取 uid 做权限判定。
             .wrap(PermissionCheck)
             .wrap(JwtAuth),

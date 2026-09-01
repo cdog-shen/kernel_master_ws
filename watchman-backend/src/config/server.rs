@@ -151,6 +151,9 @@ impl AllConfigs {
                     "/api/hey".to_string(),
                     "/api/auth/login".to_string(),
                     "/api/auth/signup".to_string(),
+                    // 回源鉴权端点自身跳过权限判定（JWT 仍须验）：
+                    // 真正判定的是 body 里的目标 path/method
+                    "/api/auth/verify".to_string(),
                     "/api/subsystem_control/all_subsystem".to_string(),
                     "/api/subsystem_control/update_subsystem".to_string(),
                 ]

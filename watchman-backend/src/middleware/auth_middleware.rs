@@ -143,8 +143,10 @@ where
                 Err(e) => return Ok(mme_into_response(req, e)),
             };
 
-            // 把 uid 塞进 extensions，下游中间件或 handler 都能拿到
+            // 把身份塞进 extensions，下游按需读取：
+            // PermissionCheck 取 uid（i32），/api/auth/verify 的 handler 取完整 AuthIdentity
             req.extensions_mut().insert(identity.uid);
+            req.extensions_mut().insert(identity);
 
             svc.call(req).await.map(ServiceResponse::map_into_left_body)
         })
