@@ -19,14 +19,15 @@ fn user_auth() -> UserAuth {
     })
 }
 
+// 路由表人工排版：一行一个 service/resource，rustfmt 跳过本函数以保持布局
+#[rustfmt::skip]
 pub fn config_services(cfg: &mut web::ServiceConfig) {
     log_info!("Configuring routes...");
 
     // System management APIs（individual 模式下无 master，主关注册端点编译期裁掉）
     #[cfg(not(feature = "individual"))]
-    cfg.service(web::scope("/api/manage").service(
-        web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master)),
-    ));
+    cfg.service(web::scope("/api/manage")
+        .service(web::resource("/refresh_master").route(web::post().to(system_manage::refresh_master))));
 
     cfg.service(
         web::scope("/api")
@@ -34,72 +35,34 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
             .service(web::resource("/hey").route(web::get().to(hey_hi_hello::hey)))
             .service(web::resource("/hey").route(web::post().to(hey_hi_hello::hey)))
             // Unified notification APIs
-            .service(
-                web::scope("/notify")
-                    .service(
-                        web::resource("/template")
-                            .route(web::post().to(notify::send_with_template)),
-                    )
-                    .wrap(user_auth()),
-            )
+            .service(web::scope("/notify")
+                .service(web::resource("/template").route(web::post().to(notify::send_with_template)))
+                .wrap(user_auth()))
             // Template management APIs
-            .service(
-                web::scope("/template")
-                    .service(
-                        web::resource("/get").route(web::get().to(template_manage::get_templates)),
-                    )
-                    .service(
-                        web::resource("/help")
-                            .route(web::get().to(template_manage::get_template_help))
-                            .route(web::post().to(template_manage::post_template_help)),
-                    )
-                    .service(
-                        web::resource("/new")
-                            .route(web::post().to(template_manage::create_template)),
-                    )
-                    .service(
-                        web::resource("/update")
-                            .route(web::post().to(template_manage::update_template)),
-                    )
-                    .service(
-                        web::resource("/delete")
-                            .route(web::post().to(template_manage::delete_template)),
-                    )
-                    .wrap(user_auth()),
-            )
+            .service(web::scope("/template")
+                .service(web::resource("/get").route(web::get().to(template_manage::get_templates)))
+                .service(web::resource("/help")
+                    .route(web::get().to(template_manage::get_template_help))
+                    .route(web::post().to(template_manage::post_template_help)))
+                .service(web::resource("/new").route(web::post().to(template_manage::create_template)))
+                .service(web::resource("/update").route(web::post().to(template_manage::update_template)))
+                .service(web::resource("/delete").route(web::post().to(template_manage::delete_template)))
+                .wrap(user_auth()))
             // Notification record APIs
-            .service(
-                web::scope("/record")
-                    .service(web::resource("/get").route(web::get().to(record_manage::get_records)))
-                    .wrap(user_auth()),
-            )
+            .service(web::scope("/record")
+                .service(web::resource("/get").route(web::get().to(record_manage::get_records)))
+                .wrap(user_auth()))
             // Channel config APIs
-            .service(
-                web::scope("/channel")
-                    .service(
-                        web::resource("/get")
-                            .route(web::get().to(channel_manage::get_channel_configs)),
-                    )
-                    .service(
-                        web::resource("/update")
-                            .route(web::post().to(channel_manage::update_channel_config)),
-                    )
-                    .wrap(user_auth()),
-            )
+            .service(web::scope("/channel")
+                .service(web::resource("/get").route(web::get().to(channel_manage::get_channel_configs)))
+                .service(web::resource("/update").route(web::post().to(channel_manage::update_channel_config)))
+                .wrap(user_auth()))
             // Alias management APIs
-            .service(
-                web::scope("/alias")
-                    .service(web::resource("/get").route(web::get().to(alias_manage::get_aliases)))
-                    .service(
-                        web::resource("/new").route(web::post().to(alias_manage::create_alias)),
-                    )
-                    .service(
-                        web::resource("/update").route(web::post().to(alias_manage::update_alias)),
-                    )
-                    .service(
-                        web::resource("/delete").route(web::post().to(alias_manage::delete_alias)),
-                    )
-                    .wrap(user_auth()),
-            ),
+            .service(web::scope("/alias")
+                .service(web::resource("/get").route(web::get().to(alias_manage::get_aliases)))
+                .service(web::resource("/new").route(web::post().to(alias_manage::create_alias)))
+                .service(web::resource("/update").route(web::post().to(alias_manage::update_alias)))
+                .service(web::resource("/delete").route(web::post().to(alias_manage::delete_alias)))
+                .wrap(user_auth())),
     );
 }
