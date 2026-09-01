@@ -23,8 +23,6 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
             .service(web::resource("/hey")
                 .route(web::get().to(hey_hi_hello::hey))
                 .route(web::post().to(hey_hi_hello::hey)))
-            .wrap(JwtAuth)
-            .wrap(PermissionCheck)
             // Hot reload
             .service(web::resource("/reload").route(web::post().to(system_manage::reload_config)))
             // Auth
@@ -32,65 +30,55 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
                 .service(web::resource("/login").route(web::post().to(account_manage::login)))
                 .service(web::resource("/logout").route(web::post().to(account_manage::logout)))
                 // UID check (No need to check permission)
-                .service(web::resource("/me/{id}").route(web::get().to(account_manage::get_me)))
-                .wrap(JwtAuth))
+                .service(web::resource("/me/{id}").route(web::get().to(account_manage::get_me))))
             // user management
             .service(web::resource("/user")
                 .route(web::get().to(account_manage::all_user))
                 .route(web::post().to(account_manage::signup))
                 .route(web::patch().to(account_manage::user_update)))
-            .wrap(JwtAuth)
-            .wrap(PermissionCheck)
             // group (role) management
             .service(web::resource("/group")
                 .route(web::get().to(group_manage::all_group))
                 .route(web::post().to(group_manage::new_group))
                 .route(web::patch().to(group_manage::update_group))
                 .route(web::delete().to(group_manage::delete_group)))
-            .wrap(JwtAuth)
-            .wrap(PermissionCheck)
             // service management
             .service(web::resource("/service")
                 .route(web::get().to(service_manage::all_service))
                 .route(web::post().to(service_manage::new_service))
                 .route(web::patch().to(service_manage::update_service))
                 .route(web::delete().to(service_manage::delete_service)))
-            .wrap(JwtAuth)
-            .wrap(PermissionCheck)
             // access management
             .service(web::resource("/access")
                 .route(web::get().to(access_manage::all_access))
                 .route(web::post().to(access_manage::new_access))
                 .route(web::patch().to(access_manage::update_access))
                 .route(web::delete().to(access_manage::delete_access)))
-            .wrap(JwtAuth)
-            .wrap(PermissionCheck)
             // subsystem management
             .service(web::resource("/subsystem")
                 .route(web::get().to(subsys_manage::all_subsys))
                 .route(web::post().to(subsys_manage::new_subsys))
                 .route(web::patch().to(subsys_manage::update_subsys))
                 .route(web::delete().to(subsys_manage::delete_subsys)))
-            .wrap(JwtAuth)
-            .wrap(PermissionCheck)
             // Subsystem JSON RPC call
             .service(web::scope("/subsystem_call")
                 .service(web::resource("/{subsystem_name}").route(web::post().to(subsys_manage::call_subsys))))
-            .wrap(JwtAuth)
-            .wrap(PermissionCheck)
             // webhook management
             .service(web::resource("/webhook")
                 .route(web::get().to(webhook_manage::all_webhook))
                 .route(web::post().to(webhook_manage::new_webhook))
                 .route(web::patch().to(webhook_manage::update_webhook))
                 .route(web::delete().to(webhook_manage::delete_webhook)))
-            .wrap(JwtAuth)
-            .wrap(PermissionCheck)
             // webhook call
             .service(web::scope("/webhook")
                 .service(web::resource("/{token}")
                     .route(web::post().to(webhook_manage::post_webhook))
-                    .route(web::get().to(webhook_manage::get_webhook)))),
+                    .route(web::get().to(webhook_manage::get_webhook))))
+            // scope 级中间件对整个 /api scope 生效，与挂载位置无关；只挂一对。
+            // 后注册的先执行（洋葱模型）：JwtAuth 最外层先验 token 并注入 uid，
+            // PermissionCheck 内层后执行读取 uid 做权限判定。
+            .wrap(PermissionCheck)
+            .wrap(JwtAuth),
     );
 }
 
