@@ -1,7 +1,8 @@
 //! 子系统统一用户鉴权中间件
 //!
 //! 认证链路（按 `Authorization` header 的 scheme 区分，大小写不敏感）：
-//! - `Bearer <jwt>`：用户直连新链路。取 JWT 向 watchman `POST /api/auth/verify` 回源鉴权，
+//! - `Bearer <jwt>`：用户直连新链路。把用户 JWT 原样作为 `Authorization` 转发给 watchman
+//!   `POST /api/auth/verify` 回源鉴权（body 携带 `subsys_name`/`subsys_uuid`/`path`/`method`），
 //!   通过后把 `uid`（i32）写入 request extensions 放行；回源 401/403 原样映射，
 //!   网络失败/超时按 503 处理（需 feature `http`，individual 模式下整段编译期裁掉）
 //! - `uuid <uuid>`：watchman 转发旧链路。与本机 `subsys_uuid` 比对，一致放行
@@ -39,6 +40,9 @@ pub struct UserAuthConfig {
     /// watchman 端口（回源用，individual 模式下裁掉）
     #[cfg(not(feature = "individual"))]
     pub master_port: u16,
+    /// 本机子系统名称（回源自证用，individual 模式下裁掉）
+    #[cfg(not(feature = "individual"))]
+    pub subsys_name: String,
     /// 本机子系统 uuid（旧链路校验 + 回源自证）
     pub subsys_uuid: String,
     /// 认证白名单：path 前缀命中即放行
@@ -184,13 +188,13 @@ where
                 "http://{}:{}/api/auth/verify",
                 config.master_addr, config.master_port
             );
-            // 回源自证：携带本机子系统 uuid
-            let headers = vec![(
-                "authorization".to_owned(),
-                format!("uuid {}", config.subsys_uuid),
-            )];
+            // 回源：把用户的 JWT 原样作为 Authorization 转发给 watchman（由其 JwtAuth 验签）
+            let headers = vec![("authorization".to_owned(), format!("Bearer {credential}"))];
+            // 新约定 body：子系统自证（name + uuid）+ 目标资源（path + method），
+            // watchman 校验 name/uuid 匹配后做权限判定
             let body = serde_json::json!({
-                "token": credential,
+                "subsys_name": config.subsys_name,
+                "subsys_uuid": config.subsys_uuid,
                 "path": path,
                 "method": method.as_str(),
             });
