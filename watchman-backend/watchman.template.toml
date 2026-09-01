@@ -10,7 +10,6 @@ clear_log = "True"
 authenticate_bypass = [
     "/api/hey",
     "/webhook",
-    "/api/reload",
     "/api/auth/login",
     "/api/auth/signup",
     "/api/subsystem_control/all_subsystem",
@@ -19,7 +18,6 @@ authenticate_bypass = [
 permit_bypass = [
     "/api/hey",
     "/webhook",
-    "/api/reload",
     "/api/auth/me",
     "/api/auth/login",
     "/api/auth/signup",

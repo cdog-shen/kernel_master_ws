@@ -123,7 +123,6 @@ impl AllConfigs {
                 vec![
                     "/api/hey".to_string(),
                     "/webhook".to_string(),
-                    "/api/reload".to_string(),
                     "/api/auth/login".to_string(),
                     "/api/auth/signup".to_string(),
                     "/api/subsystem_control/all_subsystem".to_string(),
@@ -150,7 +149,6 @@ impl AllConfigs {
                 vec![
                     "/webhook".to_string(),
                     "/api/hey".to_string(),
-                    "/api/reload".to_string(),
                     "/api/auth/login".to_string(),
                     "/api/auth/signup".to_string(),
                     "/api/subsystem_control/all_subsystem".to_string(),
