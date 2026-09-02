@@ -4,7 +4,8 @@
 **/target
 /dist/
 **/.DS_Store
-**/Cargo.lock
+
+# Cargo.lock 需要入库（workspace 含二进制 crate，锁定依赖版本保证构建一致性）
 
 # cargo build config
 watchman-backend/config.toml
