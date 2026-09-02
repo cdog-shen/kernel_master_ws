@@ -13,7 +13,7 @@ HTTP 方法、报错串等技术名词保持英文原文，不做翻译。
 
 存量英文注释禁止批量重写；当改动触及某段代码时，顺手将其周边注释翻译为中文。
 
-✅ 新代码（`yell/src/services/notification_router.rs`）：
+✅ 新代码（`yell/src/service/notification_router.rs`）：
 
 ```rust
 // 渲染各渠道 JSON: HashMap<channel_type, rendered_payload>
@@ -39,7 +39,7 @@ let bypass = GLOBAL_CONFIG
 参数约束（必填/取值范围/单位）、错误语义（何时返回 `Err`、错误内容的构成）。`pub(crate)`
 及以下的内部项可以只在行为不直观时写。
 
-✅ 契约式注释（`yell/src/services/channel.rs`）：
+✅ 契约式注释（`yell/src/service/channel.rs`）：
 
 ```rust
 /// 发送前适配请求内容（默认不修改）
@@ -49,7 +49,7 @@ fn prepare_request(&self, request: NotificationRequest) -> NotificationRequest {
 }
 ```
 
-✅ 参数与错误语义（`yell/src/services/notification_router.rs`）：
+✅ 参数与错误语义（`yell/src/service/notification_router.rs`）：
 
 ```rust
 /// 发送消息到指定渠道列表
@@ -142,7 +142,7 @@ git 历史，git 历史即档案。调试用的 `log_debug!` 要么删除，要�
 // TODO: 接入 wecom 渠道——等 WeComChannel 实现 Channel trait 后取消注释并注册（见 yell 渠道规划 issue）
 ```
 
-❌ 无上下文（`yell/src/services/notification_router.rs` 中的现状，不推荐模仿）：
+❌ 无上下文（`yell/src/service/notification_router.rs` 中的现状，不推荐模仿）：
 
 ```rust
 // TODO: 注册更多渠道
@@ -162,7 +162,7 @@ git 历史，git 历史即档案。调试用的 `log_debug!` 要么删除，要�
   对应文件时顺手删除。
 - **复述式注释存量**。`watchman-backend/src/model/` 下多个文件存在 `// query implement` /
   `// update implement` 式注释，属第 3 条的反面教材，随改动顺手清理。
-- **TODO 普遍缺上下文**。`yell/src/services/notification_router.rs` 的两处 TODO 均未关联
+- **TODO 普遍缺上下文**。`yell/src/service/notification_router.rs` 的两处 TODO 均未关联
   issue 或完成条件，按第 6 条补全。
 - **yell 尚无 README**。其余 7 个 crate 与根目录均有 `Readme.md` + `Readme_ZH-CN.md` 成对
   文件，yell 是例外，补齐时按第 5 条成对创建。

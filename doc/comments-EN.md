@@ -17,7 +17,7 @@ error strings stay in their original English form and are not translated.
 Existing English comments must not be rewritten in bulk; when a change touches a piece of
 code, translate its surrounding comments into Chinese as part of that change.
 
-✅ New code (`yell/src/services/notification_router.rs`):
+✅ New code (`yell/src/service/notification_router.rs`):
 
 ```rust
 // 渲染各渠道 JSON: HashMap<channel_type, rendered_payload>
@@ -46,7 +46,7 @@ the contract rather than the implementation: what it does, parameter constraints
 error contains). Internal items (`pub(crate)` and below) may be documented only when
 their behavior is not self-evident.
 
-✅ Contract-style comment (`yell/src/services/channel.rs`):
+✅ Contract-style comment (`yell/src/service/channel.rs`):
 
 ```rust
 /// 发送前适配请求内容（默认不修改）
@@ -56,7 +56,7 @@ fn prepare_request(&self, request: NotificationRequest) -> NotificationRequest {
 }
 ```
 
-✅ Parameter and error semantics (`yell/src/services/notification_router.rs`):
+✅ Parameter and error semantics (`yell/src/service/notification_router.rs`):
 
 ```rust
 /// 发送消息到指定渠道列表
@@ -160,7 +160,7 @@ comments must not be committed.
 // TODO: 接入 wecom 渠道——等 WeComChannel 实现 Channel trait 后取消注释并注册（见 yell 渠道规划 issue）
 ```
 
-❌ No context (current state in `yell/src/services/notification_router.rs`; do not
+❌ No context (current state in `yell/src/service/notification_router.rs`; do not
 imitate):
 
 ```rust
@@ -188,7 +188,7 @@ imitate):
   contain `// query implement` / `// update implement` style comments; they are the
   counterexample for rule 3 and are cleaned up opportunistically as code is touched.
 - **TODOs generally lack context.** Neither TODO in
-  `yell/src/services/notification_router.rs` links an issue or states a completion
+  `yell/src/service/notification_router.rs` links an issue or states a completion
   condition; complete them per rule 6.
 - **yell has no README yet.** The other 7 crates and the repository root all have paired
   `Readme.md` + `Readme_ZH-CN.md` files; yell is the exception. When it is added,

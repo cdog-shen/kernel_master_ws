@@ -155,9 +155,9 @@ main.rs:182-198 消费循环（MQ 原子操作全部内联在 main，无封装�
   755, 799）（高）
 - handler 内含 DB 原子操作：`resolve_recipients` 直接查 alias（api/notify.rs:34-42）（高）
 - 编排层直接查库：router 自己 `web::block` 查 ChannelConfig 和模板
-  （services/notification_router.rs:233-260, 138-146）（中）
+  （service/notification_router.rs:233-260, 138-146）（中）
 - 渠道 service 是"原子+编排"混合体，且 [查配置→建记录→外呼→更新记录] 小编排在
-  5 渠道 × 2 方法（send/send_template）中近乎平行复制（bark/service.rs:42-265 等）（中）
+  5 渠道 × 2 方法（send/send_template）中近乎平行复制（infra/bark/service.rs:42-265 等）（中）
 - model 层混入业务逻辑：模板 `render` 递归渲染 `{{var}}`（model/notification_template.rs:185-237）；
   ChannelConfig 做配置反序列化与业务错误（model/channel_config.rs:159-243）（中）
 - 未遵循 `from_map` 清洗惯例，handler 逐字段手工摘取且含默认策略业务规则

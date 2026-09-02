@@ -8,11 +8,11 @@ yell 是 Kernel Master 项目的通知服务.
 
 - 所有 ORM 相关的操作放置在 ***model*** 目录下的相应模块中.
 
-- 所有渠道发送与管理逻辑放置在 ***services*** 目录下.
+- 渠道发送的编排逻辑放置在 ***service*** 目录下, 渠道外呼实现放置在 ***infra*** 目录下.
 
     每个渠道 (`bark/`、`gotify/`、`mail/`、`teams/`、`teams_hook/`、`webhook/`) 实现
-    `services/channel.rs` 中定义的 `Channel` trait (`channel_type` / `preflight` /
-    `render` / `send`). `notification_router.rs`
+    `service/channel.rs` 中定义的 `Channel` trait (`channel_type` / `preflight` /
+    `render` / `send`). `service/notification_router.rs`
     负责把请求路由到指定的渠道实例并记录投递结果.
 
 - 与 API 响应相关的逻辑放置在 ***api*** 目录下的相应模块中.
@@ -64,7 +64,7 @@ yell 是 Kernel Master 项目的通知服务.
 `POST /api/template/help`, JSON body 为 `{"name": "<模板名>"}`.
 
 返回该模板按渠道分组的模拟渲染 JSON 示例 (以 `MailManOk` 包装, 载荷在 `data` 字段). 渲染规则
-(实现于 `services/template_render.rs::render_example`):
+(实现于 `service/template_render.rs::render_example`):
 
 - 所有 `{{var}}` 占位符统一填充为字符串 `"TEST"`;
 - 模板中的数字 / 布尔字面量原样保留;

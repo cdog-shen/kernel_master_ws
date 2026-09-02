@@ -26,7 +26,7 @@ web 错误响应映射、统一鉴权中间件）。
 | `jc-commander` | Job-Center 调度端 | 9003 | RabbitMQ(lapin) + tokio |
 | `jc-worker` | Job-Center 执行端 | — | 纯 MQ 消费者，无 actix/diesel |
 | `file-agent` | 文件系统操作 | 9004 | multipart 上传，无数据库 |
-| `yell` | 通知服务（bark/gotify/mail/teams/webhook/wecom） | 9005 | `service/` 编排层 + `infra/` 渠道外呼实现，按渠道组织 |
+| `yell` | 通知服务（bark/gotify/mail/teams/teams_hook/webhook） | 9005 | `service/` 编排层 + `infra/` 渠道外呼实现，按渠道组织 |
 
 ## 构建与检查命令
 

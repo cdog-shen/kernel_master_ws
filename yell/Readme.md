@@ -10,12 +10,13 @@ records persisted in PostgreSQL.
 
 - All ORM-related operations are placed in the corresponding module under the ***model*** directory.
 
-- All channel-sending and management logic belongs in the ***services*** directory.
+- Channel-sending orchestration belongs in the ***service*** directory; channel
+    call-out implementations belong in the ***infra*** directory.
 
     Each channel (`bark/`, `gotify/`, `mail/`, `teams/`, `teams_hook/`,
     `webhook/`) implements the `Channel` trait defined in
-    `services/channel.rs` (`channel_type` / `preflight` / `render` / `send`).
-    `notification_router.rs` routes a request to the requested channel
+    `service/channel.rs` (`channel_type` / `preflight` / `render` / `send`).
+    `service/notification_router.rs` routes a request to the requested channel
     instances and records the delivery.
 
 - API-response–related logic goes into the corresponding API module under the ***api*** directory.
@@ -70,7 +71,7 @@ template sending is the only send path now.
 
 Returns the template mock-rendered per channel as JSON (wrapped in
 `MailManOk`, payload in `data`). Rendering rules
-(implemented in `services/template_render.rs::render_example`):
+(implemented in `service/template_render.rs::render_example`):
 
 - every `{{var}}` placeholder is filled with the string `"TEST"`;
 - numeric / boolean literals in the template are kept as-is;
