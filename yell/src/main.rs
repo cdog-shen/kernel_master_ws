@@ -22,6 +22,7 @@ use config::server;
 // local modules
 mod api;
 mod config;
+mod infra;
 mod model;
 mod services;
 

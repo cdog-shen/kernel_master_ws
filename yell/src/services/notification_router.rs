@@ -9,17 +9,17 @@ use std::sync::Arc;
 
 use share_lib::data_structure::{MailManErr, MailManOk};
 
+use crate::infra::bark::service::BarkChannel;
+use crate::infra::gotify::service::GotifyChannel;
+use crate::infra::mail::service::SmtpChannel;
+use crate::infra::teams::service::TeamsChannel;
+use crate::infra::teams_hook::service::TeamsHookChannel;
+use crate::infra::webhook::service::WebhookChannel;
 use crate::model::notification_template::NotificationTemplate;
-use crate::services::bark::service::BarkChannel;
 use crate::services::channel::{
     Channel, ChannelConfigs, ChannelResult, RecipientTarget, deliver_template,
 };
-use crate::services::gotify::service::GotifyChannel;
-use crate::services::mail::service::SmtpChannel;
-use crate::services::teams::service::TeamsChannel;
-use crate::services::teams_hook::service::TeamsHookChannel;
 use crate::services::template_render;
-use crate::services::webhook::service::WebhookChannel;
 
 /// 通知路由分发器
 pub struct NotificationRouter {
