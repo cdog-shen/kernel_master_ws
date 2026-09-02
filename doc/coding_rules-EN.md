@@ -156,7 +156,7 @@ Constraints and notes:
 - The model layer (atomic operations) is not required to be async; it follows the
   sync/async nature of the client it uses.
 - Existing synchronous service functions are legacy pending migration (see the
-  migration plan in the root `todo.md`): new orchestration functions must be async;
+  migration plan in `doc/todo.md`): new orchestration functions must be async;
   when touching an existing synchronous function, migrate it in passing, and the
   migration must update all call sites (handlers switch to `.await` calls).
 

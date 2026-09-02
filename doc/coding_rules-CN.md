@@ -138,7 +138,7 @@ pub async fn new_user<'a>(
   保持现状，async 化不等于非阻塞；如需真正不阻塞 worker 线程，另行评估
   `web::block`，不属于本条范围。
 - model 层（原子操作）不强制 async，跟随其所用客户端的同步/异步形态。
-- 存量同步 service 函数属待迁移现状（迁移计划见根目录 `todo.md`）：
+- 存量同步 service 函数属待迁移现状（迁移计划见 `doc/todo.md`）：
   新增编排函数必须 async；改动到既有同步函数时顺手迁移，迁移必须同步更新
   全部调用方（handler 改为 `.await` 调用）。
 
