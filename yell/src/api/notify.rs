@@ -8,7 +8,7 @@ use share_lib::err_mapping::MailManErrResponser;
 use std::collections::HashMap;
 
 use crate::{
-    api::filter, services::notification_router::NotificationRouter, services::notify_service,
+    api::filter, service::notification_router::NotificationRouter, service::notify_service,
 };
 
 // ==================== 统一通知发送 API ====================

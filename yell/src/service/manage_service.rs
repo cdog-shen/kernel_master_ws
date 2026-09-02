@@ -20,7 +20,7 @@ use crate::model::{
         NewNotificationTemplate, NotificationTemplate, UpdateNotificationTemplate,
     },
 };
-use crate::services::{notify_service, template_render};
+use crate::service::{notify_service, template_render};
 
 // ==================== 模板管理 ====================
 

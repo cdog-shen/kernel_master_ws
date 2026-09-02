@@ -9,7 +9,7 @@ use share_lib::err_mapping::MailManErrResponser;
 use crate::{
     api::filter,
     model::notification_template::{NewNotificationTemplate, UpdateNotificationTemplate},
-    services::manage_service,
+    service::manage_service,
 };
 
 // ==================== 模板管理 API ====================

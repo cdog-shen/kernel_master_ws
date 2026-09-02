@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 use share_lib::infrastructure::http_client;
 
 use crate::model::channel_config::BarkConfig;
-use crate::services::channel::{
+use crate::service::channel::{
     Channel, DispatchError, collect_failures, run_http_call, string_elements,
 };
 

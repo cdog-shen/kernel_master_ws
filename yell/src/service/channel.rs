@@ -97,7 +97,7 @@ pub trait Channel: Send + Sync {
         variables: &Map<String, Value>,
     ) -> Result<Vec<Value>, DispatchError> {
         let _ = recipients;
-        Ok(vec![crate::services::template_render::render_channel(
+        Ok(vec![crate::service::template_render::render_channel(
             template_json,
             variables,
         )])

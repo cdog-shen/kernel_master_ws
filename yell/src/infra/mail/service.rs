@@ -10,7 +10,7 @@ use std::str::FromStr;
 use tokio::sync::Mutex;
 
 use crate::model::channel_config::SmtpConfig;
-use crate::services::channel::{Channel, DispatchError, string_elements};
+use crate::service::channel::{Channel, DispatchError, string_elements};
 
 /// SMTP 渠道实现
 pub struct SmtpChannel {

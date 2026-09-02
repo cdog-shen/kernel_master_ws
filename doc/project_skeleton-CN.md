@@ -177,7 +177,7 @@ middleware、调度器等组件横切在 `api` → `service` → `model` 三层�
 
 - **jc-worker**：纯 MQ 消费者，无 `api/`、`middleware/`、`model/`。配置层为 `config/worker.rs`（`jc-worker/src/config/worker.rs`），启动链改为 `#[tokio::main]` + lapin 连接/建队/消费（`jc-worker/src/main.rs`），业务逻辑在 `service/task.rs`、`service/json_rpc.rs`。
 - **file-agent**：无数据库，`main.rs` 中 `mod model;` 整体注释掉，无 r2d2 池；multipart 上传逻辑在 `service/file_manage.rs`，文件系统原语收敛在 `util/file_op.rs`。
-- **yell**：业务层用复数目录 `services/`，按通知渠道（`bark/`、`gotify/`、`mail/`、`teams/`、`teams_hook/`、`webhook/`）分目录；`services/channel.rs` 定义所有渠道必须实现的 `Channel` trait（`channel_type` / `preflight` / `dispatch_template`），`services/notification_router.rs` 的 `NotificationRouter` 统一注册与分发渠道。
+- **yell**：业务层为单数目录 `service/`（原复数 `services/` 已消除），只承载编排逻辑；`service/channel.rs` 定义所有渠道必须实现的 `Channel` trait（`channel_type` / `preflight` / `render` / `send`）与统一发送骨架 `deliver_template`（含 `create_record` / `update_record` / `resolve_config`），`service/notification_router.rs` 的 `NotificationRouter` 统一注册与分发渠道。渠道外呼实现（原子操作）已迁入 `infra/`，按渠道分目录（`bark/`、`gotify/`、`mail/`、`teams/`、`teams_hook/`、`webhook/`），只保留"校验/外呼"职责。
 - **cmdb-backend**：`model/` 与 `service/` 先按子系统（`km/`、`cloudserver/`、`yell/` 等）再分一层目录，如 `cmdb-backend/src/model/km/cloud_account.rs`。
 - **jc-commander**：额外有 `util/scheduler.rs`（调度器），属 crate 私有组件，不算骨架变体。
 

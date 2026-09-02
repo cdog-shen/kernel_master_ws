@@ -146,6 +146,9 @@ Follow official Rust conventions, uniformly across the workspace:
 
 - Functions, variables, modules, files: snake_case, e.g.
   `get_user_by_username`, `reload_config`.
+- Noun-named modules/directories are always singular: `service/`, `model/`,
+  `api/`, `infra/`; plural forms such as `services/` or `handlers/` are
+  forbidden (plural is only for collection-typed variables, not module names).
 - Types, structs, enums, traits: CamelCase, e.g. `UserModel`, `MailManErr`.
 - Constants and statics: SCREAMING_SNAKE_CASE, e.g. `BAD_REQUEST_CODE`.
 - Cargo feature names: kebab-case, e.g. `full-schema` in
@@ -195,3 +198,7 @@ new code must not imitate them.
   three-struct pattern.
 - `yell/src/api/` now has `system_manage.rs` (hosting `refresh_master` —
   re-registering with watchman, like file-agent — not `/api/reload`).
+- `yell`'s plural business directory `services/` has been renamed to the
+  singular `service/` (orchestration logic only), with channel call-out
+  implementations moved into `infra/`; the plural module-name exception is
+  eliminated, and all module/directory names across the workspace are singular.

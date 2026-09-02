@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use crate::model::channel_config::ChannelConfig;
 use crate::model::notification_alias::NotificationAlias;
 use crate::model::notification_template::NotificationTemplate;
-use crate::services::channel::{ChannelConfigs, RecipientTarget};
+use crate::service::channel::{ChannelConfigs, RecipientTarget};
 
 /// 解析 recipients 字段，仅支持 String（alias）格式
 pub async fn resolve_recipients<'a>(

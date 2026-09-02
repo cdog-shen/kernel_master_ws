@@ -16,10 +16,10 @@ use crate::infra::teams::service::TeamsChannel;
 use crate::infra::teams_hook::service::TeamsHookChannel;
 use crate::infra::webhook::service::WebhookChannel;
 use crate::model::notification_template::NotificationTemplate;
-use crate::services::channel::{
+use crate::service::channel::{
     Channel, ChannelConfigs, ChannelResult, RecipientTarget, deliver_template,
 };
-use crate::services::template_render;
+use crate::service::template_render;
 
 /// 通知路由分发器
 pub struct NotificationRouter {

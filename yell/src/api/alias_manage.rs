@@ -8,7 +8,7 @@ use share_lib::err_mapping::MailManErrResponser;
 
 use crate::{
     model::notification_alias::{NewNotificationAlias, UpdateNotificationAlias},
-    services::{manage_service, notify_service},
+    service::{manage_service, notify_service},
 };
 
 // ==================== Alias 管理 API ====================

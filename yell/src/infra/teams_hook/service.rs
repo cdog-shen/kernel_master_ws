@@ -3,8 +3,8 @@ use serde_json::{Map, Value};
 use share_lib::infrastructure::http_client;
 
 use crate::model::channel_config::WebhookConfig;
-use crate::services::channel::{Channel, DispatchError, collect_failures, run_http_call};
-use crate::services::template_render;
+use crate::service::channel::{Channel, DispatchError, collect_failures, run_http_call};
+use crate::service::template_render;
 
 /// Teams Hook 推送渠道实现
 /// 是通用 webhook 的一层封装：recipient 元素为对象，

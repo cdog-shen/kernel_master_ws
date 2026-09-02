@@ -6,7 +6,7 @@ use diesel::{
 use serde_json::{Map, Value};
 use share_lib::err_mapping::MailManErrResponser;
 
-use crate::{api::filter, services::manage_service};
+use crate::{api::filter, service::manage_service};
 
 // ==================== 通知记录查询 API ====================
 

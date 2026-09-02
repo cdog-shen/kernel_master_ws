@@ -135,6 +135,9 @@ listen_port = 8000
 
 - 函数、变量、模块、文件：snake_case，如 `get_user_by_username`、
   `reload_config`。
+- 名词类模块/目录命名一律单数：`service/`、`model/`、`api/`、`infra/`，
+  禁止 `services/`、`handlers/` 等复数形式（复数仅用于表集合语义的变量，
+  不用于模块名）。
 - 类型、结构体、枚举、trait：CamelCase，如 `UserModel`、`MailManErr`。
 - 常量与静态量：SCREAMING_SNAKE_CASE，如 `BAD_REQUEST_CODE`。
 - Cargo feature 名：kebab-case，如 `cmdb-backend/Cargo.toml` 的
@@ -173,3 +176,6 @@ listen_port = 8000
   属已登记的合法变体，新增表仍优先按三结构体模式执行。
 - `yell/src/api/` 已补上 `system_manage.rs`（承载 `refresh_master`，与
   file-agent 一样是向 watchman 刷新注册，并非 `/api/reload`）。
+- `yell` 的复数业务目录 `services/` 已改为单数 `service/`（只留编排逻辑），
+  渠道外呼实现迁入 `infra/`；复数模块名例外已消除，全 workspace 模块/目录
+  命名均为单数。

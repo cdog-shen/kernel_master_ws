@@ -6,7 +6,7 @@ use diesel::{
 use serde_json::{Map, Value};
 use share_lib::err_mapping::MailManErrResponser;
 
-use crate::services::manage_service;
+use crate::service::manage_service;
 
 // ==================== 通道配置 API ====================
 

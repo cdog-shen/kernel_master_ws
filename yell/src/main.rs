@@ -24,7 +24,7 @@ mod api;
 mod config;
 mod infra;
 mod model;
-mod services;
+mod service;
 
 #[actix_rt::main]
 async fn main() -> io::Result<()> {
