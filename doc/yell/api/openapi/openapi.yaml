@@ -12,8 +12,8 @@ servers:
     description: 本地开发环境
 
 # 认证：除 /api/hey 与 /api/manage/refresh_master 外均需携带
-#   Authorization: uuid <subsys_uuid>
-# 见 yell/src/middleware/auth_middleware.rs；失败返回 401。
+#   Authorization: Bearer <用户JWT>（回源 watchman 鉴权）或 uuid <subsys_uuid>（旧链路）
+# 见 share-lib/src/middleware/user_auth.rs；失败返回 401。
 security:
   - subsystemUUIDAuth: []
 
@@ -43,7 +43,7 @@ paths:
                 type: string
                 example: "hi hello! -from yell"
 
-  # ==================== 系统管理（公开） ====================
+  # ==================== 系统管理 ====================
   /api/manage/refresh_master:
     post:
       summary: 向 master（watchman-backend）刷新本子系统的 uuid 注册信息
@@ -61,6 +61,29 @@ paths:
                 data: {}
         "500":
           $ref: "#/components/responses/InternalError"
+
+  /api/manage/register_help:
+    get:
+      summary: 获取注册用预填 JSON
+      description: 按 watchman 子系统注册接口所需字段预填 JSON；响应含 subsys_uuid（子系统凭证），需认证
+      responses:
+        "200":
+          description: 注册信息（MailManOk 包装，data 含 subsys_name / url / token / relate_service_id / is_enable）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+              example:
+                code: 200
+                key: "Register info generated"
+                data:
+                  subsys_name: "yell"
+                  url: "http://127.0.0.1:9005"
+                  token: "550e8400-e29b-41d4-a716-446655440000"
+                  relate_service_id: 0
+                  is_enable: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   # ==================== 统一通知发送 ====================
   /api/notify/template:
@@ -581,7 +604,7 @@ components:
       type: apiKey
       in: header
       name: Authorization
-      description: 格式 `uuid <subsys_uuid>`（`UUID` 前缀亦可），由 master 分配的子系统 UUID。
+      description: 两种格式均可：`Bearer <用户JWT>`（回源 watchman /api/auth/verify 鉴权）或 `uuid <subsys_uuid>`（`UUID` 前缀亦可，与本机配置比对，旧链路）。
 
   responses:
     BadRequest:

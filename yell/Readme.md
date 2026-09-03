@@ -26,8 +26,13 @@ records persisted in PostgreSQL.
 
 ## APIs
 
-All endpoints are prefixed with `/api`. Except `/hey` and `/manage`, every
-scope is wrapped by the `Authentication` middleware.
+All endpoints are prefixed with `/api`. All scopes are wrapped by the shared
+`UserAuth` middleware (`share-lib`), which accepts either
+`Authorization: Bearer <user JWT>` (verified against watchman) or
+`uuid <subsys_uuid>` (legacy watchman-forwarded path). Only `/hey` and
+`/manage/refresh_master` are whitelisted via `authenticate_bypass`;
+`/manage/register_help` requires auth because its response carries the
+subsystem UUID credential.
 
 All success responses are wrapped in `MailManOk` (`{code, key, data}`),
 including the query-style GET endpoints (`/template/get`, `/template/help`,
@@ -44,6 +49,7 @@ including the query-style GET endpoints (`/template/get`, `/template/help`,
 |     Resource      | Supported Methods | Purpose | Notes |
 | :---------------: | :---------------: | :------ | :---- |
 |  /refresh_master  |      `POST`       | Re-register this instance with watchman | Public, no auth required; implemented in `api/system_manage.rs` |
+|  /register_help   |       `GET`       | Pre-filled JSON for subsystem registration | Requires auth; response carries the subsystem UUID credential |
 
 ### /notify
 
@@ -168,7 +174,7 @@ master_addr = "127.0.0.1"
 master_port = 8000
 # CORS & auth bypass
 allowed_origin_list = ["http://localhost:3000", "http://127.0.0.1:3000"]
-authenticate_bypass = ["/api/refresh_master"]
+authenticate_bypass = ["/api/hey", "/api/manage/refresh_master"]
 
 # Database
 [db_config]

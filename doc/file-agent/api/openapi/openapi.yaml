@@ -33,6 +33,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/MailManOk"
 
+  /manage/register_help:
+    get:
+      summary: 获取注册用预填 JSON
+      description: 返回按 watchman 子系统注册接口预填的 JSON（含 subsys_uuid 凭证），需鉴权
+      operationId: registerHelp
+      responses:
+        "200":
+          description: 注册信息
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
   /token/gen:
     post:
       summary: 生成下载令牌

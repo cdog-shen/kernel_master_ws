@@ -40,23 +40,24 @@ All endpoints are prefixed with `/api`.
 
 | Resource | Supported Methods | Purpose            | Notes                                   |
 | :------: | :---------------: | :----------------- | :-------------------------------------- |
-|    /     |      `POST`       | Reloads all config | Hot-reloads dynamic configuration files |
+|    /     |      `POST`       | Reloads all config | Hot-reloads dynamic configuration files; requires authentication |
 
 ### /auth
 
-| Resource | Supported Methods | Purpose                      | Notes                     |
-| :------: | :---------------: | :--------------------------- | :------------------------ |
-| /me/{id} |       `GET`       | Retrieve a single user       | Returns full user profile |
-|  /login  |      `POST`       | Login with username/password |                           |
-| /logout  |      `POST`       | Logout                       |                           |
+| Resource | Supported Methods | Purpose                      | Notes                                                         |
+| :------: | :---------------: | :--------------------------- | :------------------------------------------------------------ |
+| /me/{id} |       `GET`       | Retrieve a single user       | Returns full user profile                                     |
+|  /login  |      `POST`       | Login with username/password |                                                               |
+| /logout  |      `POST`       | Logout                       |                                                               |
+| /verify  |      `POST`       | Origin auth for subsystems   | Bearer user JWT; body carries subsys name/uuid + target path/method |
 
 ### /user
 
 | Resource | Supported Methods | Purpose                 | Notes |
 | :------: | :---------------: | :---------------------- | :---- |
 |    /     |       `GET`       | Retrieve all users      |       |
-|    /     |      `POST`       | Update user information |       |
-|    /     |      `PATCH`      | Register a new user     |       |
+|    /     |      `POST`       | Register a new user     |       |
+|    /     |      `PATCH`      | Update user information |       |
 
 ### /group
 
@@ -189,21 +190,22 @@ secret_key_path = "key/jwt_secret.key"
 authenticate_bypass = [
     "/api/hey",
     "/webhook",
-    "/api/reload",
     "/api/auth/login",
     "/api/auth/signup",
-    "/api/subsystem/all_subsystem",
-    "/api/subsystem/update_subsystem",
+    "/api/subsystem_control/all_subsystem",
+    "/api/subsystem_control/update_subsystem",
 ]
 permit_bypass = [
     "/api/hey",
     "/webhook",
-    "/api/reload",
     "/api/auth/me",
     "/api/auth/login",
     "/api/auth/signup",
-    "/api/subsystem/all_subsystem",
-    "/api/subsystem/update_subsystem",
+    # /api/auth/verify skips the permission check itself (JWT still required):
+    # the real permission decision targets the path in the request body
+    "/api/auth/verify",
+    "/api/subsystem_control/all_subsystem",
+    "/api/subsystem_control/update_subsystem",
 ]
 
 # Database

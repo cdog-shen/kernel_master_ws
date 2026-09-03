@@ -55,7 +55,7 @@ clear_log = "True"
 master_addr = "127.0.0.1"
 master_port = 8000
 register_name = "cloud-api"
-authenticate_bypass = ["/api/refresh_master"]
+authenticate_bypass = ["/api/hey", "/api/manage/refresh_master"]
 python_path = "/opt/miniconda3/envs/cloud_api/bin/python"
 script_dir = "scripts"
 

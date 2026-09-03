@@ -196,7 +196,7 @@ middleware、调度器等组件横切在 `api` → `service` → `model` 三层�
 ## 现状与例外
 
 - `/api/reload` 端点目前只有 `watchman-backend` 在 `config/app.rs` 中注册（`watchman-backend/src/config/app.rs:20`）。其余 crate 的 `AllConfigs::reload()` 已实现并用于启动加载，但未暴露 HTTP 热重载端点；`file-agent` 与 `yell` 的 `api/system_manage.rs` 承载的是 `refresh_master`（向 watchman 刷新注册），不是 reload。
-- `/api/hey` 在 watchman-backend 同时注册 GET 与 POST，其余 crate 只注册了 POST（如 `file-agent/src/config/app.rs:11`），调用方应使用 POST 以保证兼容。
+- `/api/hey` 在 watchman-backend 与 yell 同时注册 GET 与 POST，其余 crate 只注册了 POST（如 `file-agent/src/config/app.rs:11`），调用方应使用 POST 以保证兼容。
 - `yell` 历史上曾长期漏登记进 build 脚本与 docker-compose。当前 build 脚本已包含 `yell`，`docker-compose.yaml` 也已注册 `yell` 服务（`docker-compose.yaml:134`），`README.md` / `Readme_ZH-CN.md` 双语说明亦已补齐，该历史遗漏已闭环。
 - 各子系统 crate 的本地 `middleware/auth_middleware.rs` 已删除并接入 share-lib 统一鉴权中间件（`share-lib/src/middleware/user_auth.rs`）；仅 `config/server.rs` 仍按 crate 分化（依赖自身 model/配置），属有意的非公共代码，不纳入 share-lib。
-- `refresh_master` 路由在各 crate 不一致：cmdb-backend / yell / file-agent 为 `/api/manage/refresh_master`，cloud-api / jc-commander 为 `/api/refresh_master`；各 crate 的 `authenticate_bypass` 白名单已按实际路由配置。该路由在 `individual` 模式下经 cfg 门控裁掉。
+- `refresh_master` 路由已统一为 `/api/manage/refresh_master`（cloud-api / jc-commander 由 `/api/refresh_master` 迁来）；各 crate 的 `authenticate_bypass` 白名单按该路由配置。该路由与同组的 `register_help`（GET，需鉴权，返回注册用预填 JSON）在 `individual` 模式下经 cfg 门控一并裁掉。

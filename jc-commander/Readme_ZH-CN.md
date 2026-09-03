@@ -59,7 +59,7 @@ clear_log = "True"
 master_addr = "127.0.0.1"
 master_port = 8000
 register_name = "job-center"
-authenticate_bypass = ["/api/refresh_master"]
+authenticate_bypass = ["/api/hey", "/api/manage/refresh_master"]
 
 [db_config]
 db_str = "mysql://root:778631@127.0.0.1:3306/job_center"

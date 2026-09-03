@@ -84,6 +84,46 @@ paths:
         "200":
           description: 登出成功
 
+  /auth/verify:
+    post:
+      summary: 子系统回源鉴权
+      description: >
+        子系统直连链路的回源鉴权接口。调用方（子系统）把用户 JWT 原样作为
+        `Authorization: Bearer <JWT>` 携带，由 JwtAuth 完成用户认证；
+        body 携带子系统自证（subsys_name/subsys_uuid）与目标资源（path/method），
+        本端校验子系统 name/uuid 匹配后对目标 path/method 做权限判定。
+      operationId: authVerify
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subsys_name, subsys_uuid, path, method]
+              properties:
+                subsys_name:
+                  type: string
+                  description: 调用方子系统注册名
+                subsys_uuid:
+                  type: string
+                  format: uuid
+                  description: 调用方子系统 UUID
+                path:
+                  type: string
+                  description: 目标资源路径 (e.g. /api/table/query)
+                method:
+                  type: string
+                  description: 目标 HTTP 方法 (e.g. POST)
+      responses:
+        "200":
+          description: 鉴权结果
+        "400":
+          description: body 字段缺失或不合法
+        "401":
+          description: 用户 JWT 无效或子系统 name/uuid 不匹配
+
   /auth/me/{id}:
     get:
       summary: 获取用户信息

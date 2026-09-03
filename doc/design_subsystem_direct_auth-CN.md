@@ -209,6 +209,6 @@ cargo build -p cmdb-backend --features individual   # 独立模式：无需 watc
   对这两个配置项的读取未统一做 cfg 门控（存量仍按模板原样读取）。
 - **file-agent 启用鉴权**：原先中间件整体注释（无鉴权裸奔），本次接入 share-lib
   中间件后启用，属设计内项的落实。
-- **refresh_master 路由不一致（存量）**：cmdb / yell / file-agent 为
-  `/api/manage/refresh_master`，cloud-api / jc-commander 为 `/api/refresh_master`；
-  各 crate 的 `authenticate_bypass` 白名单已按实际路由配置，未做统一。
+- **refresh_master 路由统一**：cloud-api / jc-commander 已从 `/api/refresh_master`
+  迁至 `/api/manage/refresh_master`，与 cmdb / yell / file-agent 一致；各 crate 的
+  `authenticate_bypass` 白名单已按统一路由配置。

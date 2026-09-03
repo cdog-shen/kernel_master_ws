@@ -28,7 +28,8 @@
 
 Subsystem link to `watchman` service
 
-Called by `POST` to `watchman/api/subsystem_call/{subsystem_name}/{operate}` from `watchman`
+Legacy path: proxied by `POST` to `watchman/api/subsystem_call/{subsystem_name}` from `watchman`.  
+Current path: call a subsystem directly with the user JWT; the subsystem verifies it against watchman via `POST /api/auth/verify`.
 
 ### CMDB: Configuration Management Database for all instance
 
@@ -49,6 +50,10 @@ This subsystem is divided into two parts: the worker and the commander.
 ### File-Agent: A subsystem to operate with file system
 
 📃 [file-agent readme file](./file-agent/Readme.md)
+
+### Yell: A multi-channel notification service
+
+🔔 [yell readme file](./yell/Readme.md)
 
 ## DockerFile
 

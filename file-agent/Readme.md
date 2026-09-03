@@ -3,7 +3,7 @@
 Provides the whole system with file-interaction capabilities.  
 Supports upload / download / ls, etc.
 
-***Currently the UUID-based auth logic for this subsystem is not finished; treat this as a fairly complete test case only. Do NOT deploy it in an untrusted network environment.***
+This subsystem is protected by the shared auth middleware (`share-lib` `UserAuth`): requests authenticate either via `Authorization: Bearer <user JWT>` (verified against watchman) or via the subsystem UUID (legacy watchman-forwarded path).
 
 ## Database Structure
 The executor does **not** connect to the database directly.
@@ -29,7 +29,7 @@ master_addr = "127.0.0.1"
 master_port = 8000
 workers = 8
 allowed_origin_list = ["http://localhost:3000", "http://127.0.0.1:3000"]
-authenticate_bypass = ["/api/refresh_master"]
+authenticate_bypass = ["/api/hey", "/api/manage/refresh_master"]
 root = "./"
 file_size_limit = 0
 ```

@@ -33,10 +33,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/MailManOk"
 
+  /manage/register_help:
+    get:
+      summary: 获取注册用预填 JSON
+      description: 返回按 watchman 子系统注册接口预填的 JSON（含 subsys_uuid 凭证），需鉴权
+      operationId: registerHelp
+      responses:
+        "200":
+          description: 注册信息
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailManOk"
+
   /table/query:
     post:
       summary: 查询表数据
-      description: 根据表名和查询条件获取记录。支持的表: lighthouse, cloudserver_instance, logservice_topic
+      description: "根据表名和查询条件获取记录。支持的表: lighthouse, cloudserver_instance, logservice_topic"
       operationId: queryTable
       requestBody:
         required: true

@@ -27,7 +27,8 @@
 
 子系统链接到 `watchman` 服务
 
-通过 `POST` 请求 `watchman/api/subsystem_call/{subsystem_name}/{operate}` 从 `watchman` 调用
+旧链路：通过 `POST` 请求 `watchman/api/subsystem_call/{subsystem_name}` 由 `watchman` 转发调用。
+现链路：调用方持用户 JWT 直连子系统，子系统通过 `POST /api/auth/verify` 向 watchman 回源鉴权。
 
 ### CMDB: 所有实例的配置管理数据库
 
@@ -48,6 +49,10 @@
 ### File-Agent: 与文件系统交互的子系统
 
 📃 [file-agent 说明文件](./file-agent/Readme_ZH-CN.md)
+
+### Yell: 多渠道通知服务
+
+🔔 [yell 说明文件](./yell/Readme_ZH-CN.md)
 
 ## DockerFile
 

@@ -22,7 +22,11 @@ yell 是 Kernel Master 项目的通知服务.
 
 ## APIs
 
-所有 API 以 `/api` 范围开头. 除 `/hey` 与 `/manage` 外, 所有 scope 都包裹了 `Authentication` 中间件.
+所有 API 以 `/api` 范围开头. 所有 scope 都包裹了 share-lib 统一鉴权中间件
+(`UserAuth`), 支持 `Authorization: Bearer <用户JWT>` (回源 watchman 鉴权) 或
+`uuid <subsys_uuid>` (watchman 转发旧链路) 两种凭证. 仅 `/hey` 与
+`/manage/refresh_master` 经 `authenticate_bypass` 白名单放行;
+`/manage/register_help` 需认证, 因为其响应携带 subsys_uuid 子系统凭证.
 
 所有成功响应均以 `MailManOk` (`{code, key, data}`) 包装返回, 包括查询类 GET
 端点 (`/template/get`、`/template/help`、`/record/get`、`/channel/get`、`/alias/get`),
@@ -39,6 +43,7 @@ yell 是 Kernel Master 项目的通知服务.
 |      资源       | 支持的方法 | 功能                        | 备注                                          |
 | :-------------: | :--------: | :-------------------------- | :-------------------------------------------- |
 | /refresh_master |   `POST`   | 向 watchman 刷新本实例注册 | 公开接口, 无需认证; 实现于 `api/system_manage.rs` |
+| /register_help  |   `GET`    | 获取注册用预填 JSON         | 需认证; 响应携带 subsys_uuid 子系统凭证        |
 
 ### /notify
 
@@ -157,7 +162,7 @@ master_addr = "127.0.0.1"
 master_port = 8000
 # CORS 与认证白名单
 allowed_origin_list = ["http://localhost:3000", "http://127.0.0.1:3000"]
-authenticate_bypass = ["/api/refresh_master"]
+authenticate_bypass = ["/api/hey", "/api/manage/refresh_master"]
 
 # 数据库配置
 [db_config]

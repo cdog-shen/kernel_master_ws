@@ -39,15 +39,16 @@ watchman 是整个 Kernel master 项目的 IAM 和调度服务.
 
 | 资源  | 支持的方法 | 功能             | 备注                         |
 | :---: | :--------: | :--------------- | :--------------------------- |
-|   /   |   `POST`   | 重新加载配置数据 | 热加载配置以刷新任何动态配置 |
+|   /   |   `POST`   | 重新加载配置数据 | 热加载配置以刷新任何动态配置; 需要认证 |
 
 ### /auth
 
-|   资源   | 支持的方法 | 功能                 | 备注               |
-| :------: | :--------: | :------------------- | :----------------- |
-| /me/{id} |   `GET`    | 获取用户的所有信息   | 包含用户的所有信息 |
-|  /login  |   `POST`   | 使用用户名和密码登录 |                    |
-| /logout  |   `POST`   | 注销                 |                    |
+|   资源   | 支持的方法 | 功能                 | 备注                                                  |
+| :------: | :--------: | :------------------- | :---------------------------------------------------- |
+| /me/{id} |   `GET`    | 获取用户的所有信息   | 包含用户的所有信息                                    |
+|  /login  |   `POST`   | 使用用户名和密码登录 |                                                       |
+| /logout  |   `POST`   | 注销                 |                                                       |
+| /verify  |   `POST`   | 子系统回源鉴权       | Bearer 携带用户 JWT; body 含子系统 name/uuid 与目标 path/method |
 
 
 ### /user
@@ -186,21 +187,21 @@ secret_key_path = "key/jwt_secret.key"
 authenticate_bypass = [
     "/api/hey",
     "/webhook",
-    "/api/reload",
     "/api/auth/login",
     "/api/auth/signup",
-    "/api/subsystem/all_subsystem",
-    "/api/subsystem/update_subsystem",
+    "/api/subsystem_control/all_subsystem",
+    "/api/subsystem_control/update_subsystem",
 ]
 permit_bypass = [
     "/api/hey",
     "/webhook",
-    "/api/reload",
     "/api/auth/me",
     "/api/auth/login",
     "/api/auth/signup",
-    "/api/subsystem/all_subsystem",
-    "/api/subsystem/update_subsystem",
+    # 回源鉴权端点自身跳过权限判定（JWT 仍须验）：真正判定的是 body 里的目标 path
+    "/api/auth/verify",
+    "/api/subsystem_control/all_subsystem",
+    "/api/subsystem_control/update_subsystem",
 ]
 
 # 数据库配置
