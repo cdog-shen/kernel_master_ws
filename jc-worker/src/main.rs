@@ -5,9 +5,8 @@ use share_lib::logger;
 use config::worker;
 // local modules
 mod config;
-mod mq_consumer;
+mod infra;
 mod service;
-mod util;
 
 #[tokio::main]
 async fn main() {
@@ -32,5 +31,5 @@ async fn main() {
     );
 
     // start MQ consume loop
-    mq_consumer::run().await;
+    infra::mq_consumer::run().await;
 }

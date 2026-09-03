@@ -24,8 +24,8 @@ use config::server;
 mod api;
 mod config;
 // mod model;
+mod infra;
 mod service;
-mod util;
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {

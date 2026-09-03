@@ -7,7 +7,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 use std::path::{Path, PathBuf};
 
 use crate::config::server::GLOBAL_CONFIG;
-use crate::util::file_op;
+use crate::infra::file_op;
 
 pub async fn check<'a>(
     path: &PathBuf,

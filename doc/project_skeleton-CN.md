@@ -128,7 +128,7 @@ pub static GLOBAL_CONFIG: Lazy<RwLock<AllConfigs>> = Lazy::new(|| RwLock::new(Al
   - `share_lib::infrastructure::http_client` — 基于 ureq 的同步 HTTP 原子操作（`get` / `delete` / `post_json` / `put_json`），feature `http`；
   - `share_lib::infrastructure::mq_client` — 基于 lapin 的异步 MQ 原子操作（`connect` / `declare_quorum_queue` / `publish_json`），feature `mq`；消费端的消费循环与业务强相关，继续留在各 crate；
   - `share_lib::infrastructure::process_runner` — 基于 std::process 的同步进程执行（`run` 返回 `ProcessOutput { stdout, stderr, exit_code }`），无 feature 门控，常驻可用。
-- **crate 特有的原子操作**：若某原子操作只有一个 crate 使用且与其他 crate 无复用前景，可留在本 crate 的 `util/`（如 `file-agent/src/util/file_op.rs` 的文件系统原语）。
+- **crate 特有的原子操作**：若某原子操作只有一个 crate 使用且与其他 crate 无复用前景，统一放在本 crate 的 `infra/` 模块（如 `file-agent/src/infra/file_op.rs` 的文件系统原语、`jc-worker/src/infra/log_update.rs` 的日志回报 HTTP 外呼、`jc-worker/src/infra/mq_consumer.rs` 的 MQ 消费循环）。
 
 所有原子操作的错误一律走 MailMan 体系（`MailManErr::new`，500 系 code，level 按语义取 0/1），由编排层继续上抛或转换。
 
@@ -153,7 +153,7 @@ middleware、调度器等组件横切在 `api` → `service` → `model` 三层�
     feature 时直接 `compile_error!` 拒绝编译；
   - watchman-backend 是鉴权源，保留本地 `JwtAuth`/`PermissionCheck`（允许直接调 model 做
     JWT 解析与权限查询），不接入该中间件。
-- **调度器**：`jc-commander` 的 `util/scheduler.rs`（时间轮调度器）定位为独立的调度器组件，不属于三层中的任何一层。其约束与编排层一致：DB 调用必须走 `model/`，MQ 调用必须走 `share_lib::infrastructure::mq_client` 原子模块，禁止在调度器内直接内联 diesel 或 lapin 代码。
+- **调度器**：`jc-commander` 的 `util/scheduler.rs`（时间轮调度器）定位为独立的调度器组件，不属于三层中的任何一层。因其是横切组件而非原子操作，故保留在 `util/` 而非 `infra/`。其约束与编排层一致：DB 调用必须走 `model/`，MQ 调用必须走 `share_lib::infrastructure::mq_client` 原子模块，禁止在调度器内直接内联 diesel 或 lapin 代码。
 - **其余 crate 特有的横切组件**（如 file-agent 的 SegQueue 内存队列）参照同一原则：IO 一律走原子层（model 或 share-lib infrastructure），禁止在组件内内联实现。
 
 ## 固定件
@@ -175,8 +175,8 @@ middleware、调度器等组件横切在 `api` → `service` → `model` 三层�
 
 骨架允许以下已登记的变体，除此之外不得自行增删层次：
 
-- **jc-worker**：纯 MQ 消费者，无 `api/`、`middleware/`、`model/`。配置层为 `config/worker.rs`（`jc-worker/src/config/worker.rs`），启动链改为 `#[tokio::main]` + lapin 连接/建队/消费（`jc-worker/src/main.rs`），业务逻辑在 `service/task.rs`、`service/json_rpc.rs`。
-- **file-agent**：无数据库，`main.rs` 中 `mod model;` 整体注释掉，无 r2d2 池；multipart 上传逻辑在 `service/file_manage.rs`，文件系统原语收敛在 `util/file_op.rs`。
+- **jc-worker**：纯 MQ 消费者，无 `api/`、`middleware/`、`model/`。配置层为 `config/worker.rs`（`jc-worker/src/config/worker.rs`），启动链改为 `#[tokio::main]` + 调用 `infra/mq_consumer.rs` 的消费循环（`jc-worker/src/main.rs`）；业务编排在 `service/task.rs`，crate 私有原子操作收敛在 `infra/`（MQ 消费循环 `mq_consumer.rs`、日志回报 HTTP 外呼 `log_update.rs`）。
+- **file-agent**：无数据库，`main.rs` 中 `mod model;` 整体注释掉，无 r2d2 池；multipart 上传逻辑在 `service/file_manage.rs`，文件系统原语收敛在 `infra/file_op.rs`。
 - **yell**：业务层为单数目录 `service/`（原复数 `services/` 已消除），只承载编排逻辑；`service/channel.rs` 定义所有渠道必须实现的 `Channel` trait（`channel_type` / `preflight` / `render` / `send`）与统一发送骨架 `deliver_template`（含 `create_record` / `update_record` / `resolve_config`），`service/notification_router.rs` 的 `NotificationRouter` 统一注册与分发渠道。渠道外呼实现（原子操作）已迁入 `infra/`，按渠道分目录（`bark/`、`gotify/`、`mail/`、`teams/`、`teams_hook/`、`webhook/`），只保留"校验/外呼"职责。
 - **cmdb-backend**：`model/` 与 `service/` 先按子系统（`km/`、`cloudserver/`、`yell/` 等）再分一层目录，如 `cmdb-backend/src/model/km/cloud_account.rs`。
 - **jc-commander**：额外有 `util/scheduler.rs`（调度器），属 crate 私有组件，不算骨架变体。

@@ -5,7 +5,7 @@ use share_lib::data_structure::{MailManErr, MailManOk};
 use share_lib::infrastructure::process_runner;
 
 use crate::config::worker;
-use crate::util::log_update::update_log;
+use crate::infra::log_update::update_log;
 
 /// MQ 任务消息（清洗层强类型输入）
 ///

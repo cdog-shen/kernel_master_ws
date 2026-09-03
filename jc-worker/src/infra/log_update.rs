@@ -1,7 +1,7 @@
 //! 向 commander 回报任务结果的 HTTP 外呼原子操作
 //!
 //! 原为 `service/json_rpc.rs`，实为对 commander `/api/log/update` 的 HTTP 回调，
-//! 属 crate 私有的原子操作，按骨架规约归位 `util/`，
+//! 属 crate 私有的原子操作，按骨架规约归位 `infra/`，
 //! 基于 share-lib `http_client`（feature `http`）实现。
 
 use chrono::Local;

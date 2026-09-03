@@ -4,7 +4,7 @@ use serde_json::{Value, json};
 use share_lib::data_structure::{MailManErr, MailManOk};
 use std::path::PathBuf;
 
-use crate::util::file_op;
+use crate::infra::file_op;
 
 pub async fn check<'a>(
     path: PathBuf,
