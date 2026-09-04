@@ -61,6 +61,28 @@ async fn main() -> std::io::Result<()> {
         .unwrap()
         .allowed_origin_list
         .clone();
+    // CORS 方法/请求头白名单：启动期解析为强类型，非法配置直接 panic（配置错误应尽早暴露）
+    let allowed_methods: Vec<http::Method> = server::GLOBAL_CONFIG
+        .read()
+        .unwrap()
+        .allowed_methods
+        .iter()
+        .map(|method| {
+            method
+                .parse()
+                .expect("invalid HTTP method in server_config:allowed_methods")
+        })
+        .collect();
+    let allowed_headers: Vec<http::header::HeaderName> = server::GLOBAL_CONFIG
+        .read()
+        .unwrap()
+        .allowed_headers
+        .iter()
+        .map(|header| {
+            http::header::HeaderName::from_bytes(header.as_bytes())
+                .expect("invalid header name in server_config:allowed_headers")
+        })
+        .collect();
     let app_url = format!(
         "{}:{}",
         &*server::GLOBAL_CONFIG.read().unwrap().listen_addr,
@@ -89,7 +111,7 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .wrap(
-                Cors::default() // allowed_origin return access-control-allow-origin: * by default
+                Cors::default()
                     .allowed_origin_fn({
                         let value = allowed_origin_list.clone();
                         move |origin, _req_head| {
@@ -97,9 +119,8 @@ async fn main() -> std::io::Result<()> {
                         }
                     })
                     .send_wildcard()
-                    .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
-                    .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-                    .allowed_header(http::header::CONTENT_TYPE)
+                    .allowed_methods(allowed_methods.clone())
+                    .allowed_headers(allowed_headers.clone())
                     .max_age(3600),
             )
             .app_data(web::Data::new(pool.clone()))

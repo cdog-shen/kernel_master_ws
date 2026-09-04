@@ -17,6 +17,8 @@ pub struct AllConfigs {
     pub listen_port: u16,
     pub workers: u16,
     pub allowed_origin_list: Vec<String>,
+    pub allowed_methods: Vec<String>,
+    pub allowed_headers: Vec<String>,
 
     // pub pub_key_path: String,
     // pub pri_key_path: String,
@@ -38,6 +40,16 @@ impl AllConfigs {
             listen_port: 8000,
             workers: 2,
             allowed_origin_list: vec![],
+            // CORS 默认放行方法（覆盖全仓库路由实际用到的方法 + OPTIONS 预检）与请求头（实际只用到这两个）
+            allowed_methods: vec![
+                "GET".to_string(),
+                "POST".to_string(),
+                "PATCH".to_string(),
+                "DELETE".to_string(),
+                "PUT".to_string(),
+                "OPTIONS".to_string(),
+            ],
+            allowed_headers: vec!["Content-Type".to_string(), "Authorization".to_string()],
 
             // pub_key_path: String::new(),
             // pri_key_path: String::new(),
@@ -91,6 +103,45 @@ impl AllConfigs {
                     "http://localhost:3000".to_string(),
                     "http://127.0.0.1:3000".to_string(),
                 ]
+            }
+        };
+        self.allowed_methods = match &config["server_config"]["allowed_methods"] {
+            Value::Array(vec) => vec
+                .iter()
+                .filter_map(|item| item.as_str())
+                .map(|item| item.to_string())
+                .collect(),
+            _ => {
+                MailManErr::new(
+                    500,
+                    "Config Missing",
+                    Some("Config path server_config:allowed_methods (Array[string]) not found, Using default".to_string()),
+                    0,
+                );
+                vec![
+                    "GET".to_string(),
+                    "POST".to_string(),
+                    "PATCH".to_string(),
+                    "DELETE".to_string(),
+                    "PUT".to_string(),
+                    "OPTIONS".to_string(),
+                ]
+            }
+        };
+        self.allowed_headers = match &config["server_config"]["allowed_headers"] {
+            Value::Array(vec) => vec
+                .iter()
+                .filter_map(|item| item.as_str())
+                .map(|item| item.to_string())
+                .collect(),
+            _ => {
+                MailManErr::new(
+                    500,
+                    "Config Missing",
+                    Some("Config path server_config:allowed_headers (Array[string]) not found, Using default".to_string()),
+                    0,
+                );
+                vec!["Content-Type".to_string(), "Authorization".to_string()]
             }
         };
 

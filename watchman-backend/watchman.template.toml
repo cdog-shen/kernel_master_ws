@@ -5,6 +5,10 @@ listen_addr = "0.0.0.0"
 listen_port = 8000
 workers = 2
 allowed_origin_list = ["http://localhost:3000", "http://127.0.0.1:3000"]
+# CORS 允许的请求方法（覆盖全仓库路由实际用到的方法 + OPTIONS 预检）
+allowed_methods = ["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"]
+# CORS 允许的请求头（实际请求只用到这两个）
+allowed_headers = ["Content-Type", "Authorization"]
 secret_key_path = "key/jwt_secret.key"
 clear_log = "True"
 authenticate_bypass = [
