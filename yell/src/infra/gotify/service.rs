@@ -51,19 +51,23 @@ impl Channel for GotifyChannel {
             .and_then(|v| v.as_u64())
             .unwrap_or(5);
 
-        let mut form_body = format!("title={}&message={}&priority={}", title, message, priority);
+        let mut push_payload = json!({
+            "title": title,
+            "message": message,
+            "priority": priority,
+        });
         if let Some(url) = payload.get("url").and_then(|v| v.as_str())
             && !url.is_empty()
         {
-            let extras = json!({
+            push_payload["extras"] = json!({
                 "client::notification": {
                     "click": { "url": url }
                 }
             });
-            form_body.push_str(&format!("&extras={}", extras));
         }
 
         let base_url = gotify_config.server_url.trim_end_matches('/').to_string();
+        let push_url = format!("{}/message", base_url);
         let mut errors = Vec::new();
         for token in tokens {
             let app_token = if !token.is_empty() {
@@ -71,18 +75,11 @@ impl Channel for GotifyChannel {
             } else {
                 gotify_config.app_token.clone()
             };
-            let push_url = format!("{}/message?token={}", base_url, app_token);
-            let body = form_body.clone();
+            let url = push_url.clone();
+            let query = [("token".to_string(), app_token)];
+            let body = push_payload.clone();
             let result = run_http_call("Gotify", move || {
-                http_client::post_raw(
-                    &push_url,
-                    &[(
-                        "Content-Type".to_string(),
-                        "application/x-www-form-urlencoded".to_string(),
-                    )],
-                    &[],
-                    &body,
-                )
+                http_client::post_json(&url, &[], &query, &body)
             })
             .await;
             if let Err(e) = result {
